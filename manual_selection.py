@@ -15,8 +15,8 @@ from PyQt5.QtCore import Qt
 # Created by brendon-ai, September 2017
 
 # Dimensions of window as well as image
-WINDOW_WIDTH = 1280
-WINDOW_HEIGHT = 720
+WINDOW_WIDTH = 2560
+WINDOW_HEIGHT = 1440
 
 # Height of output training images (width is assumed to be the same as that of the input images)
 OUTPUT_HEIGHT = 10
