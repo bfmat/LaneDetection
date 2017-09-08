@@ -2,7 +2,9 @@
 
 import os
 import sys
+import uuid
 import cv2
+
 from PyQt5.QtWidgets import QLabel, QWidget, QApplication
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtCore import Qt
@@ -15,6 +17,9 @@ from PyQt5.QtCore import Qt
 # Dimensions of window as well as image
 WINDOW_WIDTH = 1280
 WINDOW_HEIGHT = 720
+
+# Height of output training images (width is assumed to be the same as that of the input images)
+OUTPUT_HEIGHT = 10
 
 
 # Main PyQt5 QWidget class
@@ -92,7 +97,8 @@ class ManualSelection(QWidget):
         if key_event.key() == Qt.Key_Space:
 
             # Save the current image data and clear the line path
-            save_training_data(self.current_image, self.road_line_path)
+            output_folder = os.path.expanduser(sys.argv[2])
+            save_training_data(self.current_image, self.road_line_path, output_folder)
             self.road_line_path = []
 
             # If there are no images left that we haven't read, exit the application
@@ -117,7 +123,9 @@ class ManualSelection(QWidget):
         current_image_qpixmap = QPixmap(current_image_qimage_rgb).scaled(WINDOW_WIDTH, WINDOW_HEIGHT)
 
         # Set the image scaling factor to the window width divided by the image width
-        self.image_scaling_factor = WINDOW_WIDTH / width
+        # This must be an integer for everything to work properly
+        # That is, the screen dimensions must be an even multiple of the input image dimensions
+        self.image_scaling_factor = WINDOW_WIDTH // width
 
         # Fill the image box with the picture
         self.image_box.setPixmap(current_image_qpixmap)
@@ -141,8 +149,23 @@ def get_image_paths(folder):
 
 
 # Slice and save data derived from a single image
-def save_training_data(image, road_line_path):
-    pass
+def save_training_data(image, road_line_path, output_folder):
+
+    # For every point defined on the road line, we take a slice of the image centered on the point's vertical value
+    for road_line_point in road_line_path:
+
+        # Calculate the top and bottom limits of the slice
+        vertical_slice_start = road_line_point[1] - (OUTPUT_HEIGHT // 2)
+        vertical_slice_end = vertical_slice_start + OUTPUT_HEIGHT
+
+        # Slice the image's NumPy array representation
+        image_slice = image[vertical_slice_start:vertical_slice_end, :, :]
+
+        # Use the Unix time and the position of the current road line point in the file name
+        file_name = '{}/x{}_y{}_{}.jpg'.format(output_folder, *road_line_point, uuid.uuid4())
+
+        # Save the image
+        cv2.imwrite(file_name, image_slice)
 
 
 # If this file is being run directly, instantiate the ManualSelection class
