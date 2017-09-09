@@ -36,3 +36,5 @@ def sliding_window_model(window_size):
         loss='binary_crossentropy',
         optimizer='adadelta'
     )
+
+    return model

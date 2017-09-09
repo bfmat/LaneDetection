@@ -1,0 +1,121 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import cv2
+import numpy
+import random
+
+from model.sliding_window_model import sliding_window_model
+
+
+# Slice up an image into square windows given the horizontal position of the road line within it
+def slice_image(full_image, road_line_position):
+
+    # Compute a slice start and a slice end given a horizontal center point
+    def compute_slice(center_position):
+
+        # Determine the horizontal starting and ending points of the window based on the global window size
+        horizontal_slice_start = center_position - (WINDOW_SIZE // 2)
+        horizontal_slice_end = horizontal_slice_start + WINDOW_SIZE
+
+        return horizontal_slice_start, horizontal_slice_end
+
+    # Slice out the positive example in the image, centered on the road line position
+    positive_slice_start, positive_slice_end = compute_slice(road_line_position)
+    positive_example = full_image[:, positive_slice_start:positive_slice_end, :]
+
+    # Pick a random position outside of the range road_line_position +/- WINDOW_SIZE
+    full_image_range = set(range(320))
+
+    # Do not center the negative example within the range of the last window
+    positive_example_range = set(range(positive_slice_start, positive_slice_end))
+
+    # Get the elements that are in full_image_range but not in positive_example_range
+    negative_example_range = full_image_range.difference(positive_example_range)
+
+    # Choose a position randomly from the range
+    negative_example_position = random.choice(tuple(negative_example_range))
+
+    # Slice out the negative example centered on the random point
+    negative_slice_start, negative_slice_end = compute_slice(negative_example_position)
+    negative_example = full_image[:, negative_slice_start:negative_slice_end, :]
+
+    # Return [1, 0] for the labels because the first example is always positive and the second is always negative
+    return [positive_example, negative_example], [1, 0]
+
+
+# Gather the images and labels from a specified folder
+def get_data(image_folder):
+
+    # List of images and labels
+    image_list = []
+    label_list = []
+
+    # For each image path in the provided folder
+    for image_name in os.listdir(image_folder):
+
+        # Format the fully qualified path of the image
+        image_path = '{}/{}'.format(image_folder, image_name)
+
+        # Load the image
+        full_image = cv2.imread(image_path)
+
+        # Get the image's horizontal road line integer position from the name
+        # Names should be in the format 'x[horizontal position]_y[vertical position]_[UUID].jpg'
+        road_line_position = int(image_name.split('_')[0][1:])
+
+        # Slice up the image into square windows
+        image_slices, slice_labels = slice_image(full_image, road_line_position)
+
+        # Add each of the windows to the image list
+        for image in image_slices:
+
+            # Add an extra dimension to the image, allowing them to be stacked into a single array later on
+            image_four_dimensional = numpy.expand_dims(image, 0)
+
+            # Add the four-dimensional image to the list
+            image_list.append(image_four_dimensional)
+
+        # Add each of the corresponding labels to the label list
+        for label in slice_labels:
+            label_list.append(label)
+
+    # Stack all of the images into a single NumPy array (defaults to axis 0)
+    image_numpy_array = numpy.concatenate(image_list)
+
+    return image_numpy_array, label_list
+
+
+# Check that the number of command line arguments is correct
+if len(sys.argv) != 2:
+    print('Usage: {} <training image folder>'.format(sys.argv[0]))
+    sys.exit()
+
+# Training parameters
+EPOCHS = 100
+BATCH_SIZE = 5
+VALIDATION_SPLIT = 0.1
+
+# Width and height of square training images
+WINDOW_SIZE = 10
+
+# Create the model with specified window size
+model = sliding_window_model(WINDOW_SIZE)
+
+# Print a summary of the model architecture
+print('\nSummary of model:')
+print(model.summary())
+
+# Load data from the folder given as a command line argument
+image_folder = os.path.expanduser(sys.argv[1])
+images, labels = get_data(image_folder)
+
+# Train the model
+model.fit(
+    images,
+    labels,
+    epochs=EPOCHS,
+    batch_size=BATCH_SIZE,
+    validation_split=VALIDATION_SPLIT
+)
