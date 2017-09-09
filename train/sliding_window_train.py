@@ -2,6 +2,7 @@
 
 import os
 import sys
+import time
 import numpy
 import random
 
@@ -68,13 +69,15 @@ def get_data(image_folder):
         # Slice up the image into square windows
         image_slices, slice_labels = slice_image(full_image, road_line_position)
 
-        # Add each of the windows to the image list
-        for image in image_slices:
-            image_list.append(image)
+        # Add each of the windows to the image list, provided their shapes are correct
+        for i in range(len(image_slices)):
 
-        # Add each of the corresponding labels to the label list
-        for label in slice_labels:
-            label_list.append(label)
+            # Only add it if its dimensions are correct
+            if image_slices[i].shape == (WINDOW_SIZE, WINDOW_SIZE, 3):
+                image_list.append(image_slices[i])
+
+                # Also add the corresponding label to the label list if the image is valid
+                label_list.append(slice_labels[i])
 
     # Stack all of the images into a single NumPy array (defaults to stacking on axis 0)
     image_numpy_array = numpy.stack(image_list)
@@ -83,17 +86,17 @@ def get_data(image_folder):
 
 
 # Check that the number of command line arguments is correct
-if len(sys.argv) != 2:
-    print('Usage: {} <training image folder>'.format(sys.argv[0]))
+if len(sys.argv) != 3:
+    print('Usage: {} <training image folder> <trained model folder>'.format(sys.argv[0]))
     sys.exit()
 
 # Training parameters
-EPOCHS = 100
+EPOCHS = 30
 BATCH_SIZE = 5
 VALIDATION_SPLIT = 0.1
 
 # Width and height of square training images
-WINDOW_SIZE = 10
+WINDOW_SIZE = 16
 
 # Create the model with specified window size
 model = sliding_window_model(WINDOW_SIZE)
@@ -114,3 +117,13 @@ model.fit(
     batch_size=BATCH_SIZE,
     validation_split=VALIDATION_SPLIT
 )
+
+# We will save the model to the folder path provided as the second parameter
+model_folder = os.path.expanduser(sys.argv[2])
+
+# Name the model with the current Unix time
+unix_time = int(time.time())
+
+# Format the name and save the model
+trained_model_path = '{}/{}.h5'.format(model_folder, unix_time)
+model.save(trained_model_path)

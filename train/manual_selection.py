@@ -4,6 +4,7 @@ import os
 import sys
 import uuid
 import cv2
+import random
 
 from PyQt5.QtWidgets import QLabel, QWidget, QApplication
 from PyQt5.QtGui import QPixmap, QImage
@@ -15,11 +16,11 @@ from PyQt5.QtCore import Qt
 # Created by brendon-ai, September 2017
 
 # Dimensions of window as well as image
-WINDOW_WIDTH = 2560
-WINDOW_HEIGHT = 1440
+WINDOW_WIDTH = 3840
+WINDOW_HEIGHT = 840
 
 # Height of output training images (width is assumed to be the same as that of the input images)
-OUTPUT_HEIGHT = 10
+OUTPUT_HEIGHT = 16
 
 
 # Main PyQt5 QWidget class
@@ -144,6 +145,9 @@ def get_image_paths(folder):
     for name in os.listdir(folder):
         path = folder + '/' + name
         image_paths.append(path)
+
+    # Randomize the order of the images
+    random.shuffle(image_paths)
 
     return image_paths
 
