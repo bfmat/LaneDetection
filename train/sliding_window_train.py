@@ -2,10 +2,10 @@
 
 import os
 import sys
-import cv2
 import numpy
 import random
 
+from scipy import misc
 from model.sliding_window_model import sliding_window_model
 
 
@@ -58,8 +58,8 @@ def get_data(image_folder):
         # Format the fully qualified path of the image
         image_path = '{}/{}'.format(image_folder, image_name)
 
-        # Load the image
-        full_image = cv2.imread(image_path)
+        # Load the image as a 32-bit floating point NumPy array
+        full_image = misc.imread(image_path).astype(numpy.float32)
 
         # Get the image's horizontal road line integer position from the name
         # Names should be in the format 'x[horizontal position]_y[vertical position]_[UUID].jpg'
@@ -70,19 +70,14 @@ def get_data(image_folder):
 
         # Add each of the windows to the image list
         for image in image_slices:
-
-            # Add an extra dimension to the image, allowing them to be stacked into a single array later on
-            image_four_dimensional = numpy.expand_dims(image, 0)
-
-            # Add the four-dimensional image to the list
-            image_list.append(image_four_dimensional)
+            image_list.append(image)
 
         # Add each of the corresponding labels to the label list
         for label in slice_labels:
             label_list.append(label)
 
-    # Stack all of the images into a single NumPy array (defaults to axis 0)
-    image_numpy_array = numpy.concatenate(image_list)
+    # Stack all of the images into a single NumPy array (defaults to stacking on axis 0)
+    image_numpy_array = numpy.stack(image_list)
 
     return image_numpy_array, label_list
 
