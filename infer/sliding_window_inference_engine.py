@@ -27,22 +27,25 @@ class SlidingWindowInferenceEngine:
     def infer(self, image):
 
         # Slice up the image into windows
-        image_slices = view_as_windows(image, (3, self.window_size, self.window_size), self.stride)
+        image_slices = view_as_windows(image, (self.window_size, self.window_size, 3), self.stride)
 
         # A two-dimensional list that will contain the predictions corresponding to the windows
         classification_matrix = []
 
         # Loop over the windows and classify them, one row at a time
-        for row in image_slices:
+        for row in range(image_slices.shape[0]):
 
             # Create a one-dimensional list of the classifications for this row
             row_classifications = []
 
             # Loop over the second dimension
-            for window in row:
+            for column in range(image_slices.shape[1]):
+
+                # Slice the individual window out of the list
+                window = image_slices[row, column]
 
                 # Use the model to classify the image, and convert the result to a Boolean
-                classification = bool(self.model.predict(window))
+                classification = bool(round(self.model.predict(window)[0, 0]))
 
                 # Append it to the list of classifications for this row
                 row_classifications.append(classification)
