@@ -15,6 +15,7 @@ from PyQt5.QtCore import Qt
 # in order to create training data for a convolutional neural network.
 # Created by brendon-ai, September 2017
 
+
 # Dimensions of window as well as image
 WINDOW_WIDTH = 3840
 WINDOW_HEIGHT = 840

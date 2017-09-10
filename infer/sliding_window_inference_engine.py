@@ -2,6 +2,10 @@ from skimage.util import view_as_windows
 
 
 # A system for running inference on sections of an image using sliding windows
+# Created by brendon-ai, September 2017
+
+
+# Main class, instantiated with configuration and trained model
 class SlidingWindowInferenceEngine:
 
     # The Keras model used for inference on square sections of the image
