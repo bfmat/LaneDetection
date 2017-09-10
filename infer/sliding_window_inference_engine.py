@@ -23,25 +23,23 @@ class SlidingWindowInferenceEngine:
         self.window_size = window_size
         self.stride = stride
 
-    # Given an image, compute a vector of positions describing the position of the line for each column
+    # Given an image, compute a vector of positions describing the position of the line within each row
     def infer(self, image):
 
         # Slice up the image into windows
         image_slices = view_as_windows(image, (self.window_size, self.window_size, 3), self.stride)
 
-        print(image_slices.shape)
-
-        # A two-dimensional list that will contain the line positions for each column
+        # A two-dimensional list that will contain the line positions for each row
         line_positions = []
 
         # Loop over the windows and classify them, one row at a time
-        for column in range(image_slices.shape[1]):
+        for row in range(image_slices.shape[0]):
 
             # Create a one-dimensional list of the predictions for this row
             row_predictions = []
 
             # Loop over the second dimension
-            for row in range(image_slices.shape[0]):
+            for column in range(image_slices.shape[1]):
 
                 # Slice the individual window out of the list
                 window = image_slices[row, column]
