@@ -28,12 +28,12 @@ class Visualizer(QWidget):
 
         # Check that the number of command line arguments is correct
         if len(sys.argv) != 3:
-            print('Usage: {} <trained model> <input image>'.format(sys.argv[0]))
+            print('Usage: {} <trained model> <image folder>'.format(sys.argv[0]))
             sys.exit()
 
         # Process the paths to the model and image provided as command line arguments
         model_path = os.path.expanduser(sys.argv[1])
-        image_path = os.path.expanduser(sys.argv[2])
+        image_folder = os.path.expanduser(sys.argv[2])
 
         # Load the model
         model = load_model(model_path)
@@ -46,7 +46,7 @@ class Visualizer(QWidget):
         )
 
         # Load and perform inference on the image
-        self.process_image(inference_engine, image_path)
+        load_images(inference_engine, image_folder)
 
         # Set up the UI
         self.init_ui()
@@ -55,15 +55,20 @@ class Visualizer(QWidget):
     def init_ui(self):
         pass
 
-    # Load and process the image with the provided inference engine
-    def process_image(self, inference_engine, image_path):
 
-        # Load the image from disk
+# Load and process the image with the provided inference engine
+def load_images(inference_engine, image_folder):
+
+    # Loop over each of the images in the folder
+    for image_name in os.listdir(image_folder):
+
+        # Load the image from disk, using its fully qualified path
+        image_path = image_folder + '/' + image_name
         image = misc.imread(image_path)
+        print(image.shape)
 
         # Run inference on the image
-        output_matrix = inference_engine.infer(image)
-        print(output_matrix)
+        line_positions = inference_engine.infer(image)
 
 
 # If this file is being run directly, instantiate the ManualSelection class
