@@ -26,6 +26,9 @@ class SlidingWindowInferenceEngine:
     # Given an image, compute a vector of positions describing the position of the line within each row
     def infer(self, image):
 
+        # The distance of the very first window from the top and side of the whole image
+        offset_from_side = self.window_size // 2
+
         # Slice up the image into windows
         image_slices = view_as_windows(image, (self.window_size, self.window_size, 3), self.stride)
 
@@ -57,10 +60,14 @@ class SlidingWindowInferenceEngine:
             # Find the index of the max value
             max_prediction_index = row_predictions.index(max_prediction)
 
-            # Using the stride and window size, compute the horizontal position corresponding to the index
-            max_horizontal_position = (self.window_size // 2) + (self.stride * max_prediction_index)
+            # Using the stride and window size, compute the horizontal and vertical positions corresponding to the index
+            max_vertical_position = offset_from_side + (self.stride * row)
+            max_horizontal_position = offset_from_side + (self.stride * max_prediction_index)
+
+            # Make a tuple containing the overall position
+            position = (max_vertical_position, max_horizontal_position)
 
             # Add it to the list of positions
-            line_positions.append(max_horizontal_position)
+            line_positions.append(position)
 
         return line_positions

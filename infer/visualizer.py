@@ -17,9 +17,15 @@ from infer.sliding_window_inference_engine import SlidingWindowInferenceEngine
 # Scaling factor for the input image, which defines the size of the window
 SCALING_FACTOR = 4
 
+# The distance from the center to the edge of the green squares placed along the road line
+MARKER_RADIUS = 2
+
 
 # Main PyQt5 QWidget class
 class Visualizer(QWidget):
+
+    # List of NumPy images
+    image_list = None
 
     # Call various initialization functions
     def __init__(self):
@@ -46,18 +52,23 @@ class Visualizer(QWidget):
         )
 
         # Load and perform inference on the image
-        load_images(inference_engine, image_folder)
+        self.image_list = load_images(inference_engine, image_folder)
+
+        # Set the global image height and width variables
+        image_height, image_width = self.image_list[0].shape[:2]
 
         # Set up the UI
-        self.init_ui()
+        self.init_ui(image_height, image_width)
 
     # Initialize the user interface
-    def init_ui(self):
+    def init_ui(self, image_height, image_width):
         pass
 
 
 # Load and process the image with the provided inference engine
 def load_images(inference_engine, image_folder):
+    # Calculate the relative horizontal and vertical range of the position markers
+    marker_range = range(-MARKER_RADIUS, MARKER_RADIUS)
 
     # Loop over each of the images in the folder
     for image_name in os.listdir(image_folder):
@@ -65,10 +76,20 @@ def load_images(inference_engine, image_folder):
         # Load the image from disk, using its fully qualified path
         image_path = image_folder + '/' + image_name
         image = misc.imread(image_path)
-        print(image.shape)
 
         # Run inference on the image
         line_positions = inference_engine.infer(image)
+
+        # For each of the positions which include horizontal and vertical values
+        for position in line_positions:
+
+            # Create a green square centered at position
+            # Iterate over both dimensions
+            for i in marker_range:
+                for j in marker_range:
+
+                    # Set the current pixel to green
+                    image[position[0] + i, position[1] + j] = (0, 1, 0)
 
 
 # If this file is being run directly, instantiate the ManualSelection class
