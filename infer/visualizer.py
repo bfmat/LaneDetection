@@ -67,8 +67,12 @@ class Visualizer(QWidget):
 
 # Load and process the image with the provided inference engine
 def load_images(inference_engine, image_folder):
+
     # Calculate the relative horizontal and vertical range of the position markers
     marker_range = range(-MARKER_RADIUS, MARKER_RADIUS)
+
+    # List that we will add processed images to
+    image_list = []
 
     # Loop over each of the images in the folder
     for image_name in os.listdir(image_folder):
@@ -90,6 +94,11 @@ def load_images(inference_engine, image_folder):
 
                     # Set the current pixel to green
                     image[position[0] + i, position[1] + j] = (0, 1, 0)
+
+        # Add the prepared image to the list
+        image_list.append(image)
+
+    return image_list
 
 
 # If this file is being run directly, instantiate the ManualSelection class
