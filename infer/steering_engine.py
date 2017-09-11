@@ -10,17 +10,32 @@ class SteeringEngine:
     # Distance off of the line of best fit a point must be to be considered an outlier
     max_line_variation = None
 
+    # Y position at which the road center point is calculated
+    center_point_height = None
+
     # Set global variables provided as arguments
-    def __init__(self, max_line_variation):
+    def __init__(self, max_line_variation, center_point_height):
         self.max_line_variation = max_line_variation
+        self.center_point_height = center_point_height
 
     # Compute a steering angle. given points on each road line
     def compute_steering_angle(self, left_points, right_points):
 
         # Calculate the lines of best fit
-        left_line, right_line = [line_of_best_fit(points) for points in (left_points, right_points)]
+        left_line, right_line = (line_of_best_fit(points) for points in (left_points, right_points))
 
-        # For eac
+        # Remove the outliers from each line
+        left_points_no_outliers = remove_outliers(left_points, left_line, self.max_line_variation)
+        right_points_no_outliers = remove_outliers(right_points, right_line, self.max_line_variation)
+
+        # Recalculate the lines of best fit
+        lines_no_outliers = zip(line_of_best_fit(points) for points in (left_points_no_outliers, right_points_no_outliers))
+
+        # Calculate the average of the two lines, that is, the center line of the road
+        center_line = ((a + b) / 2 for a, b in lines_no_outliers)
+
+        # Find the horizontal position of the center line at the given vertical position
+        center_x = (self.center_point_height - center_line[1]) / center_line[0]
 
 
 # Calculate a line of best fit for a set of points
@@ -37,8 +52,12 @@ def line_of_best_fit(points):
 
     return line_parameters
 
+
 # Remove all outliers from a list of points given a line of best fit
-def remove_outliers(points, line):
+def remove_outliers(points, line, max_variation):
+
+    # List with outliers removed that we will return
+    output_points = []
 
     # Calculate the perpendicular slope to the line
     perpendicular_slope = 1 / line[1]
@@ -46,13 +65,29 @@ def remove_outliers(points, line):
     # Iterate over each of the points
     for point in points:
 
-        # Calculate where the point would be on the perpendicular line with Y intercept 0
+        # Find the distance from this particular point to its projection on the line
+        # Calculate where the point's X value is on the perpendicular line with Y intercept 0
         predicted_y = point[0] * perpendicular_slope
 
         # Use that to compute the bias term and calculate the perpendicular line that passes through the point
         y_intercept = point[1] - predicted_y
 
         # Calculate the intersection point of the lines
-        # TODO
+        # Start by subtracting one line from the other
+        line_minus_perpendicular_line = (line[0] - y_intercept, line[1] - perpendicular_slope)
 
+        # Find the value of X so that the corresponding Y value on this new line is 0
+        intersection_x = -line_minus_perpendicular_line[0] / line_minus_perpendicular_line[1]
 
+        # Now calculate the Y value of this intersection point and wrap the two values in a tuple
+        intersection = (intersection_x, line[0] + (line[1] * intersection_x))
+
+        # This intersection point is the projection of the original point onto the line
+        # Calculate its Pythagorean distance from the original point
+        distance = sum(((a - b) ** 2 for a, b in zip(point, intersection)))
+
+        # If the distance is less than or equal to the maximum permitted variation, add it to the output list
+        if distance <= max_variation:
+            output_points.append(point)
+
+    return output_points
