@@ -65,7 +65,7 @@ class SlidingWindowInferenceEngine:
             max_horizontal_position = offset_from_side + (self.stride * max_prediction_index)
 
             # Make a tuple containing the overall position
-            position = (max_vertical_position, max_horizontal_position)
+            position = (max_horizontal_position, max_vertical_position)
 
             # Add it to the list of positions
             line_positions.append(position)

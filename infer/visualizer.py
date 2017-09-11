@@ -149,7 +149,7 @@ def load_images(inference_engine, image_folder):
                 for j in marker_range:
 
                     # Set the current pixel to green
-                    image[position[0] + i, position[1] + j] = (0, 0, 0)
+                    image[position[1] + i, position[0] + j] = (0, 0, 0)
 
         # Add the prepared image to the list
         image_list.append(image)
