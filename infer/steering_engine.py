@@ -29,13 +29,16 @@ class SteeringEngine:
         right_points_no_outliers = remove_outliers(right_points, right_line, self.max_line_variation)
 
         # Recalculate the lines of best fit
-        lines_no_outliers = zip(line_of_best_fit(points) for points in (left_points_no_outliers, right_points_no_outliers))
+        lines_no_outliers = (line_of_best_fit(points) for points in (left_points_no_outliers, right_points_no_outliers))
 
         # Calculate the average of the two lines, that is, the center line of the road
-        center_line = ((a + b) / 2 for a, b in lines_no_outliers)
+        center_line = [(a + b) / 2 for a, b in lines_no_outliers]
 
         # Find the horizontal position of the center line at the given vertical position
-        center_x = (self.center_point_height - center_line[1]) / center_line[0]
+        # center_x = (self.center_point_height - center_line[1]) / center_line[0]
+
+        # PID stuff
+        # TODO
 
 
 # Calculate a line of best fit for a set of points
@@ -48,7 +51,8 @@ def line_of_best_fit(points):
     x = np.array([[1, point[0]] for point in points])
 
     # Use the normal equation to find the line of best fit
-    line_parameters = np.linalg.pinv(x.transpose().dot(x)).dot(x.transpose()).dot(y)
+    x_transpose = x.transpose()
+    line_parameters = np.linalg.pinv(x_transpose.dot(x)).dot(x_transpose).dot(y)
 
     return line_parameters
 
@@ -58,6 +62,9 @@ def remove_outliers(points, line, max_variation):
 
     # List with outliers removed that we will return
     output_points = []
+
+    # Calculate the square of the maximum permitted variation
+    sqr_max_variation = max_variation ** 2
 
     # Calculate the perpendicular slope to the line
     perpendicular_slope = 1 / line[1]
@@ -84,10 +91,10 @@ def remove_outliers(points, line, max_variation):
 
         # This intersection point is the projection of the original point onto the line
         # Calculate its Pythagorean distance from the original point
-        distance = sum(((a - b) ** 2 for a, b in zip(point, intersection)))
+        sqr_distance = sum(((a - b) ** 2 for a, b in zip(point, intersection)))
 
         # If the distance is less than or equal to the maximum permitted variation, add it to the output list
-        if distance <= max_variation:
+        if sqr_distance <= sqr_max_variation:
             output_points.append(point)
 
     return output_points
