@@ -5,7 +5,9 @@ import sys
 
 from scipy import misc
 from keras.models import load_model
+from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtWidgets import QLabel, QWidget, QApplication
+from PyQt5.QtGui import QPixmap, QImage
 from infer.sliding_window_inference_engine import SlidingWindowInferenceEngine
 
 
@@ -15,7 +17,7 @@ from infer.sliding_window_inference_engine import SlidingWindowInferenceEngine
 
 
 # Scaling factor for the input image, which defines the size of the window
-SCALING_FACTOR = 4
+SCALING_FACTOR = 8
 
 # The distance from the center to the edge of the green squares placed along the road line
 MARKER_RADIUS = 2
@@ -26,6 +28,12 @@ class Visualizer(QWidget):
 
     # List of NumPy images
     image_list = None
+
+    # The image we are currently on
+    image_index = 0
+
+    # The label that displays the current image
+    image_box = None
 
     # Call various initialization functions
     def __init__(self):
@@ -62,11 +70,59 @@ class Visualizer(QWidget):
 
     # Initialize the user interface
     def init_ui(self, image_height, image_width):
-        pass
+
+        # The window's size is that of the image times SCALING_FACTOR
+        window_width = image_width * SCALING_FACTOR
+        window_height = image_height * SCALING_FACTOR
+
+        # Set the size, position, title, and color scheme of the window
+        self.setFixedSize(window_width, window_height)
+        self.move(100, 100)
+        self.setWindowTitle('Manual Training Data Selection')
+
+        # Initialize the image box that holds the video frames
+        self.image_box = QLabel(self)
+        self.image_box.setAlignment(Qt.AlignCenter)
+        self.image_box.setFixedSize(window_width, window_height)
+        self.image_box.move(0, 0)
+
+        # Make the window exist
+        self.show()
+
+        # Display the initial image
+        self.update_display()
+
+    # Update the image in the display
+    def update_display(self):
+
+        # Get the image that we should display from the list
+        image = self.image_list[self.image_index]
+
+        # Convert the NumPy array into a QImage for display
+        height, width, channel = image.shape
+        bytes_per_line = channel * width
+        current_image_qimage = QImage(image.data, width, height, bytes_per_line, QImage.Format_RGB888)
+        current_image_qpixmap = QPixmap(current_image_qimage).scaled(self.image_box.width(), self.image_box.height())
+
+        # Fill the image box with the picture
+        self.image_box.setPixmap(current_image_qpixmap)
+
+        # Update the index of the current image
+        self.image_index += 1
+
+        # If it has passed the last image, reset it to 0
+        if self.image_index == len(self.image_list):
+            self.image_index = 0
+
+        # Update again in 30 milliseconds
+        QTimer().singleShot(30, self.update_display)
 
 
 # Load and process the image with the provided inference engine
 def load_images(inference_engine, image_folder):
+
+    # Notify the user that we have started loading the images
+    print('Loading images...')
 
     # Calculate the relative horizontal and vertical range of the position markers
     marker_range = range(-MARKER_RADIUS, MARKER_RADIUS)
@@ -75,7 +131,7 @@ def load_images(inference_engine, image_folder):
     image_list = []
 
     # Loop over each of the images in the folder
-    for image_name in os.listdir(image_folder):
+    for image_name in sorted(os.listdir(image_folder)):
 
         # Load the image from disk, using its fully qualified path
         image_path = image_folder + '/' + image_name
@@ -93,7 +149,7 @@ def load_images(inference_engine, image_folder):
                 for j in marker_range:
 
                     # Set the current pixel to green
-                    image[position[0] + i, position[1] + j] = (0, 1, 0)
+                    image[position[0] + i, position[1] + j] = (0, 0, 0)
 
         # Add the prepared image to the list
         image_list.append(image)
