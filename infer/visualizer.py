@@ -27,7 +27,7 @@ MARKER_RADIUS = 2
 class Visualizer(QWidget):
 
     # List of NumPy images
-    image_list = None
+    image_lists = None
 
     # The image we are currently on
     image_index = 0
@@ -46,21 +46,33 @@ class Visualizer(QWidget):
             sys.exit()
 
         # Process the paths to the model and image provided as command line arguments
-        model_path = os.path.expanduser(sys.argv[1])
+        model_folder = os.path.expanduser(sys.argv[1])
         image_folder = os.path.expanduser(sys.argv[2])
 
-        # Load the model
-        model = load_model(model_path)
+        # Array of inference engines
+        inference_engines = []
 
-        # Create a sliding window inference engine with the model
-        inference_engine = SlidingWindowInferenceEngine(
-            model=model,
-            window_size=16,
-            stride=8
-        )
+        # Get the models from the folder
+        for model_name in os.listdir(model_folder):
 
-        # Load and perform inference on the image
-        self.image_list = load_images(inference_engine, image_folder)
+            # Get the fully qualified path of the model
+            model_path = '{}/{}'.format(model_folder, model_name)
+
+            # Load the model
+            model = load_model(model_path)
+
+            # Create a sliding window inference engine with the model
+            inference_engine = SlidingWindowInferenceEngine(
+                model=model,
+                window_size=16,
+                stride=8
+            )
+
+            # Add it to the list
+            inference_engines.append(inference_engine)
+
+        # Load and perform inference on the images
+        self.image_list = load_images(inference_engines, image_folder)
 
         # Set the global image height and width variables
         image_height, image_width = self.image_list[0].shape[:2]
@@ -119,7 +131,7 @@ class Visualizer(QWidget):
 
 
 # Load and process the image with the provided inference engine
-def load_images(inference_engine, image_folder):
+def load_images(inference_engines, image_folder):
 
     # Notify the user that we have started loading the images
     print('Loading images...')
@@ -137,8 +149,14 @@ def load_images(inference_engine, image_folder):
         image_path = image_folder + '/' + image_name
         image = misc.imread(image_path)
 
-        # Run inference on the image
-        line_positions = inference_engine.infer(image)
+        # List of points on the lines
+        line_positions = []
+
+        # With each of the provided engines
+        for inference_engine in inference_engines:
+
+            # Perform inference on the current image, adding the results to the list of points
+            line_positions += inference_engine.infer(image)
 
         # For each of the positions which include horizontal and vertical values
         for position in line_positions:

@@ -59,6 +59,10 @@ def get_data(image_folder):
         # Format the fully qualified path of the image
         image_path = '{}/{}'.format(image_folder, image_name)
 
+        # If the file has size zero, skip it
+        if os.path.getsize(image_path) == 0:
+            continue
+
         # Load the image as a 32-bit floating point NumPy array
         full_image = misc.imread(image_path).astype(numpy.float32)
 
