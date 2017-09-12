@@ -13,9 +13,17 @@ class SteeringEngine:
     # Y position at which the road center point is calculated
     center_point_height = None
 
+    # Ideal horizontal position for the center of the road
+    ideal_center_x = None
+
+    # Positive multiplier for the proportional error term calculated for steering
+    steering_multiplier = None
+
     # Set global variables provided as arguments
-    def __init__(self, max_line_variation, center_point_height):
+    def __init__(self, max_line_variation, steering_multiplier, ideal_center_x, center_point_height):
         self.max_line_variation = max_line_variation
+        self.steering_multiplier = steering_multiplier
+        self.ideal_center_x = ideal_center_x
         self.center_point_height = center_point_height
 
     # Compute a steering angle. given points on each road line
@@ -35,10 +43,15 @@ class SteeringEngine:
         center_line = [(a + b) / 2 for a, b in lines_no_outliers]
 
         # Find the horizontal position of the center line at the given vertical position
-        # center_x = (self.center_point_height - center_line[1]) / center_line[0]
+        center_x = (self.center_point_height - center_line[1]) / center_line[0]
 
-        # PID stuff
-        # TODO
+        # Calculate the error from the ideal center
+        error = self.ideal_center_x - center_x
+
+        # Multiply the error by the steering multiplier
+        steering_angle = error * self.steering_multiplier
+
+        return steering_angle
 
 
 # Calculate a line of best fit for a set of points

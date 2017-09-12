@@ -6,8 +6,9 @@ import sys
 from scipy import misc
 from keras.models import load_model
 from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtWidgets import QLabel, QWidget, QApplication
 from PyQt5.QtGui import QPixmap, QImage
+from PyQt5.QtWidgets import QLabel, QWidget, QApplication
+from infer.steering_engine import SteeringEngine
 from infer.sliding_window_inference_engine import SlidingWindowInferenceEngine
 
 
@@ -136,6 +137,14 @@ def load_images(inference_engines, image_folder):
     # Notify the user that we have started loading the images
     print('Loading images...')
 
+    # Instantiate the steering angle generation engine
+    steering_engine = SteeringEngine(
+        max_line_variation=25,
+        steering_multiplier=0.1,
+        ideal_center_x=160,
+        center_point_height=20
+    )
+
     # Calculate the relative horizontal and vertical range of the position markers
     marker_range = range(-MARKER_RADIUS, MARKER_RADIUS)
 
@@ -157,6 +166,11 @@ def load_images(inference_engines, image_folder):
 
             # Perform inference on the current image, adding the results to the list of points
             line_positions += inference_engine.infer(image)
+
+        # Calculate a steering angle from the points
+        steering_angle = steering_engine.compute_steering_angle(line_positions, line_positions)
+
+        print(steering_angle)
 
         # For each of the positions which include horizontal and vertical values
         for position in line_positions:
