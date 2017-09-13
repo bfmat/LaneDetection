@@ -154,6 +154,8 @@ def load_images(inference_engines, image_folder):
     # Loop over each of the images in the folder
     for image_name in sorted(os.listdir(image_folder)):
 
+        print(image_name)
+
         # Load the image from disk, using its fully qualified path
         image_path = image_folder + '/' + image_name
         image = misc.imread(image_path)
@@ -165,15 +167,17 @@ def load_images(inference_engines, image_folder):
         for inference_engine in inference_engines:
 
             # Perform inference on the current image, adding the results to the list of points
-            line_positions += inference_engine.infer(image)
+            line_positions.append(inference_engine.infer(image))
 
         # Calculate a steering angle from the points
-        steering_angle = steering_engine.compute_steering_angle(line_positions, line_positions)
+        steering_angle = steering_engine.compute_steering_angle(*line_positions)
+        print('Steering angle: ', steering_angle)
 
-        print(steering_angle)
+        # Flatten the list of line positions
+        flat_line_positions = [item for sublist in line_positions for item in sublist]
 
         # For each of the positions which include horizontal and vertical values
-        for position in line_positions:
+        for position in flat_line_positions:
 
             # Create a green square centered at position
             # Iterate over both dimensions

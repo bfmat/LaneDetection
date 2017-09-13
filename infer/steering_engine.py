@@ -39,11 +39,14 @@ class SteeringEngine:
         # Recalculate the lines of best fit
         lines_no_outliers = (line_of_best_fit(points) for points in (left_points_no_outliers, right_points_no_outliers))
 
+        # Calculate the transpose of the list of two lines, so the corresponding elements are matched up
+        lines_no_outliers_transpose = list(map(list, zip(*lines_no_outliers)))
+
         # Calculate the average of the two lines, that is, the center line of the road
-        center_line = [(a + b) / 2 for a, b in lines_no_outliers]
+        center_line = [(a + b) / 2 for a, b in lines_no_outliers_transpose]
 
         # Find the horizontal position of the center line at the given vertical position
-        center_x = (self.center_point_height - center_line[1]) / center_line[0]
+        center_x = (self.center_point_height - center_line[0]) / center_line[1]
 
         # Calculate the error from the ideal center
         error = self.ideal_center_x - center_x
