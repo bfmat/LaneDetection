@@ -139,7 +139,7 @@ def load_images(inference_engines, image_folder):
 
     # Instantiate the steering angle generation engine
     steering_engine = SteeringEngine(
-        max_line_variation=35,
+        max_average_variation=20,
         steering_multiplier=0.1,
         ideal_center_x=160,
         center_point_height=20

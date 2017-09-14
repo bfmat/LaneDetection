@@ -1,3 +1,4 @@
+import math
 import numpy as np
 
 # A system for converting line positions on each side of the road to steering angles, using outlier detection and PID
@@ -8,7 +9,7 @@ import numpy as np
 class SteeringEngine:
 
     # Distance off of the line of best fit a point must be to be considered an outlier
-    max_line_variation = None
+    max_average_variation = None
 
     # Y position at which the road center point is calculated
     center_point_height = None
@@ -20,8 +21,8 @@ class SteeringEngine:
     steering_multiplier = None
 
     # Set global variables provided as arguments
-    def __init__(self, max_line_variation, steering_multiplier, ideal_center_x, center_point_height):
-        self.max_line_variation = max_line_variation
+    def __init__(self, max_average_variation, steering_multiplier, ideal_center_x, center_point_height):
+        self.max_average_variation = max_average_variation
         self.steering_multiplier = steering_multiplier
         self.ideal_center_x = ideal_center_x
         self.center_point_height = center_point_height
@@ -29,12 +30,9 @@ class SteeringEngine:
     # Compute a steering angle. given points on each road line
     def compute_steering_angle(self, left_points, right_points):
 
-        # Calculate the lines of best fit
-        left_line, right_line = (line_of_best_fit(points) for points in (left_points, right_points))
-
-        # Remove the outliers from each line
-        left_points_no_outliers = remove_outliers(left_points, left_line, self.max_line_variation)
-        right_points_no_outliers = remove_outliers(right_points, right_line, self.max_line_variation)
+        # Remove the outliers from each set of points
+        left_points_no_outliers = remove_outliers(left_points, self.max_average_variation)
+        right_points_no_outliers = remove_outliers(right_points, self.max_average_variation)
 
         # If all the points were considered outliers, and the lists are empty
         if not left_points_no_outliers or not right_points_no_outliers:
@@ -43,10 +41,11 @@ class SteeringEngine:
             return None
 
         # Recalculate the lines of best fit
-        lines_no_outliers = (line_of_best_fit(points) for points in (left_points_no_outliers, right_points_no_outliers))
+        left_line, right_line = \
+            (line_of_best_fit(points) for points in (left_points_no_outliers, right_points_no_outliers))
 
         # Calculate the transpose of the list of two lines, so the corresponding elements are matched up
-        lines_no_outliers_transpose = list(map(list, zip(*lines_no_outliers)))
+        lines_no_outliers_transpose = list(map(list, zip(left_line, right_line)))
 
         # Calculate the average of the two lines, that is, the center line of the road
         center_line = [(a + b) / 2 for a, b in lines_no_outliers_transpose]
@@ -60,7 +59,7 @@ class SteeringEngine:
         # Multiply the error by the steering multiplier
         steering_angle = error * self.steering_multiplier
 
-        return left_line, right_line, center_line
+        return left_line, right_line
 
 
 # Calculate a line of best fit for a set of points
@@ -80,43 +79,31 @@ def line_of_best_fit(points):
 
 
 # Remove all outliers from a list of points given a line of best fit
-def remove_outliers(points, line, max_variation):
+def remove_outliers(points, max_variation):
 
     # List with outliers removed that we will return
     output_points = []
 
-    # Calculate the square of the maximum permitted variation
-    sqr_max_variation = max_variation ** 2
-
-    # Calculate the perpendicular slope to the line
-    perpendicular_slope = 1 / line[1]
-
     # Iterate over each of the points
     for point in points:
 
-        # Find the distance from this particular point to its projection on the line
-        # Calculate where the point's X value is on the perpendicular line with Y intercept 0
-        predicted_y = point[0] * perpendicular_slope
+        # Number of points that this point was within the permitted distance of
+        valid_comparisons = 0
 
-        # Use that to compute the bias term and calculate the perpendicular line that passes through the point
-        y_intercept = point[1] - predicted_y
+        # Iterate over each of the points again
+        for comparison_point in points:
 
-        # Calculate the intersection point of the lines
-        # Start by subtracting one line from the other
-        line_minus_perpendicular_line = (line[0] - y_intercept, line[1] - perpendicular_slope)
+            # Calculate the Pythagorean distance between the two points
+            distance = math.sqrt(sum((a - b) ** 2 for a, b in zip(point, comparison_point)))
 
-        # Find the value of X so that the corresponding Y value on this new line is 0
-        intersection_x = -line_minus_perpendicular_line[0] / line_minus_perpendicular_line[1]
+            # If the value is within the permitted maximum
+            if distance < max_variation:
 
-        # Now calculate the Y value of this intersection point and wrap the two values in a tuple
-        intersection = (intersection_x, line[0] + (line[1] * intersection_x))
+                # Increment the counter for this point
+                valid_comparisons += 1
 
-        # This intersection point is the projection of the original point onto the line
-        # Calculate its Pythagorean distance from the original point
-        sqr_distance = sum(((a - b) ** 2 for a, b in zip(point, intersection)))
-
-        # If the distance is less than or equal to the maximum permitted variation, add it to the output list
-        if sqr_distance <= sqr_max_variation:
+        # If this point was within the required distance of at least two points
+        if valid_comparisons >= 2:
             output_points.append(point)
 
     return output_points
