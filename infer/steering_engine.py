@@ -36,6 +36,12 @@ class SteeringEngine:
         left_points_no_outliers = remove_outliers(left_points, left_line, self.max_line_variation)
         right_points_no_outliers = remove_outliers(right_points, right_line, self.max_line_variation)
 
+        # If all the points were considered outliers, and the lists are empty
+        if not left_points_no_outliers or not right_points_no_outliers:
+
+            # Exit early and return None
+            return None
+
         # Recalculate the lines of best fit
         lines_no_outliers = (line_of_best_fit(points) for points in (left_points_no_outliers, right_points_no_outliers))
 
@@ -54,7 +60,7 @@ class SteeringEngine:
         # Multiply the error by the steering multiplier
         steering_angle = error * self.steering_multiplier
 
-        return steering_angle
+        return left_line, right_line, center_line
 
 
 # Calculate a line of best fit for a set of points

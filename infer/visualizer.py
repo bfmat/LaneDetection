@@ -139,7 +139,7 @@ def load_images(inference_engines, image_folder):
 
     # Instantiate the steering angle generation engine
     steering_engine = SteeringEngine(
-        max_line_variation=25,
+        max_line_variation=35,
         steering_multiplier=0.1,
         ideal_center_x=160,
         center_point_height=20
@@ -153,8 +153,6 @@ def load_images(inference_engines, image_folder):
 
     # Loop over each of the images in the folder
     for image_name in sorted(os.listdir(image_folder)):
-
-        print(image_name)
 
         # Load the image from disk, using its fully qualified path
         image_path = image_folder + '/' + image_name
@@ -170,8 +168,19 @@ def load_images(inference_engines, image_folder):
             line_positions.append(inference_engine.infer(image))
 
         # Calculate a steering angle from the points
-        steering_angle = steering_engine.compute_steering_angle(*line_positions)
-        print('Steering angle: ', steering_angle)
+        lines = steering_engine.compute_steering_angle(*line_positions)
+
+        # Draw the lines on screen
+        for y_position in range(66):
+
+            # Calculate the corresponding X position on each of the lines
+            try:
+                for line in lines:
+                    x_position = int((y_position - line[0]) / line[1])
+                    try:
+                        image[y_position, x_position] = (0,0,0)
+                    except: pass
+            except: pass
 
         # Flatten the list of line positions
         flat_line_positions = [item for sublist in line_positions for item in sublist]
