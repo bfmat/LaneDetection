@@ -2,5 +2,4 @@
 .idea
 
 # Compiled bytecode
-*.pyc
-*.pyo
+*.py[cod]

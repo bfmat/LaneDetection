@@ -7,7 +7,7 @@ import numpy
 import random
 
 from scipy import misc
-from model.sliding_window_model import sliding_window_model
+from LaneDetection.model.sliding_window_model import sliding_window_model
 
 
 # Slice up an image into square windows given the horizontal position of the road line within it
