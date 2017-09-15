@@ -141,8 +141,7 @@ def load_images(inference_engines, image_folder):
     steering_engine = SteeringEngine(
         max_average_variation=20,
         steering_multiplier=0.1,
-        ideal_center_x=160,
-        center_point_height=20
+        ideal_center_x=160
     )
 
     # Calculate the relative horizontal and vertical range of the position markers
@@ -168,19 +167,9 @@ def load_images(inference_engines, image_folder):
             line_positions.append(inference_engine.infer(image))
 
         # Calculate a steering angle from the points
-        lines = steering_engine.compute_steering_angle(*line_positions)
+        steering_angle = steering_engine.compute_steering_angle(*line_positions)
 
-        # Draw the lines on screen
-        for y_position in range(66):
-
-            # Calculate the corresponding X position on each of the lines
-            try:
-                for line in lines:
-                    x_position = int((y_position - line[0]) / line[1])
-                    try:
-                        image[y_position, x_position] = (0,0,0)
-                    except: pass
-            except: pass
+        print(steering_angle)
 
         # Flatten the list of line positions
         flat_line_positions = [item for sublist in line_positions for item in sublist]
