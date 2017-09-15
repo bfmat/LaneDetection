@@ -144,9 +144,6 @@ def load_images(inference_engines, image_folder):
         ideal_center_x=160
     )
 
-    # Calculate the relative horizontal and vertical range of the position markers
-    marker_range = range(-MARKER_RADIUS, MARKER_RADIUS)
-
     # List that we will add processed images to
     image_list = []
 
@@ -169,24 +166,30 @@ def load_images(inference_engines, image_folder):
         # Calculate a steering angle from the points
         steering_angle = steering_engine.compute_steering_angle(*line_positions)
 
-        print(steering_angle)
+        # Calculate the center of the road from the steering angle
+        error = steering_angle / steering_engine.steering_multiplier
+        center_x = int(steering_engine.ideal_center_x - error)
 
         # Flatten the list of line positions
         flat_line_positions = [item for sublist in line_positions for item in sublist]
 
+        # Add the center of the road to the list of positions, at height 20
+        flat_line_positions.append((center_x, 20))
+
         # For each of the positions which include horizontal and vertical values
         for position in flat_line_positions:
 
-            # Create a green square centered at position
-            # Iterate over both dimensions
-            for i in marker_range:
-                for j in marker_range:
+            # Calculate the four bounds of the marker to be placed
+            bounds = [center + offset for center in position for offset in (-MARKER_RADIUS, MARKER_RADIUS)]
 
-                    # Set the current pixel to green
-                    image[position[1] + i, position[0] + j] = (0, 0, 0)
+            # Create a black square within the bounds
+            image[bounds[2]:bounds[3], bounds[0]:bounds[1]] = 0
 
         # Add the prepared image to the list
         image_list.append(image)
+
+    # Notify the user that loading is complete
+    print('Loading complete!')
 
     return image_list
 
