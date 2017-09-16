@@ -16,11 +16,15 @@ class SteeringEngine:
     # Positive multiplier for the proportional error term calculated for steering
     steering_multiplier = None
 
+    # Maximum permitted absolute value for the steering angle
+    steering_limit = None
+
     # Set global variables provided as arguments
-    def __init__(self, max_average_variation, steering_multiplier, ideal_center_x):
+    def __init__(self, max_average_variation, steering_multiplier, ideal_center_x, steering_limit):
         self.max_average_variation = max_average_variation
         self.steering_multiplier = steering_multiplier
         self.ideal_center_x = ideal_center_x
+        self.steering_limit = steering_limit
 
     # Compute a steering angle. given points on each road line
     def compute_steering_angle(self, left_points, right_points):
@@ -47,6 +51,14 @@ class SteeringEngine:
 
         # Multiply the error by the steering multiplier
         steering_angle = error * self.steering_multiplier
+
+        # If the steering angle is greater than the maximum, set it to the maximum
+        if steering_angle > self.steering_limit:
+            steering_angle = steering_limit
+
+        # If it is less than the minimum, set it to the minimum
+        else if < -self.steering_limit:
+            steering_angle = -steering_limit
 
         return steering_angle
 
