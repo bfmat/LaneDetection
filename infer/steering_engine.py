@@ -57,7 +57,7 @@ class SteeringEngine:
             steering_angle = steering_limit
 
         # If it is less than the minimum, set it to the minimum
-        else if < -self.steering_limit:
+        elif steering_angle < -self.steering_limit:
             steering_angle = -steering_limit
 
         return steering_angle
