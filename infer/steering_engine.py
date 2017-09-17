@@ -60,7 +60,8 @@ class SteeringEngine:
         elif steering_angle < -self.steering_limit:
             steering_angle = -self.steering_limit
 
-        return steering_angle
+        # Return the steering angle and the error
+        return steering_angle, error
 
 
 # Remove all outliers from a list of points given a line of best fit
