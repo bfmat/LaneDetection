@@ -54,11 +54,11 @@ class SteeringEngine:
 
         # If the steering angle is greater than the maximum, set it to the maximum
         if steering_angle > self.steering_limit:
-            steering_angle = steering_limit
+            steering_angle = self.steering_limit
 
         # If it is less than the minimum, set it to the minimum
         elif steering_angle < -self.steering_limit:
-            steering_angle = -steering_limit
+            steering_angle = -self.steering_limit
 
         return steering_angle
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2
 
 import os
 import sys
@@ -167,7 +167,7 @@ def save_training_data(image, road_line_path, output_folder):
         image_slice = image[vertical_slice_start:vertical_slice_end, :, :]
 
         # Use the Unix time and the position of the current road line point in the file name
-        file_name = '{}/x{}_y{}_{}.jpg'.format(output_folder, *road_line_point, uuid.uuid4())
+        file_name = '{}/x{}_y{}_{}.jpg'.format(output_folder, road_line_point[0], road_line_point[1], uuid.uuid4())
 
         # Save the image
         cv2.imwrite(file_name, image_slice)

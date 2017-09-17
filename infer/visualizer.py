@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2
 
 import os
 import sys
@@ -8,8 +8,8 @@ from keras.models import load_model
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtWidgets import QLabel, QWidget, QApplication
-from LaneDetection.infer.steering_engine import SteeringEngine
-from LaneDetection.infer.sliding_window_inference_engine import SlidingWindowInferenceEngine
+from ..infer.steering_engine import SteeringEngine
+from ..infer.sliding_window_inference_engine import SlidingWindowInferenceEngine
 
 
 # Program which demonstrates the effectiveness or ineffectiveness of a lane detection model
