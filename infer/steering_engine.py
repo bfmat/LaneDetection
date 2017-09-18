@@ -45,9 +45,11 @@ class SteeringEngine:
 
         # Calculate the average of the two points, that is, the center of the road
         center_x = (left_average + right_average) // 2
+        print(center_x)
 
         # Calculate the error from the ideal center
         error = self.ideal_center_x - center_x
+        print(error)
 
         # Multiply the error by the steering multiplier
         steering_angle = error * self.steering_multiplier
