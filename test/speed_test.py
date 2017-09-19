@@ -26,9 +26,8 @@ num_iterations = int(sys.argv[1])
 model_path = os.path.expanduser(sys.argv[2])
 model = load_model(model_path)
 
-# Load the example image
+# Parse the example image path
 image_path = os.path.expanduser(sys.argv[3])
-image = imread(image_path)
 
 # Create an inference engine with the model
 inference_engine = SlidingWindowInferenceEngine(
@@ -42,6 +41,9 @@ start_time = time.time()
 
 # For the provided number of iterations
 for i in xrange(num_iterations):
+
+    # Load the image again on every iteration, for a better simulation of real-world use
+    image = imread(image_path)
 
     # Run the inference engine on the example image, discarding the result
     inference_engine.infer(image)
