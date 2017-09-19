@@ -6,7 +6,7 @@ from keras.layers.convolutional import Conv2D
 def sliding_window_model(window_size):
 
     # Rectified linear activation function
-    activation = 'tanh'
+    activation = 'relu'
 
     # Initialize the sequential model
     model = Sequential()
@@ -27,7 +27,7 @@ def sliding_window_model(window_size):
 
     # Fully connected layers
     model.add(Flatten())
-    model.add(Dense(64, activation=activation))
+    model.add(Dense(16, activation=activation))
 
     # Sigmoid activation is used because its outputs are in the range of 0 to 1
     model.add(Dense(1, activation='sigmoid'))
@@ -39,3 +39,4 @@ def sliding_window_model(window_size):
     )
 
     return model
+
