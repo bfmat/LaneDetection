@@ -94,7 +94,7 @@ if len(sys.argv) != 3:
 
 # Training parameters
 EPOCHS = 30
-BATCH_SIZE = 10
+BATCH_SIZE = 1
 VALIDATION_SPLIT = 0.1
 
 # Width and height of square training images
