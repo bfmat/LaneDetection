@@ -12,17 +12,17 @@ def sliding_window_model(window_size):
     # Initialize the sequential model
     model = Sequential()
 
-    # Batch normalization
-    model.add(BatchNormalization(
-        input_shape=(window_size, window_size, 3)
-    ))
-
-    # Two convolutional layers
+    # Three convolutional layers
     model.add(Conv2D(
         input_shape=(window_size, window_size, 3),
         kernel_size=2,
         filters=16,
         strides=2,
+        activation=activation
+    ))
+    model.add(Conv2D(
+        kernel_size=2,
+        filters=16,
         activation=activation
     ))
     model.add(Conv2D(
