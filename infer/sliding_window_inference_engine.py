@@ -1,3 +1,4 @@
+from time import time
 from skimage.util import view_as_windows
 
 
@@ -26,11 +27,17 @@ class SlidingWindowInferenceEngine:
     # Given an image, compute a vector of positions describing the position of the line within each row
     def infer(self, image):
 
+        # Starting time
+        print('Started at ' + str(time()))
+
         # The distance of the very first window from the top and side of the whole image
         offset_from_side = self.window_size // 2
 
         # Slice up the image into windows
         image_slices = view_as_windows(image, (self.window_size, self.window_size, 3), self.stride)
+
+        # Viewing as windows complete
+        print('Viewing as windows complete at ' + str(time()))
 
         # A two-dimensional list that will contain the line positions for each row
         line_positions = []
@@ -69,5 +76,8 @@ class SlidingWindowInferenceEngine:
 
             # Add it to the list of positions
             line_positions.append(position)
+
+        # Completion time
+        print('Complete at ' + str(time()))
 
         return line_positions
