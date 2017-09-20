@@ -36,8 +36,6 @@ class SlidingWindowInferenceEngine:
         else:
             self.stride = (stride, stride, MORE_THAN_CHANNELS)
 
-        print(self.stride)
-
     # Given an image, compute a vector of positions describing the position of the line within each row
     def infer(self, image):
 
