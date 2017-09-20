@@ -1,9 +1,12 @@
-from time import time
 from skimage.util import view_as_windows
 
 
 # A system for running inference on sections of an image using sliding windows
 # Created by brendon-ai, September 2017
+
+
+# A number used as a stride for the channel axis, ensuring that no window slicing occurs on that axis
+MORE_THAN_CHANNELS = 6
 
 
 # Main class, instantiated with configuration and trained model
@@ -20,24 +23,27 @@ class SlidingWindowInferenceEngine:
 
     # Set global variables provided as arguments
     def __init__(self, model, window_size, stride):
+
+        # Set scalar variables
         self.model = model
         self.window_size = window_size
-        self.stride = stride
+
+        # If stride is a tuple, set the global variable to that tuple plus a term corresponding to the channel axis
+        if isinstance(stride, tuple):
+            self.stride = stride + (MORE_THAN_CHANNELS,)
+
+        # If stride is a scalar, set the global variable to a three-element tuple with that value plus a channel term
+        else:
+            self.stride = (stride, stride, MORE_THAN_CHANNELS)
 
     # Given an image, compute a vector of positions describing the position of the line within each row
     def infer(self, image):
-
-        # Starting time
-        print('Started at ' + str(time()))
 
         # The distance of the very first window from the top and side of the whole image
         offset_from_side = self.window_size // 2
 
         # Slice up the image into windows
         image_slices = view_as_windows(image, (self.window_size, self.window_size, 3), self.stride)
-
-        # Viewing as windows complete
-        print('Viewing as windows complete at ' + str(time()))
 
         # A two-dimensional list that will contain the line positions for each row
         line_positions = []
@@ -68,16 +74,13 @@ class SlidingWindowInferenceEngine:
             max_prediction_index = row_predictions.index(max_prediction)
 
             # Using the stride and window size, compute the horizontal and vertical positions corresponding to the index
-            max_vertical_position = offset_from_side + (self.stride * row)
-            max_horizontal_position = offset_from_side + (self.stride * max_prediction_index)
+            max_vertical_position = offset_from_side + (self.stride[0] * row)
+            max_horizontal_position = offset_from_side + (self.stride[1] * max_prediction_index)
 
             # Make a tuple containing the overall position
             position = (max_horizontal_position, max_vertical_position)
 
             # Add it to the list of positions
             line_positions.append(position)
-
-        # Completion time
-        print('Complete at ' + str(time()))
 
         return line_positions
