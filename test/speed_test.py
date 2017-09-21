@@ -45,8 +45,11 @@ for i in range(num_iterations):
     # Load the image again on every iteration, for a better simulation of real-world use
     image = imread(image_path)
 
+    # Crop the image
+    image_cropped = image[40:-40, :, :]
+
     # Run the inference engine on the example image, discarding the result
-    inference_engine.infer(image)
+    inference_engine.infer(image_cropped)
 
     # If the current iteration is divisible by 10, tell the user how many we have completed
     if i % 10 == 0:
