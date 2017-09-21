@@ -169,7 +169,7 @@ def load_images(inference_engines, image_folder):
 
     # Instantiate the steering angle generation engine
     steering_engine = SteeringEngine(
-        max_average_variation=20,
+        max_average_variation=25,
         steering_multiplier=0.1,
         ideal_center_x=IDEAL_CENTER_X,
         steering_limit=0.2
@@ -226,7 +226,7 @@ def load_images(inference_engines, image_folder):
             for position in line_positions[i]:
 
                 # Calculate the four bounds of the marker to be placed
-                bounds = [center + offset for center in position for offset in (-MARKER_RADIUS, MARKER_RADIUS)]
+                bounds = [int(round(center + offset)) for center in position for offset in (-MARKER_RADIUS, MARKER_RADIUS)]
 
                 # Create a black square within the bounds
                 image[bounds[2]:bounds[3], bounds[0]:bounds[1]] = color

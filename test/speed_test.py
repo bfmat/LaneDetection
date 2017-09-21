@@ -33,14 +33,14 @@ image_path = os.path.expanduser(sys.argv[3])
 inference_engine = SlidingWindowInferenceEngine(
     model=model,
     window_size=16,
-    stride=(16, 8)
+    stride=8
 )
 
 # Record the starting time
 start_time = time.time()
 
 # For the provided number of iterations
-for i in xrange(num_iterations):
+for i in range(num_iterations):
 
     # Load the image again on every iteration, for a better simulation of real-world use
     image = imread(image_path)
