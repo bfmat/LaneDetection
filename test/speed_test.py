@@ -46,7 +46,7 @@ for i in range(num_iterations):
     image = imread(image_path)
 
     # Crop the image
-    image_cropped = image[:, 20:-20, :]
+    image_cropped = image[:, 40:-40, :]
 
     # Run the inference engine on the example image, discarding the result
     inference_engine.infer(image_cropped)
