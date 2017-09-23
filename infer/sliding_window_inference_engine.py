@@ -5,6 +5,10 @@ from skimage.util import view_as_windows
 # Created by brendon-ai, September 2017
 
 
+# A number used as a stride for the channel axis, ensuring that no window slicing occurs on that axis
+MORE_THAN_CHANNELS = 6
+
+
 # Main class, instantiated with configuration and trained model
 class SlidingWindowInferenceEngine:
 
@@ -19,9 +23,18 @@ class SlidingWindowInferenceEngine:
 
     # Set global variables provided as arguments
     def __init__(self, model, window_size, stride):
+
+        # Set scalar variables
         self.model = model
         self.window_size = window_size
-        self.stride = stride
+
+        # If stride is a tuple, set the global variable to that tuple plus a term corresponding to the channel axis
+        if isinstance(stride, tuple):
+            self.stride = stride + (MORE_THAN_CHANNELS,)
+
+        # If stride is a scalar, set the global variable to a three-element tuple with that value plus a channel term
+        else:
+            self.stride = (stride, stride, MORE_THAN_CHANNELS)
 
     # Given an image, compute a vector of positions describing the position of the line within each row
     def infer(self, image):
@@ -60,14 +73,43 @@ class SlidingWindowInferenceEngine:
             # Find the index of the max value
             max_prediction_index = row_predictions.index(max_prediction)
 
+            # If there are no values in the prediction list which are positive (greater than 0.5)
+            if not sum(prediction > 0.5 for prediction in row_predictions):
+
+                # Simply use the max value index
+                prediction_index = max_prediction_index
+
+            else:
+
+                # List of relative horizontal positions of valid adjacent windows
+                adjacent_options = []
+
+                # If the maximum is not right against the left edge, we can search the window to the left
+                if max_prediction_index > 0:
+                    adjacent_options.append(-1)
+
+                # If it is not on the right edge, search the window to the right
+                if max_prediction_index < len(row_predictions) - 1:
+                    adjacent_options.append(1)
+
+                # Get the index of the greater of the two values adjacent to the maximum
+                adjacent_max = max(row_predictions[max_prediction_index + i] for i in adjacent_options)
+                adjacent_max_index = row_predictions.index(adjacent_max)
+
+                # Calculate the proportions that the global max and adjacent max each contribute to the sum of the two
+                total_prediction = max_prediction + adjacent_max
+                adjacent_weight = adjacent_max / total_prediction
+                max_weight = max_prediction / total_prediction
+
+                # Calculate a weighted average of their indices
+                prediction_index = (adjacent_max_index * adjacent_weight) + (max_prediction_index * max_weight)
+
             # Using the stride and window size, compute the horizontal and vertical positions corresponding to the index
-            max_vertical_position = offset_from_side + (self.stride * row)
-            max_horizontal_position = offset_from_side + (self.stride * max_prediction_index)
+            max_vertical_position = offset_from_side + (self.stride[0] * row)
+            max_horizontal_position = offset_from_side + (self.stride[1] * prediction_index)
 
-            # Make a tuple containing the overall position
+            # Make a tuple containing the overall position and add it to the list of positions
             position = (max_horizontal_position, max_vertical_position)
-
-            # Add it to the list of positions
             line_positions.append(position)
 
         return line_positions
