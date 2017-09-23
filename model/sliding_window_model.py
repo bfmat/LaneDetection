@@ -1,5 +1,6 @@
 from keras.models import Sequential
 from keras.layers import Dense, Flatten
+from keras.layers.normalization import BatchNormalization
 from keras.layers.convolutional import Conv2D
 
 
@@ -11,12 +12,22 @@ def sliding_window_model(window_size):
     # Initialize the sequential model
     model = Sequential()
 
-    # One convolutional layer
+    # Three convolutional layers
     model.add(Conv2D(
         input_shape=(window_size, window_size, 3),
         kernel_size=2,
         filters=16,
         strides=2,
+        activation=activation
+    ))
+    model.add(Conv2D(
+        kernel_size=2,
+        filters=16,
+        activation=activation
+    ))
+    model.add(Conv2D(
+        kernel_size=2,
+        filters=16,
         activation=activation
     ))
 
@@ -34,3 +45,4 @@ def sliding_window_model(window_size):
     )
 
     return model
+
