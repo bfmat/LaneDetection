@@ -80,7 +80,7 @@ def remove_outliers(points, max_variation):
         for comparison_point in points:
 
             # Calculate the Pythagorean distance between the two points
-            distance = math.sqrt(sum((a - b) ** 2 for a, b in zip(point, comparison_point)))
+            distance = math.sqrt(((point[0] - comparison_point[0]) ** 2) + ((point[1] - comparison_point[1]) ** 2))
 
             # If the value is within the permitted maximum
             if distance < max_variation:
