@@ -7,6 +7,7 @@ import numpy
 import random
 
 from scipy import misc
+from keras.callbacks import ModelCheckpoint
 from ..model import sliding_window_model
 
 
@@ -95,7 +96,7 @@ def get_data(image_folders):
                 full_image=full_image,
                 road_line_position=road_line_position,
                 is_negative_example=bool(folder_index),
-                num_random_negative_examples=3
+                num_random_negative_examples=15
             )
 
             # Add each of the windows to the image list, provided their shapes are correct
@@ -120,7 +121,7 @@ if len(sys.argv) != 4:
     sys.exit()
 
 # Training parameters
-EPOCHS = 100
+EPOCHS = 30
 BATCH_SIZE = 5
 VALIDATION_SPLIT = 0.1
 
@@ -138,21 +139,21 @@ print(model.summary())
 image_folders = [os.path.expanduser(folder) for folder in sys.argv[1:3]]
 images, labels = get_data(image_folders)
 
-# Train the model
-model.fit(
-    images,
-    labels,
-    epochs=EPOCHS,
-    batch_size=BATCH_SIZE,
-    validation_split=VALIDATION_SPLIT
-)
-
-# We will save the model to the folder path provided as the second parameter
+# We will save snapshots to the folder path provided as the second parameter
 model_folder = os.path.expanduser(sys.argv[3])
 
 # Name the model with the current Unix time
 unix_time = int(time.time())
 
-# Format the name and save the model
-trained_model_path = '{}/{}.h5'.format(model_folder, unix_time)
-model.save(trained_model_path)
+# Train the model and save snapshots
+model.fit(
+    images,
+    labels,
+    epochs=EPOCHS,
+    batch_size=BATCH_SIZE,
+    validation_split=VALIDATION_SPLIT,
+    callbacks=[ModelCheckpoint(
+        '{}/batch={}-epoch={{epoch:d}}-val_loss={{val_loss:f}}.h5'
+        .format(model_folder, unix_time)
+    )]
+)

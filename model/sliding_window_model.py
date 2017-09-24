@@ -6,7 +6,7 @@ from keras.layers.convolutional import Conv2D
 def sliding_window_model(window_size):
 
     # Rectified linear activation function
-    activation = 'relu'
+    activation = 'tanh'
 
     # Initialize the sequential model
     model = Sequential()
