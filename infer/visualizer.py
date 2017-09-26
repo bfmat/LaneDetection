@@ -8,8 +8,8 @@ from keras.models import load_model
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QImage, QFont
 from PyQt5.QtWidgets import QLabel, QWidget, QApplication
-from ..infer import SteeringEngine
-from ..infer import SlidingWindowInferenceEngine
+from ..infer import SteeringEngine, SlidingWindowInferenceEngine
+from ..infer.steering_engine import remove_outliers
 
 
 # Program which demonstrates the effectiveness or ineffectiveness of a lane detection model
@@ -18,13 +18,13 @@ from ..infer import SlidingWindowInferenceEngine
 
 
 # Scaling factor for the input image, which defines the size of the window
-SCALING_FACTOR = 8
+SCALING_FACTOR = 4
 
 # The distance from the center to the edge of the green squares placed along the road line
 MARKER_RADIUS = 2
 
 # The ideal position for the center of the image
-IDEAL_CENTER_X = 120
+IDEAL_CENTER_X = 160
 
 # Labels for each of the elements of an image data tuple
 IMAGE_DATA_LABELS = ('File name', 'Predicted center', 'Error from center', 'Steering angle')
@@ -169,7 +169,7 @@ def load_images(inference_engines, image_folder):
 
     # Instantiate the steering angle generation engine
     steering_engine = SteeringEngine(
-        max_average_variation=25,
+        max_average_variation=30,
         steering_multiplier=0.1,
         ideal_center_x=IDEAL_CENTER_X,
         steering_limit=0.2
@@ -204,7 +204,21 @@ def load_images(inference_engines, image_folder):
             line_positions.append(inference_engine.infer(image))
 
         # Calculate a steering angle from the points
-        steering_angle, error = steering_engine.compute_steering_angle(*line_positions)
+        values = steering_engine.compute_steering_angle(*line_positions)
+
+        # Set the steering angle and error to large negative values if None is returned
+        if values == None:
+            steering_angle = -5
+            error = -5
+
+        else:
+            # Extract steering angle and error from the return values
+            steering_angle, error = values
+
+        # Remove the outliers from each of the lists and add them to a new list
+        line_positions_without_outliers = []
+        for line in line_positions:
+            line_positions_without_outliers.append(remove_outliers(line, 30))
 
         # Calculate the center of the road from the steering angle
         center_x = int(steering_engine.ideal_center_x - error)
@@ -223,7 +237,7 @@ def load_images(inference_engines, image_folder):
             color[i] = 255
 
             # For each of the positions which include horizontal and vertical values
-            for position in line_positions[i]:
+            for position in line_positions_without_outliers[i]:
 
                 # Calculate the four bounds of the marker to be placed
                 bounds = [int(round(center + offset)) for center in position for offset in (-MARKER_RADIUS, MARKER_RADIUS)]
