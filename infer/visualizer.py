@@ -13,7 +13,7 @@ from ..infer.steering_engine import remove_outliers
 
 
 # Program which demonstrates the effectiveness or ineffectiveness of a lane detection model
-# by displaying an image and highlighting the areas in which it predicts there are road lines.
+# by displaying an image and highlighting the areas in which it predicts there are road lines
 # Created by brendon-ai, September 2017
 
 
@@ -52,7 +52,7 @@ class Visualizer(QWidget):
 
         # Check that the number of command line arguments is correct
         if len(sys.argv) != 3:
-            print('Usage: {} <trained model> <image folder>'.format(sys.argv[0]))
+            print('Usage: {} <trained model folder> <image folder>'.format(sys.argv[0]))
             sys.exit()
 
         # Process the paths to the model and image provided as command line arguments
@@ -74,7 +74,7 @@ class Visualizer(QWidget):
             # Create a sliding window inference engine with the model
             inference_engine = SlidingWindowInferenceEngine(
                 model=model,
-                window_size=16,
+                slice_dimensions=(16, 320, 3),
                 stride=8
             )
 

@@ -3,7 +3,7 @@ from keras.layers import Dense, Flatten
 from keras.layers.convolutional import Conv2D
 
 
-# A convolutional neural network model intended to predict the lateral position of an object in a wide, short image.
+# A convolutional neural network model intended to predict the lateral position of an object in a wide, short image
 # Created by brendon-ai, September 2017
 
 

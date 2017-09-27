@@ -9,8 +9,8 @@ from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtCore import Qt
 
 
-# Program which allows a user to select the position of a road line in a wide image,
-# in order to create training data for a convolutional neural network.
+# Program which allows a user to select the position of a road line in a wide image
+# in order to create training data for a convolutional neural network
 # Created by brendon-ai, September 2017
 
 

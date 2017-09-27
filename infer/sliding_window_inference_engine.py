@@ -22,11 +22,11 @@ class SlidingWindowInferenceEngine:
     stride = None
 
     # Set global variables provided as arguments
-    def __init__(self, model, window_size, stride):
+    def __init__(self, model, slice_dimensions, stride):
 
         # Set scalar variables
         self.model = model
-        self.window_size = window_size
+        self.window_size = slice_dimensions[0]
 
         # If stride is a tuple, set the global variable to that tuple plus a term corresponding to the channel axis
         if isinstance(stride, tuple):
@@ -45,7 +45,7 @@ class SlidingWindowInferenceEngine:
         # Slice up the image into windows
         image_slices = view_as_windows(image, (self.window_size, self.window_size, 3), self.stride)
 
-        # A two-dimensional list that will contain the line positions for each row
+        # A list that will contain the line positions for each row
         line_positions = []
 
         # Loop over the windows and classify them, one row at a time

@@ -9,7 +9,7 @@ from ..model import wide_slice_model
 from ..train.common_train_features import train_and_save
 
 
-# A script for training a CNN to output the lateral position of a road line in a wide image.
+# A script for training a CNN to output the lateral position of a road line in a wide image
 # Created by brendon-ai, September 2017
 
 

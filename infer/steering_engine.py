@@ -1,6 +1,6 @@
 import math
 
-# A system for converting line positions on each side of the road to steering angles, using outlier detection and PID
+# A system for converting line positions on each side of the road to steering angles, using outlier detection and PID.
 # Created by brendon-ai, September 2017
 
 

@@ -10,7 +10,7 @@ from ..model import sliding_window_model
 from ..train.common_train_features import train_and_save
 
 
-# A script for training a small CNN for use as a sliding window on a set of wide images.
+# A script for training a small CNN for use as a sliding window on a set of wide images
 # Created by brendon-ai, September 2017
 
 
