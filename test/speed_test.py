@@ -33,7 +33,7 @@ image_path = os.path.expanduser(sys.argv[3])
 inference_engine = SlidingWindowInferenceEngine(
     model=model,
     window_size=16,
-    stride=(8, 4)
+    stride=8
 )
 
 # Record the starting time
