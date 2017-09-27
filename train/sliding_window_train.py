@@ -2,13 +2,16 @@ from __future__ import print_function
 
 import os
 import sys
-import time
 import numpy
 import random
 
 from scipy import misc
-from keras.callbacks import ModelCheckpoint
 from ..model import sliding_window_model
+from ..train.common_train_features import train_and_save
+
+
+# A script for training a small CNN for use as a sliding window on a set of wide images.
+# Created by brendon-ai, September 2017
 
 
 # Slice up an image into square windows given the horizontal position of the road line within it
@@ -131,29 +134,20 @@ WINDOW_SIZE = 16
 # Create the model with specified window size
 model = sliding_window_model(WINDOW_SIZE)
 
-# Print a summary of the model architecture
-print('\nSummary of model:')
-print(model.summary())
-
 # Load data from the folder given as a command line argument
 image_folders = [os.path.expanduser(folder) for folder in sys.argv[1:3]]
 images, labels = get_data(image_folders)
 
 # We will save snapshots to the folder path provided as the second parameter
-model_folder = os.path.expanduser(sys.argv[3])
+trained_model_folder = os.path.expanduser(sys.argv[3])
 
-# Name the model with the current Unix time
-unix_time = int(time.time())
-
-# Train the model and save snapshots
-model.fit(
-    images,
-    labels,
+# Train the model
+train_and_save(
+    model=model,
+    trained_model_folder=trained_model_folder,
+    images=images,
+    labels=labels,
     epochs=EPOCHS,
     batch_size=BATCH_SIZE,
-    validation_split=VALIDATION_SPLIT,
-    callbacks=[ModelCheckpoint(
-        '{}/batch={}-epoch={{epoch:d}}-val_loss={{val_loss:f}}.h5'
-        .format(model_folder, unix_time)
-    )]
+    validation_split=VALIDATION_SPLIT
 )
