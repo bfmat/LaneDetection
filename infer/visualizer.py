@@ -169,7 +169,7 @@ def load_images(inference_engines, image_folder):
 
     # Instantiate the steering angle generation engine
     steering_engine = SteeringEngine(
-        max_average_variation=30,
+        max_average_variation=40,
         steering_multiplier=0.1,
         ideal_center_x=IDEAL_CENTER_X,
         steering_limit=0.2
@@ -195,16 +195,16 @@ def load_images(inference_engines, image_folder):
         image = misc.imread(image_path)
 
         # List of points on the lines
-        line_positions = []
+        all_line_positions = []
 
         # With each of the provided engines
         for inference_engine in inference_engines:
 
             # Perform inference on the current image, adding the results to the list of points
-            line_positions.append(inference_engine.infer(image))
+            all_line_positions.append(inference_engine.infer(image))
 
         # Calculate a steering angle from the points
-        values = steering_engine.compute_steering_angle(*line_positions)
+        values = steering_engine.compute_steering_angle(*all_line_positions)
 
         # Set the steering angle and error to large negative values if None is returned
         if values == None:
@@ -215,10 +215,22 @@ def load_images(inference_engines, image_folder):
             # Extract steering angle and error from the return values
             steering_angle, error = values
 
-        # Remove the outliers from each of the lists and add them to a new list
-        line_positions_without_outliers = []
-        for line in line_positions:
-            line_positions_without_outliers.append(remove_outliers(line, 30))
+        # Remove the outliers from each of the lists and keep the outliers in a separate list
+        all_line_positions_without_outliers = []
+        all_line_positions_outliers_only = []
+        for line_positions in all_line_positions:
+
+            # Add the outlier-free points to one list
+            line_positions_without_outliers = remove_outliers(line_positions, 30)
+            all_line_positions_without_outliers.append(line_positions_without_outliers)
+
+            # Find the points that are in the original list but not in the outlier-free list (that is, the outliers)
+            all_positions_set = set(line_positions)
+            outlier_free_set = set(line_positions_without_outliers)
+            line_positions_outliers_only = list(all_positions_set - outlier_free_set)
+
+            # Add it to the outlier-only list
+            all_line_positions_outliers_only.append(line_positions_outliers_only)
 
         # Calculate the center of the road from the steering angle
         center_x = int(steering_engine.ideal_center_x - error)
@@ -229,15 +241,19 @@ def load_images(inference_engines, image_folder):
         # Create a vertical black line at the predefined center of the image
         image[:, IDEAL_CENTER_X] = 0
 
-        # For each of the two road lines
-        for i in range(2):
+        # Combine the two road lines with the lists of outliers, along with their corresponding colors
+        lines_and_colors = [
+            (all_line_positions_without_outliers[0], [0, 0, 255]),
+            (all_line_positions_without_outliers[1], [0, 255, 0]),
+            (all_line_positions_outliers_only[0], [255, 0, 0]),
+            (all_line_positions_outliers_only[1], [255, 0, 0])
+        ]
 
-            # Define a color that has the ith element set to 255 and the others to 0
-            color = [0] * 3
-            color[i] = 255
+        # For each of the two road lines
+        for line_positions, color in lines_and_colors:
 
             # For each of the positions which include horizontal and vertical values
-            for position in line_positions_without_outliers[i]:
+            for position in line_positions:
 
                 # Calculate the four bounds of the marker to be placed
                 bounds = [int(round(center + offset)) for center in position for offset in (-MARKER_RADIUS, MARKER_RADIUS)]
