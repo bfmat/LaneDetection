@@ -207,7 +207,7 @@ def load_images(inference_engines, image_folder):
         values = steering_engine.compute_steering_angle(*all_line_positions)
 
         # Set the steering angle and error to large negative values if None is returned
-        if values == None:
+        if values is None:
             steering_angle = -5
             error = -5
 
@@ -221,7 +221,7 @@ def load_images(inference_engines, image_folder):
         for line_positions in all_line_positions:
 
             # Add the outlier-free points to one list
-            line_positions_without_outliers = remove_outliers(line_positions, 30)
+            line_positions_without_outliers = remove_outliers(line_positions, 40)
             all_line_positions_without_outliers.append(line_positions_without_outliers)
 
             # Find the points that are in the original list but not in the outlier-free list (that is, the outliers)
@@ -246,7 +246,7 @@ def load_images(inference_engines, image_folder):
             (all_line_positions_without_outliers[0], [0, 0, 255]),
             (all_line_positions_without_outliers[1], [0, 255, 0]),
             (all_line_positions_outliers_only[0], [255, 0, 0]),
-            (all_line_positions_outliers_only[1], [255, 0, 0])
+            (all_line_positions_outliers_only[1], [255, 255, 0])
         ]
 
         # For each of the two road lines
