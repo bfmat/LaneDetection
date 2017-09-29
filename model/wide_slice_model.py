@@ -21,22 +21,23 @@ def wide_slice_model(slice_dimensions):
     # Four convolutional layers
     model.add(Conv2D(
         input_shape=input_shape,
-        kernel_size=(6, 10),
+        kernel_size=2,
         filters=32,
         strides=2,
         activation=activation
     ))
 
     model.add(Conv2D(
-        kernel_size=(2, 5),
+        kernel_size=2,
         filters=64,
         strides=2,
         activation=activation
     ))
 
     model.add(Conv2D(
-        kernel_size=3,
+        kernel_size=4,
         filters=128,
+        strides=4,
         activation=activation
     ))
 
