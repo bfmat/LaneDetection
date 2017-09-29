@@ -18,25 +18,38 @@ def wide_slice_model(slice_dimensions):
     # Input shape is provided, but add the channel axis to it
     input_shape = slice_dimensions + (3,)
 
-    # Two convolutional layers
+    # Four convolutional layers
     model.add(Conv2D(
         input_shape=input_shape,
         kernel_size=2,
-        filters=16,
+        filters=64,
         strides=2,
         activation=activation
     ))
 
     model.add(Conv2D(
         kernel_size=2,
-        filters=32,
+        filters=64,
         strides=2,
+        activation=activation
+    ))
+
+    model.add(Conv2D(
+        kernel_size=2,
+        filters=128,
+        activation=activation
+    ))
+
+    model.add(Conv2D(
+        kernel_size=2,
+        filters=256,
         activation=activation
     ))
 
     # Fully connected layers
     model.add(Flatten())
-    model.add(Dense(64, activation=activation))
+    model.add(Dense(128, activation=activation))
+    model.add(Dense(32, activation=activation))
     model.add(Dense(1))
 
     # Compile model with Adadelta optimizer
