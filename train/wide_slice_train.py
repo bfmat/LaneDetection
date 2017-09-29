@@ -56,7 +56,7 @@ if len(sys.argv) != 3:
     sys.exit()
 
 # Training parameters
-EPOCHS = 30
+EPOCHS = 200
 BATCH_SIZE = 5
 VALIDATION_SPLIT = 0.1
 
