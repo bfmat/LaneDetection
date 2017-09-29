@@ -8,7 +8,7 @@ from keras.models import load_model
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtWidgets import QLabel, QWidget, QApplication
-from ..infer import SteeringEngine, SlidingWindowInferenceEngine
+from ..infer import SteeringEngine, WideSliceInferenceEngine
 from ..infer.steering_engine import remove_outliers
 
 
@@ -72,10 +72,10 @@ class Visualizer(QWidget):
             model = load_model(model_path)
 
             # Create a sliding window inference engine with the model
-            inference_engine = SlidingWindowInferenceEngine(
+            inference_engine = WideSliceInferenceEngine(
                 model=model,
                 slice_dimensions=(16, 320, 3),
-                stride=8
+                vertical_stride=8
             )
 
             # Add it to the list

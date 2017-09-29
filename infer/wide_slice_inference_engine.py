@@ -1,3 +1,5 @@
+import numpy as np
+
 from skimage.util import view_as_windows
 
 
@@ -35,12 +37,20 @@ class WideSliceInferenceEngine:
         line_positions = []
 
         # Iterate over the slices
-        for image_slice in image_slices:
+        for i in range(len(image_slices)):
+
+            # Remove the first useless dimension from the image
+            image_slice_squeezed = np.squeeze(image_slices[i], axis=0)
 
             # Use the network to calculate the position of the object in the image
-            lateral_position = self.model.predict(image_slice)
+            horizontal_position = self.model.predict(image_slice_squeezed)[0, 0]
 
-            # Add it to the list for return
-            line_positions.append(lateral_position)
+            # Calculate the vertical position using the slice height
+            slice_height = self.slice_dimensions[0]
+            vertical_position = (i + 0.5) * slice_height
+
+            # Compose a position tuple and add it to the list for return
+            position = (horizontal_position, vertical_position)
+            line_positions.append(position)
 
         return line_positions
