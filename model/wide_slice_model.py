@@ -1,5 +1,6 @@
 from keras.models import Sequential
 from keras.layers import Dense, Flatten
+from keras.layers.pooling import MaxPooling2D
 from keras.layers.convolutional import Conv2D
 
 
@@ -21,25 +22,26 @@ def wide_slice_model(slice_dimensions):
     # Four convolutional layers
     model.add(Conv2D(
         input_shape=input_shape,
-        kernel_size=2,
-        filters=32,
-        strides=2,
+        kernel_size=7,
+        filters=10,
         activation=activation
     ))
 
-    model.add(Conv2D(
-        kernel_size=2,
-        filters=64,
-        strides=2,
-        activation=activation
+    model.add(MaxPooling2D(
+        pool_size=3,
+        strides=2
     ))
 
     model.add(Conv2D(
         kernel_size=4,
-        filters=128,
-        strides=4,
+        filters=24,
         activation=activation
     ))
+
+#    model.add(MaxPooling2D(
+#        pool_size=3,
+#        strides=2
+#    ))
 
     # Fully connected layers
     model.add(Flatten())
