@@ -1,3 +1,4 @@
+from __future__ import division
 from __future__ import print_function
 
 import os
@@ -41,8 +42,12 @@ def get_data(image_folder):
         if image.shape[:2] == SLICE_DIMENSIONS:
             image_list.append(image)
 
+            # Scale the road line position to the range of -1 to 1
+            image_width = SLICE_DIMENSIONS[1]
+            label = (road_line_position - (image_width / 2)) / image_width
+
             # Also add the corresponding label to the label list if the image is valid
-            label_list.append(road_line_position)
+            label_list.append(label)
 
     # Stack all of the images into a single NumPy array (defaults to stacking on axis 0)
     image_numpy_array = numpy.stack(image_list)
