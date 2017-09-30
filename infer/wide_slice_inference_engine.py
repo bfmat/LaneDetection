@@ -43,7 +43,11 @@ class WideSliceInferenceEngine:
             image_slice_squeezed = np.squeeze(image_slices[i], axis=0)
 
             # Use the network to calculate the position of the object in the image
-            horizontal_position = self.model.predict(image_slice_squeezed)[0, 0]
+            network_output = self.model.predict(image_slice_squeezed)[0, 0]
+
+            # Scale the network's output back into the range of the image width
+            slice_width = self.slice_dimensions[1]
+            horizontal_position = (network_output * slice_width) + (slice_width / 2)
 
             # Calculate the vertical position using the slice height
             slice_height = self.slice_dimensions[0]
