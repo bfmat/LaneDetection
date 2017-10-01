@@ -1,5 +1,6 @@
 from keras.models import Model, Sequential
-from keras.layers import Input, Dense, Flatten
+from keras.layers import Input, Dense, Flatten, Lambda
+from keras.layers.merge import Concatenate
 from keras.layers.pooling import MaxPooling2D
 from keras.layers.convolutional import Conv2D
 
@@ -22,30 +23,39 @@ def wide_slice_model(slice_dimensions):
     # Define the input
     input_layer = Input(shape=input_shape)
 
-    # Four convolutional layers
-    x = Conv2D(
-        input_shape=input_shape,
-        kernel_size=4,
-        filters=10,
-        activation=activation
-    )(input_layer)
+    # List for outputs from each of the window predictions
+    window_predictions = []
 
-    x = Conv2D(
-        kernel_size=3,
-        filters=32,
-        activation=activation
-    )(x)
+    # Step through the width of the image using the height as a step, dividing it into windows
+    window_size = slice_dimensions[0]
+    slice_width = slice_dimensions[1]
+    for i in range(0, slice_width, window_size):
 
-    x = Conv2D(
-        kernel_size=3,
-        filters=108,
-        activation=activation
-    )(x)
+        # Create a lambda layer slicing the relevant window out of the image
+        window = Lambda(
+            function=lambda full_slice: full_slice[:, :, i:i + window_size],
+            output_shape=(window_size, window_size, 3)
+        )(input_layer)
 
-    x = MaxPooling2D(pool_size=3)(x)
+        # Convolutional layer
+        window_x = Conv2D(
+            kernel_size=2,
+            filters=16,
+            activation=activation
+        )(window)
+
+        # Fully connected layers
+        window_x = Flatten()(window_x)
+        window_x = Dense(128, activation=activation)(window_x)
+        window_output_layer = Dense(1)(window_x)
+
+        # Append the output to the list of window predictions
+        window_predictions.append(window_output_layer)
+
+    # Merge the window predictions
+    x = Concatenate()(window_predictions)
 
     # Fully connected layers
-    x = Flatten()(x)
     x = Dense(128, activation=activation)(x)
     output_layer = Dense(1)(x)
 
