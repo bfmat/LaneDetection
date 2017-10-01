@@ -14,9 +14,6 @@ def wide_slice_model(slice_dimensions):
     # Hyperbolic tangent activation function
     activation = 'tanh'
 
-    # Initialize the sequential format
-    x = Sequential()
-
     # Input shape is provided, but add the channel axis to it
     input_shape = slice_dimensions + (3,)
 
