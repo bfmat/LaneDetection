@@ -1,4 +1,3 @@
-from keras import backend as K
 from keras.models import Model
 from keras.layers import Input, Dense, Flatten, Lambda
 from keras.layers.merge import Concatenate
@@ -70,14 +69,8 @@ def wide_slice_model(slice_dimensions):
         # Append the output to the list of window predictions
         window_predictions.append(window_x)
 
-    # Merge the window predictions
-    x = Concatenate()(window_predictions)
-
-    # Choose the greatest value of the window predictions using a lambda layer
-    output_layer = Lambda(
-        function=lambda predictions: K.max(predictions),
-        output_shape=(1,)
-    )(x)
+    # Merge the window predictions and send that as an output
+    output_layer = Concatenate()(window_predictions)
 
     # Define the model
     model = Model(

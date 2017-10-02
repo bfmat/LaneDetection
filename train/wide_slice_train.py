@@ -6,6 +6,7 @@ import sys
 import numpy
 
 from scipy import misc
+from keras.utils import to_categorical
 from ..model import wide_slice_model
 from ..train.common_train_features import train_and_save
 
@@ -42,17 +43,20 @@ def get_data(image_folder):
         if image.shape[:2] == SLICE_DIMENSIONS:
             image_list.append(image)
 
-            # Scale the road line position to the range of -1 to 1
-            image_width = SLICE_DIMENSIONS[1]
-            label = (road_line_position - (image_width / 2)) / image_width
+            # Convert the road line position into a one-hot encoded ground truth
+            # by finding the closest valid position to the actual road line position
+            valid_positions = range(8, 320, 16)
+            position_deltas = [abs(road_line_position - position) for position in valid_positions]
+            minimum_delta_index = position_deltas.index(min(position_deltas))
 
-            # Also add the corresponding label to the label list if the image is valid
-            label_list.append(label)
+            # Add the corresponding label to the label list if the image is valid
+            label_list.append(minimum_delta_index)
 
     # Stack all of the images into a single NumPy array (defaults to stacking on axis 0)
     image_numpy_array = numpy.stack(image_list)
 
-    return image_numpy_array, label_list
+    # One-hot encode the labels before returning them
+    return image_numpy_array, to_categorical(label_list, num_classes=20)
 
 
 # Check that the number of command line arguments is correct
