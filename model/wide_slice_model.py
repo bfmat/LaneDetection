@@ -32,7 +32,14 @@ def wide_slice_model(slice_dimensions):
             output_shape=(window_size, window_size, 3)
         ),
 
-        # Convolutional layer
+        # Two convolutional layers
+        Conv2D(
+            kernel_size=2,
+            filters=16,
+            strides=2,
+            activation=activation
+        ),
+
         Conv2D(
             kernel_size=2,
             filters=16,
@@ -41,8 +48,11 @@ def wide_slice_model(slice_dimensions):
 
         # Fully connected layers
         Flatten(),
-        Dense(128, activation=activation),
-        Dense(1)
+        Dense(64, activation=activation),
+
+        # Sigmoid activation is used for the last layer because its outputs are in the range of 0 to 1
+        Dense(1, activation='sigmoid')
+
     ]
 
     # Step through the width of the image using the height as a step, dividing it into windows
