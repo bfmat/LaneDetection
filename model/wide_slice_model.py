@@ -23,31 +23,42 @@ def wide_slice_model(slice_dimensions):
     # List for outputs from each of the window predictions
     window_predictions = []
 
-    # Step through the width of the image using the height as a step, dividing it into windows
+    # Define the layers to be applied to each of the windows
     window_size = slice_dimensions[0]
-    slice_width = slice_dimensions[1]
-    for i in range(0, slice_width, window_size):
+    window_layers = [
 
-        # Create a lambda layer slicing the relevant window out of the image
-        window = Lambda(
+        # Lambda layer for slicing the relevant window out of the image
+        Lambda(
             function=lambda full_slice: full_slice[:, :, i:i + window_size],
             output_shape=(window_size, window_size, 3)
-        )(input_layer)
+        ),
 
         # Convolutional layer
-        window_x = Conv2D(
+        Conv2D(
             kernel_size=2,
             filters=16,
             activation=activation
-        )(window)
+        ),
 
         # Fully connected layers
-        window_x = Flatten()(window_x)
-        window_x = Dense(128, activation=activation)(window_x)
-        window_output_layer = Dense(1)(window_x)
+        Flatten(),
+        Dense(128, activation=activation),
+        Dense(1)
+    ]
+
+    # Step through the width of the image using the height as a step, dividing it into windows
+    slice_width = slice_dimensions[1]
+    for i in range(0, slice_width, window_size):
+
+        # Use the input layer as an initial input
+        window_x = input_layer
+
+        # Apply each of the predefined layers in series to the input
+        for layer in window_layers:
+            window_x = layer(window_x)
 
         # Append the output to the list of window predictions
-        window_predictions.append(window_output_layer)
+        window_predictions.append(window_x)
 
     # Merge the window predictions
     x = Concatenate()(window_predictions)
