@@ -3,7 +3,7 @@ from __future__ import print_function
 import os
 import sys
 
-from scipy import misc
+from scipy.misc import imread
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtWidgets import QLabel, QWidget, QApplication
@@ -193,7 +193,7 @@ def load_images(inference_engines, image_folder):
 
         # Load the image from disk, using its fully qualified path
         image_path = image_folder + '/' + image_name
-        image = misc.imread(image_path)
+        image = imread(image_path)
 
         # List of points on the lines
         all_line_positions = []
