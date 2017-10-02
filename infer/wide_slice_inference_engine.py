@@ -31,19 +31,20 @@ class WideSliceInferenceEngine:
     def infer(self, image):
 
         # Split the image into wide slices
-        image_slices = view_as_windows(image, self.slice_dimensions, self.vertical_stride)
+        window_size = self.slice_dimensions[0]
+        window_slices = view_as_windows(image, (window_size, window_size, 3), window_size)
 
         # A list that will contain the line positions for each row
         line_positions = []
 
-        # Iterate over the slices
-        for i in range(len(image_slices)):
+        # Iterate over the windows in the slice
+        for i in range(len(window_slices)):
 
-            # Remove the first useless dimension from the image
-            image_slice_squeezed = np.squeeze(image_slices[i], axis=0)
+            # Convert the windows in the second dimension to a list
+            windows_list = [window for window in window_slices[i]]
 
             # Use the network to calculate the position of the object in the image
-            network_output = self.model.predict(image_slice_squeezed)[0, 0]
+            network_output = self.model.predict(windows_list)[0, 0]
 
             # Scale the network's output back into the range of the image width
             slice_width = self.slice_dimensions[1]

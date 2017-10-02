@@ -69,7 +69,7 @@ class Visualizer(QWidget):
             model_path = '{}/{}'.format(model_folder, model_name)
 
             # Create the model and load the weights from the file (load_model does not work with lambda layers)
-            model = wide_slice_model((16, 320))
+            model = wide_slice_model(16, 20)
             model.load_weights(model_path)
 
             # Create a sliding window inference engine with the model

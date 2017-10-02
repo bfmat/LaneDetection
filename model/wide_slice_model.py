@@ -1,5 +1,5 @@
 from keras.models import Model
-from keras.layers import Input, Dense, Flatten, Lambda
+from keras.layers import Input, Dense, Flatten
 from keras.layers.merge import Concatenate
 from keras.layers.convolutional import Conv2D
 
@@ -8,29 +8,22 @@ from keras.layers.convolutional import Conv2D
 # Created by brendon-ai, September 2017
 
 
-def wide_slice_model(slice_dimensions):
+def wide_slice_model(window_size, num_windows):
 
     # Hyperbolic tangent activation function
     activation = 'relu'
 
-    # Input shape is provided, but add the channel axis to it
-    input_shape = slice_dimensions + (3,)
-
-    # Define the input
-    input_layer = Input(shape=input_shape)
+    # Input size is provided, but add the channel axis to it
+    input_shape = (window_size, window_size, 3)
 
     # List for outputs from each of the window predictions
     window_predictions = []
 
-    # Define the layers to be applied to each of the windows
-    window_size = slice_dimensions[0]
-    window_layers = [
+    # List for corresponding input windows
+    input_windows = []
 
-        # Lambda layer for slicing the relevant window out of the image
-        Lambda(
-            function=lambda full_slice: full_slice[:, :, i:i + window_size],
-            output_shape=(window_size, window_size, 3)
-        ),
+    # Define the layers to be applied to each of the windows
+    window_layers = [
 
         # Two convolutional layers
         Conv2D(
@@ -56,13 +49,14 @@ def wide_slice_model(slice_dimensions):
     ]
 
     # Step through the width of the image using the height as a step, dividing it into windows
-    slice_width = slice_dimensions[1]
-    for i in range(0, slice_width, window_size):
+    for i in range(num_windows):
 
-        # Use the input layer as an initial input
-        window_x = input_layer
+        # Create an input layer for this window and add it to the list
+        input_layer = Input(shape=input_shape)
+        input_windows.append(input_layer)
 
         # Apply each of the predefined layers in series to the input
+        window_x = input_layer
         for layer in window_layers:
             window_x = layer(window_x)
 
@@ -74,7 +68,7 @@ def wide_slice_model(slice_dimensions):
 
     # Define the model
     model = Model(
-        inputs=input_layer,
+        inputs=input_windows,
         outputs=output_layer
     )
 
