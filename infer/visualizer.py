@@ -4,10 +4,10 @@ import os
 import sys
 
 from scipy import misc
-from keras.models import load_model
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtWidgets import QLabel, QWidget, QApplication
+from ..model import wide_slice_model
 from ..infer import SteeringEngine, WideSliceInferenceEngine
 from ..infer.steering_engine import remove_outliers
 
@@ -68,8 +68,9 @@ class Visualizer(QWidget):
             # Get the fully qualified path of the model
             model_path = '{}/{}'.format(model_folder, model_name)
 
-            # Load the model
-            model = load_model(model_path)
+            # Create the model and load the weights from the file (load_model does not work with lambda layers)
+            model = wide_slice_model((16, 320))
+            model.load_weights(model_path)
 
             # Create a sliding window inference engine with the model
             inference_engine = WideSliceInferenceEngine(

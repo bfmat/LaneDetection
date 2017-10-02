@@ -1,7 +1,6 @@
-from keras.models import Model, Sequential
+from keras.models import Model
 from keras.layers import Input, Dense, Flatten, Lambda
 from keras.layers.merge import Concatenate
-from keras.layers.pooling import MaxPooling2D
 from keras.layers.convolutional import Conv2D
 
 
