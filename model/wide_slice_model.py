@@ -11,7 +11,7 @@ from keras.layers.convolutional import Conv2D
 def wide_slice_model(slice_dimensions):
 
     # Hyperbolic tangent activation function
-    activation = 'tanh'
+    activation = 'relu'
 
     # Input shape is provided, but add the channel axis to it
     input_shape = slice_dimensions + (3,)
@@ -80,8 +80,8 @@ def wide_slice_model(slice_dimensions):
 
     # Compile model with Adadelta optimizer
     model.compile(
-        loss='mean_squared_error',
-        optimizer='adadelta'
+       loss='mean_squared_error',
+       optimizer='adadelta'
     )
 
     return model
