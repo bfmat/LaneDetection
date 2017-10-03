@@ -32,7 +32,7 @@ image_path = os.path.expanduser(sys.argv[3])
 # Create an inference engine with the model
 inference_engine = SlidingWindowInferenceEngine(
     model=model,
-    window_size=16,
+    slice_size=16,
     stride=8
 )
 

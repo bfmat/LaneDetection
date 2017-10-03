@@ -24,11 +24,11 @@ class SlidingWindowInferenceEngine:
     stride = None
 
     # Set global variables provided as arguments
-    def __init__(self, model, window_size, stride):
+    def __init__(self, model, slice_size, stride):
 
         # Set scalar variables
         self.model = model
-        self.window_size = window_size
+        self.window_size = slice_size
 
         # If stride is a tuple, set the global variable to that tuple plus a term corresponding to the channel axis
         if isinstance(stride, tuple):
