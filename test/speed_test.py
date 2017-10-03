@@ -6,7 +6,7 @@ import time
 
 from scipy.misc import imread
 from keras.models import load_model
-from ..infer import WideSliceInferenceEngine
+from ..infer import SlidingWindowInferenceEngine
 
 
 # A script for running an inference engine with a provided model and number of iterations
@@ -30,7 +30,7 @@ model = load_model(model_path)
 image_path = os.path.expanduser(sys.argv[3])
 
 # Create an inference engine with the model
-inference_engine = WideSliceInferenceEngine(
+inference_engine = SlidingWindowInferenceEngine(
     model=model,
     slice_size=16,
     stride=8
