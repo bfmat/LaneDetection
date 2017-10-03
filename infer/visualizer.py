@@ -4,11 +4,11 @@ import os
 import sys
 
 from scipy.misc import imread
+from keras.models import load_model
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtWidgets import QLabel, QWidget, QApplication
-from ..model import wide_slice_model
-from ..infer import SteeringEngine, WideSliceInferenceEngine
+from ..infer import SteeringEngine, SlidingWindowInferenceEngine
 from ..infer.steering_engine import remove_outliers
 
 
@@ -69,14 +69,13 @@ class Visualizer(QWidget):
             model_path = '{}/{}'.format(model_folder, model_name)
 
             # Create the model and load the weights from the file (load_model does not work with lambda layers)
-            model = wide_slice_model(16, 20)
-            model.load_weights(model_path)
+            model = load_model(model_path)
 
             # Create a sliding window inference engine with the model
-            inference_engine = WideSliceInferenceEngine(
+            inference_engine = SlidingWindowInferenceEngine(
                 model=model,
                 slice_dimensions=(16, 320, 3),
-                vertical_stride=8
+                stride=8
             )
 
             # Add it to the list
