@@ -47,20 +47,23 @@ class SlidingWindowInferenceEngine:
         # Slice up the image into windows
         image_slices = view_as_windows(image, (self.window_size, self.window_size, 3), self.stride)
 
+        # Flatten the window array so that there is only one non-window dimension
+        image_slices_flat = numpy.reshape(image_slices, (-1,) + image_slices.shape[-3:])
+
+        # Run a prediction on all of the windows at once
+        predictions = self.model.predict(image_slices_flat)
+
+        # Reshape the predictions to have the same initial two dimensions as the original list of image slices
+        predictions_row_arranged = numpy.reshape(predictions, image_slices.shape[:2])
+
         # A list that will contain the line positions for each row
         line_positions = []
 
         # Loop over the windows and classify them, one row at a time
-        for row_index in range(len(image_slices)):
+        for row_index in range(len(predictions_row_arranged)):
 
-            # Get the row of this index
-            row = image_slices[row_index]
-
-            # Squeeze the first dimension out of the row
-            row_squeezed = numpy.squeeze(row, axis=1)
-
-            # Run predictions simultaneously on the entire row of windows
-            row_predictions = self.model.predict(row_squeezed)
+            # Get the predictions for the current row
+            row_predictions = predictions_row_arranged[row_index]
 
             # We must now compute the position of the line based on a list of classifications for the row
             row_predictions_list = [prediction.ravel()[0] for prediction in row_predictions]
