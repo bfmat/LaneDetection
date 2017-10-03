@@ -74,7 +74,7 @@ class Visualizer(QWidget):
             # Create a sliding window inference engine with the model
             inference_engine = SlidingWindowInferenceEngine(
                 model=model,
-                slice_dimensions=(16, 320, 3),
+                window_size=16,
                 stride=8
             )
 

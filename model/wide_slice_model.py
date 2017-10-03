@@ -41,9 +41,8 @@ def wide_slice_model(slice_dimensions):
 
     model.add(MaxPooling2D(pool_size=3))
 
-    # Fully connected layers
+    # Flatten and pass straight to the output layer
     model.add(Flatten())
-    model.add(Dense(128, activation=activation))
     model.add(Dense(1))
 
     # Compile model with Adadelta optimizer
