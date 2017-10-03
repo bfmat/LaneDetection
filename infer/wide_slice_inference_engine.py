@@ -1,6 +1,4 @@
-import numpy as np
-
-from skimage.util import view_as_windows
+import numpy
 
 
 # A system for slicing an images and performing object detection inference on the slices
@@ -31,30 +29,43 @@ class WideSliceInferenceEngine:
     def infer(self, image):
 
         # Split the image into wide slices
-        image_slices = view_as_windows(image, self.slice_size, self.stride)
+        image_slices = vertical_sliding_window(image, self.slice_size, self.stride)
 
-        # A list that will contain the line positions for each row
-        line_positions = []
+        # Use the network to calculate the positions of the objects in each of the images
+        network_outputs = self.model.predict(image_slices)[:, 0]
 
-        # Iterate over the slices
-        for i in range(len(image_slices)):
+        # Convert the network's outputs to a list
+        horizontal_positions = [position for position in network_outputs]
 
-            # Remove the first useless dimension from the image
-            image_slice_squeezed = np.squeeze(image_slices[i], axis=0)
+        # Calculate the vertical positions using the slice height
+        vertical_positions = [(slice_index + 0.5) * self.slice_size for slice_index in range(len(image_slices))]
 
-            # Use the network to calculate the position of the object in the image
-            network_output = self.model.predict(image_slice_squeezed)[0, 0]
-
-            # Scale the network's output back into the range of the image width
-            slice_width = self.slice_size[1]
-            horizontal_position = (network_output * slice_width) + (slice_width / 2)
-
-            # Calculate the vertical position using the slice height
-            slice_height = self.slice_size[0]
-            vertical_position = (i + 0.5) * slice_height
-
-            # Compose a position tuple and add it to the list for return
-            position = (horizontal_position, vertical_position)
-            line_positions.append(position)
+        # Compose a position tuple and add it to the list for return
+        line_positions = [(horizontal_position, vertical_position)
+                          for horizontal_position, vertical_position in zip(horizontal_positions, vertical_positions)]
 
         return line_positions
+
+
+# Split an image vertically into slices given a stride
+def vertical_sliding_window(image, slice_height, stride):
+
+    # Get the height of the image
+    image_height = image.shape[0]
+
+    # List to add windows to
+    window_list = []
+
+    # Move across the image by the stride, starting at the left edge and stopping before going over the edge
+    safe_end_position = image_height - slice_height
+    for window_start in range(0, safe_end_position, stride):
+
+        # Cut out a square window with the height of the image
+        window_end = window_start + slice_height
+        window = image[window_start:window_end]
+
+        # Add it to the list
+        window_list.append(window)
+
+    # Convert it to a NumPy array before returning
+    return numpy.array(window_list)
