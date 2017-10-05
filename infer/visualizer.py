@@ -172,7 +172,7 @@ def load_images(inference_engines, image_folder):
         max_average_variation=40,
         steering_multiplier=0.1,
         ideal_center_x=IDEAL_CENTER_X,
-        center_y=20,
+        center_y=40,
         steering_limit=0.2
     )
 

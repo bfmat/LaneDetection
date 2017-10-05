@@ -23,19 +23,19 @@ def wide_slice_model(slice_dimensions):
     model.add(Conv2D(
         input_shape=input_shape,
         kernel_size=4,
-        filters=10,
+        filters=8,
         activation=activation
     ))
 
     model.add(Conv2D(
         kernel_size=3,
-        filters=32,
+        filters=8,
         activation=activation
     ))
 
     model.add(Conv2D(
         kernel_size=3,
-        filters=108,
+        filters=8,
         activation=activation
     ))
 
@@ -43,6 +43,7 @@ def wide_slice_model(slice_dimensions):
 
     # Flatten and pass straight to the output layer
     model.add(Flatten())
+    model.add(Dense(16, activation=activation))
     model.add(Dense(1))
 
     # Compile model with Adadelta optimizer
