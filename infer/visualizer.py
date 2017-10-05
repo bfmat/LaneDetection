@@ -172,6 +172,7 @@ def load_images(inference_engines, image_folder):
         max_average_variation=40,
         steering_multiplier=0.1,
         ideal_center_x=IDEAL_CENTER_X,
+        center_y=40,
         steering_limit=0.2
     )
 
@@ -204,7 +205,7 @@ def load_images(inference_engines, image_folder):
             all_line_positions.append(inference_engine.infer(image))
 
         # Calculate a steering angle from the points
-        values = steering_engine.compute_steering_angle(*all_line_positions)
+        values = steering_engine.compute_steering_angle(all_line_positions)
 
         # Set the steering angle and error to large negative values if None is returned
         if values is None:
