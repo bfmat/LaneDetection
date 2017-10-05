@@ -1,9 +1,10 @@
-from __future__ import print_function
+from __future__ import division, print_function
 
 import os
 import sys
+import numpy
 
-from scipy.misc import imread
+from scipy.misc import imread, imsave
 from keras.models import load_model
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QImage
@@ -161,6 +162,35 @@ class Visualizer(QWidget):
             self.update_display(-1)
 
 
+# Display a translucent red heat map over an image (modifying it in place), given a tensor of predictions to base it on
+def apply_heat_map(image, prediction_tensor):
+
+    # Find the factor to calculate rectangular blocks in the image
+    # that visually correspond to the positions in the prediction tensor
+    heat_map_block_shape = [image_dimension / prediction_dimension
+                            for image_dimension, prediction_dimension in zip(image.shape, prediction_tensor.shape)]
+
+    # Iterate over both dimensions of the image
+    for y, x in numpy.ndindex(prediction_tensor.shape):
+
+        # Find the bounds of the corresponding heat map box in the image and slice out the box
+        block_bounds = [
+            int(round((dimension + offset) * block_dimension))
+            for dimension, block_dimension in zip((y, x), heat_map_block_shape)
+            for offset in (0, 1)
+        ]
+        block = image[block_bounds[0]:block_bounds[1], block_bounds[2]:block_bounds[3]]
+
+        # Color shift the block to red, with intensity of the red
+        # proportional to the prediction corresponding to the block
+        red_weight = prediction_tensor[y, x]
+        red_pattern_flat = numpy.repeat([255, 0, 0], block.size / 3)
+        block.flat = [
+            ((red_value * red_weight) + (original_value * (1 - red_weight))) / 2
+            for red_value, original_value in zip(red_pattern_flat, block.flat)
+        ]
+
+
 # Load and process the image with the provided inference engine
 def load_images(inference_engines, image_folder):
 
@@ -232,6 +262,9 @@ def load_images(inference_engines, image_folder):
 
             # Add it to the outlier-only list
             all_line_positions_outliers_only.append(line_positions_outliers_only)
+
+        # Display a heat map in place on the image
+        apply_heat_map(image, inference_engines[0].last_prediction_tensor)
 
         # Calculate the center of the road from the steering angle
         center_x = int(steering_engine.ideal_center_x - error)

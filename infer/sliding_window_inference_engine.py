@@ -23,6 +23,9 @@ class SlidingWindowInferenceEngine:
     # The size of gaps between positions where the sliding windows are used
     stride = None
 
+    # Set-and-forget externally accessible storage for the prediction tensor of the most recently processed image
+    last_prediction_tensor = None
+
     # Set global variables provided as arguments
     def __init__(self, model, slice_size, stride):
 
@@ -55,6 +58,9 @@ class SlidingWindowInferenceEngine:
 
         # Reshape the predictions to have the same initial two dimensions as the original list of image slices
         predictions_row_arranged = numpy.reshape(predictions, image_slices.shape[:2])
+
+        # Save the prediction tensor so external scripts can access it if desired
+        self.last_prediction_tensor = predictions_row_arranged
 
         # A list that will contain the line positions for each row
         line_positions = []
