@@ -51,7 +51,7 @@ class SteeringEngine:
         lines_of_best_fit = [line_of_best_fit(points) for points in all_points_no_outliers]
 
         # Calculate the horizontal position of each line at the defined vertical position
-        horizontal_positions = [(self.center_y - line[1]) / line[0] for line in lines_of_best_fit]
+        horizontal_positions = [(self.center_y - line[0]) / line[1] for line in lines_of_best_fit]
 
         # Calculate the average of the two positions, which is the center of the road
         center_x = sum(horizontal_positions) / len(horizontal_positions)

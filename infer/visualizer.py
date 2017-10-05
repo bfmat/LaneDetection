@@ -172,7 +172,7 @@ def load_images(inference_engines, image_folder):
         max_average_variation=40,
         steering_multiplier=0.1,
         ideal_center_x=IDEAL_CENTER_X,
-        center_y=40,
+        center_y=20,
         steering_limit=0.2
     )
 
@@ -236,8 +236,11 @@ def load_images(inference_engines, image_folder):
         # Calculate the center of the road from the steering angle
         center_x = int(steering_engine.ideal_center_x - error)
 
-        # Create a vertical blue line at the same X position as the predicted center of the road
-        image[:, center_x] = [0, 0, 255]
+        # Create a vertical blue line at the same X position as the predicted center of the road, if possible
+        try:
+            image[:, center_x] = [0, 0, 255]
+        except:
+            pass
 
         # Create a vertical black line at the predefined center of the image
         image[:, IDEAL_CENTER_X] = 0
