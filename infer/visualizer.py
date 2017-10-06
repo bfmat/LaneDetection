@@ -184,11 +184,9 @@ def apply_heat_map(image, prediction_tensor):
         # Color shift the block to red, with intensity of the red
         # proportional to the prediction corresponding to the block
         red_weight = prediction_tensor[y, x]
-        red_pattern_flat = numpy.repeat([255, 0, 0], block.size / 3)
-        block.flat = [
-            ((red_value * red_weight) + (original_value * (1 - red_weight))) / 2
-            for red_value, original_value in zip(red_pattern_flat, block.flat)
-        ]
+        red_block = numpy.zeros(block.shape)
+        red_block[:, :, 0] = 255 * red_weight
+        block[:] = block * (1 - red_weight) + red_block
 
 
 # Load and process the image with the provided inference engine
