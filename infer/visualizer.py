@@ -126,6 +126,18 @@ class Visualizer(QWidget):
     # Update the image in the display
     def update_display(self, num_frames):
 
+        # Update the index of the current image by whatever number is provided
+        self.image_index += num_frames
+
+        # If it has passed the last image, reset it to zero or above, and if it has gone below zero, reset it to the last image
+        # Calculate how far it has gone beyond the relevant limit and set it to that distance past the opposite limit
+        total_frames = len(self.image_list)
+        if self.image_index >= total_frames:
+            delta_from_last_image = self.image_index - total_frames 
+            self.image_index = delta_from_last_image
+        elif self.image_index < 0:
+            self.image_index = len(self.image_list) + self.image_index
+
         # Get the image that we should display from the list
         image = self.image_list[self.image_index]
 
@@ -147,24 +159,17 @@ class Visualizer(QWidget):
             # Print the name and value in a single line
             print(name, value, sep=': ')
 
-        # Update the index of the current image by whatever number is provided
-        self.image_index += num_frames
-
-        # If it has passed the last image, reset it to 0
-        if self.image_index == len(self.image_list):
-            self.image_index = 0
-
     # Listen for key presses and update the display
     def keyPressEvent(self, event):
 
         # If the key is the left arrow key
-        if event.key() == Qt.Key_Left:
+        if event.key() == Qt.Key_Right:
 
             # Go to the next frame
             self.update_display(1)
 
         # If it is the right arrow key
-        elif event.key() == Qt.Key_Right:
+        elif event.key() == Qt.Key_Left:
 
             # Go to the previous frame
             self.update_display(-1)
