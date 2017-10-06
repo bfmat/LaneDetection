@@ -113,14 +113,12 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
     for heat_map_image, inference_engine in zip(heat_map_images, inference_engines):
         _apply_heat_map(heat_map_image, inference_engine.last_prediction_tensor)
 
-    # Downscale the heat map images to half of their original size
-    downscaled_heat_map_images = [imresize(heat_map_image, 0.5) for heat_map_image in heat_map_images]
-
-    # Add the relevant lines and points to the original image
+    # Add the relevant lines and points to the main image and scale it to double its original size
     _add_markers(image, steering_engine, marker_radius, center_x, lines_and_colors)
+    image = imresize(image, 200, interp='nearest')
 
     # Concatenate the two small images together and then concatenate them to the main image
-    concatenated_heat_map_image = numpy.concatenate(downscaled_heat_map_images, axis=1)
+    concatenated_heat_map_image = numpy.concatenate(heat_map_images, axis=1)
     tiled_image = numpy.concatenate((image, concatenated_heat_map_image), axis=0)
 
     # Return relevant metadata about the image as well as the image itself

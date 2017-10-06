@@ -17,7 +17,7 @@ from ..infer.visualizer_image_processing import process_images
 
 
 # Scaling factor for the input image, which defines the size of the window
-SCALING_FACTOR = 4
+SCALING_FACTOR = 3
 
 # The distance from the center to the edge of the green squares placed along the road line
 MARKER_RADIUS = 2
