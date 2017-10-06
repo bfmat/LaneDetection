@@ -129,7 +129,7 @@ class Visualizer(QWidget):
         # Update the index of the current image by whatever number is provided
         self.image_index += num_frames
 
-        # If it has passed the last image, reset it to zero or above, and if it has gone below zero, reset it to the last image
+        # If it is past the last image, reset it to zero or above; if it has gone below zero, reset it to the last image
         # Calculate how far it has gone beyond the relevant limit and set it to that distance past the opposite limit
         total_frames = len(self.image_list)
         if self.image_index >= total_frames:
