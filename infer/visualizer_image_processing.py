@@ -1,6 +1,7 @@
 from __future__ import division, print_function
 
 import os
+import sys
 import numpy
 
 from scipy.misc import imread, imresize
@@ -14,7 +15,7 @@ from ..infer.steering_engine import remove_outliers
 
 
 # Load and process the image with the provided inference engines and steering engine
-def process_images(image_folder, inference_engines, steering_engine, marker_radius):
+def process_images(image_folder, inference_engines, steering_engine, marker_radius, heat_map_opacity):
 
     # Notify the user that we have started loading the images
     print('Loading images...')
@@ -39,7 +40,8 @@ def process_images(image_folder, inference_engines, steering_engine, marker_radi
         image = imread(image_path)
 
         # Process the image and add various markings to it, recording metadata returned for display purposes
-        processed_image, image_data = _process_single_image(image, inference_engines, steering_engine, marker_radius)
+        processed_image, image_data =\
+            _process_single_image(image, inference_engines, steering_engine, marker_radius, heat_map_opacity)
 
         # Add the prepared image to the list
         image_list.append(processed_image)
@@ -55,7 +57,7 @@ def process_images(image_folder, inference_engines, steering_engine, marker_radi
 
 
 # Perform all necessary processing on a single image to prepare it for visualization
-def _process_single_image(image, inference_engines, steering_engine, marker_radius):
+def _process_single_image(image, inference_engines, steering_engine, marker_radius, heat_map_opacity):
 
     # List of points on the lines
     all_line_positions = []
@@ -109,9 +111,18 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
     # Copy the image twice for use in the heat map section of the user interface
     heat_map_images = [numpy.copy(image) for _ in range(2)]
 
+    # Create the dictionary of colors along with corresponding heat values
+    heat_map_colors = {
+        0.0: (0, 0, 128),
+        0.25: (0, 0, 255),
+        0.5: (0, 255, 0),
+        0.75: (255, 255, 0),
+        1.0: (255, 0, 0)
+    }
+
     # Apply the heat map in place to the copied images, using a different inference engine for each
     for heat_map_image, inference_engine in zip(heat_map_images, inference_engines):
-        _apply_heat_map(heat_map_image, inference_engine.last_prediction_tensor)
+        _apply_heat_map(heat_map_image, inference_engine.last_prediction_tensor, heat_map_colors, heat_map_opacity)
 
     # Add the relevant lines and points to the main image and scale it to double its original size
     _add_markers(image, steering_engine, marker_radius, center_x, lines_and_colors)
@@ -127,6 +138,7 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
 
 # Add lines and points to an image
 def _add_markers(image, steering_engine, marker_radius, center_x, lines_and_colors):
+
     # Create a vertical blue line at the same X position as the predicted center of the road, if possible
     try:
         image[:, center_x] = [0, 0, 255]
@@ -149,8 +161,9 @@ def _add_markers(image, steering_engine, marker_radius, center_x, lines_and_colo
             image[bounds[2]:bounds[3], bounds[0]:bounds[1]] = color
 
 
-# Display a translucent red heat map over an image (modifying it in place), given a tensor of predictions to base it on
-def _apply_heat_map(image, prediction_tensor):
+# Display a translucent multi-colored heat map over an image (modifying it in place), given a tensor of
+# predictions to base it on and a dictionary of colors with corresponding heat values to interpolate between
+def _apply_heat_map(image, prediction_tensor, colors, heat_map_opacity):
 
     # Find the factor to calculate rectangular blocks in the image
     # that visually correspond to the positions in the prediction tensor
@@ -168,9 +181,40 @@ def _apply_heat_map(image, prediction_tensor):
         ]
         block = image[block_bounds[0]:block_bounds[1], block_bounds[2]:block_bounds[3]]
 
-        # Color shift the block to red, with intensity of the red
-        # proportional to the prediction corresponding to the block
-        red_weight = prediction_tensor[y, x]
-        red_block = numpy.zeros(block.shape)
-        red_block[:, :, 0] = 255 * red_weight
-        block[:] = block * (1 - red_weight) + red_block
+        # Color calculated in the following loop
+        interpolated_color = []
+
+        # Temporary storage for the previous item used in every iteration of the loop
+        previous_item = None
+
+        # Compute the color from the dictionary by iterating over it and finding the first one that is greater than
+        # the prediction tensor value corresponding to the image
+        current_prediction = prediction_tensor[y, x]
+        for heat_value, color in colors.iteritems():
+
+            # If the first value is equal to zero, skip the first iteration because the previous value is not yet set
+            if heat_value >= current_prediction and heat_value:
+
+                # Find the proportion of the distance between the previous heat key and the current one
+                # that the heat value of the current prediction cell is
+                previous_heat_value = previous_item[0]
+                interpolation_value = (current_prediction - previous_heat_value) / (heat_value - previous_heat_value)
+
+                # Loop over the previous and current color tuples and interpolate via a weighted average
+                previous_color = previous_item[1]
+                for previous, current in zip(previous_color, color):
+                    weighted_average = (previous * (1 - interpolation_value)) + (current * interpolation_value)
+                    interpolated_color.append(weighted_average)
+
+                # Exit the loop because we have already completed the interpolation
+                break
+
+            # Remember the previous color for the next iteration
+            previous_item = (heat_value, color)
+
+        # Create the color block and give it the color calculated during interpolation
+        color_block = numpy.zeros(block.shape)
+        color_block[:, :] = interpolated_color
+
+        # Color the block correspondingly, using the supplied opacity value and the calculated color
+        block[:] = (block * (1 - heat_map_opacity)) + (color_block * heat_map_opacity)

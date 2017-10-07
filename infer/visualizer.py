@@ -22,6 +22,9 @@ SCALING_FACTOR = 3
 # The distance from the center to the edge of the green squares placed along the road line
 MARKER_RADIUS = 2
 
+# The opacity of the heat map displayed on the two bottom images
+HEAT_MAP_OPACITY = 0.7
+
 # The ideal position for the center of the image
 IDEAL_CENTER_X = 160
 
@@ -91,7 +94,7 @@ class Visualizer(QWidget):
 
         # Load and perform inference on the images
         self.image_list, self.image_data\
-            = process_images(image_folder, inference_engines, steering_engine, MARKER_RADIUS)
+            = process_images(image_folder, inference_engines, steering_engine, MARKER_RADIUS, HEAT_MAP_OPACITY)
 
         # Set the global image height and width variables
         image_height, image_width = self.image_list[0].shape[:2]
