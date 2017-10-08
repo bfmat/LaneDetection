@@ -69,16 +69,16 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
         all_line_positions.append(inference_engine.infer(image))
 
     # Calculate a steering angle from the points
-    values = steering_engine.compute_steering_angle(all_line_positions)
+    steering_angle = steering_engine.compute_steering_angle(all_line_positions)
 
     # Set the steering angle and error to large negative values if None is returned
-    if values is None:
+    if steering_angle is None:
         steering_angle = -5
         error = -5
 
     else:
-        # Extract steering angle and error from the return values
-        steering_angle, error = values
+        # Compute the error from the steering angle
+        error = steering_angle / steering_engine.proportional_multiplier
 
     # Remove the outliers from each of the lists and keep the outliers in a separate list
     all_line_positions_without_outliers = []

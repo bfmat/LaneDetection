@@ -86,10 +86,12 @@ class Visualizer(QWidget):
         # Instantiate the steering angle generation engine
         steering_engine = SteeringEngine(
             max_average_variation=40,
-            steering_multiplier=0.1,
+            proportional_multiplier=0.1,
+            derivative_multiplier=0.5,
             ideal_center_x=IDEAL_CENTER_X,
-            center_y=40,
-            steering_limit=0.2
+            center_y_high=20,
+            center_y_low=40,
+            steering_limit=100
         )
 
         # Load and perform inference on the images
