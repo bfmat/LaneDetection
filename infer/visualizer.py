@@ -24,7 +24,7 @@ SCALING_FACTOR = 4
 MARKER_RADIUS = 2
 
 # The ideal position for the center of the image
-IDEAL_CENTER_X = 160
+IDEAL_CENTER_X = 180
 
 # Labels for each of the elements of an image data tuple
 IMAGE_DATA_LABELS = ('File name', 'Predicted center', 'Error from center', 'Steering angle')
@@ -244,7 +244,7 @@ def load_images(inference_engines, image_folder):
 
         # Combine the two road lines with the lists of outliers, along with their corresponding colors
         lines_and_colors = [
-            (all_line_positions_without_outliers[0], [0, 0, 255]),
+            (all_line_positions_without_outliers[0], [255, 128, 0]),
             (all_line_positions_without_outliers[1], [0, 255, 0]),
             (all_line_positions_outliers_only[0], [255, 0, 0]),
             (all_line_positions_outliers_only[1], [255, 255, 0])
