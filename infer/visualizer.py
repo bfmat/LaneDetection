@@ -221,7 +221,8 @@ def load_images(inference_engines, image_folder):
         for line_positions in all_line_positions:
 
             # Add the outlier-free points to one list
-            line_positions_without_outliers = remove_outliers(line_positions, 40)
+            is_right_line = bool(all_line_positions.index(line_positions))
+            line_positions_without_outliers = remove_outliers(line_positions, 40, is_right_line)
             all_line_positions_without_outliers.append(line_positions_without_outliers)
 
             # Find the points that are in the original list but not in the outlier-free list (that is, the outliers)

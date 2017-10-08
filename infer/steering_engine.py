@@ -30,8 +30,8 @@ class SteeringEngine:
     def compute_steering_angle(self, left_points, right_points):
 
         # Remove the outliers from each set of points
-        left_points_no_outliers = remove_outliers(left_points, self.max_average_variation)
-        right_points_no_outliers = remove_outliers(right_points, self.max_average_variation)
+        left_points_no_outliers = remove_outliers(left_points, self.max_average_variation, False)
+        right_points_no_outliers = remove_outliers(right_points, self.max_average_variation, True)
 
         # If all the points were considered outliers, and the lists are empty
         if not left_points_no_outliers or not right_points_no_outliers:
@@ -65,13 +65,20 @@ class SteeringEngine:
 
 
 # Remove all outliers from a list of points given a line of best fit
-def remove_outliers(points, max_variation):
+def remove_outliers(points, max_variation, is_right_line):
 
     # List with outliers removed that we will return
     output_points = []
 
     # Iterate over each of the points
     for point in points:
+
+        # If this is the right line and the point is within the left 40% of the screen
+        # or if it is the left line and the point is within the right 40% of the screen
+        if (is_right_line and point[0] < 150) or ((not is_right_line) and point[0] > 192):
+
+            # Dismiss the point as an outlier
+            continue
 
         # Number of points that this point was within the permitted distance of
         valid_comparisons = 0
