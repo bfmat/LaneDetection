@@ -30,7 +30,7 @@ def wide_slice_model(slice_dimensions):
 
         # Create a lambda layer slicing the relevant window out of the image
         window = Lambda(
-            function=lambda full_slice: full_slice[:, :, i:i + window_size],
+            function=lambda full_slice: full_slice[:, :, i:i + window_size, :],
             output_shape=(window_size, window_size, 3)
         )(input_layer)
 
