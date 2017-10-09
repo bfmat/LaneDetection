@@ -32,7 +32,7 @@ image_path = os.path.expanduser(sys.argv[3])
 # Create an inference engine with the model
 inference_engine = SlidingWindowInferenceEngine(
     model=model,
-    window_size=16,
+    slice_size=16,
     stride=8
 )
 
@@ -45,11 +45,8 @@ for i in range(num_iterations):
     # Load the image again on every iteration, for a better simulation of real-world use
     image = imread(image_path)
 
-    # Crop the image
-    image_cropped = image[:, 40:-40, :]
-
     # Run the inference engine on the example image, discarding the result
-    inference_engine.infer(image_cropped)
+    inference_engine.infer(image)
 
     # If the current iteration is divisible by 10, tell the user how many we have completed
     if i % 10 == 0:

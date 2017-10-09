@@ -3,13 +3,12 @@ from __future__ import print_function
 import os
 import sys
 
-from scipy import misc
 from keras.models import load_model
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtWidgets import QLabel, QWidget, QApplication
-from ..infer import SteeringEngine, WideSliceInferenceEngine
-from ..infer.steering_engine import remove_outliers
+from ..infer import SteeringEngine, SlidingWindowInferenceEngine
+from ..infer.visualizer_image_processing import process_images
 
 
 # Program which demonstrates the effectiveness or ineffectiveness of a lane detection model
@@ -18,10 +17,13 @@ from ..infer.steering_engine import remove_outliers
 
 
 # Scaling factor for the input image, which defines the size of the window
-SCALING_FACTOR = 4
+SCALING_FACTOR = 3
 
 # The distance from the center to the edge of the green squares placed along the road line
 MARKER_RADIUS = 2
+
+# The opacity of the heat map displayed on the two bottom images
+HEAT_MAP_OPACITY = 0.7
 
 # The ideal position for the center of the image
 IDEAL_CENTER_X = 160
@@ -68,21 +70,33 @@ class Visualizer(QWidget):
             # Get the fully qualified path of the model
             model_path = '{}/{}'.format(model_folder, model_name)
 
-            # Load the model
+            # Create the model and load the weights from the file (load_model does not work with lambda layers)
             model = load_model(model_path)
 
             # Create a sliding window inference engine with the model
-            inference_engine = WideSliceInferenceEngine(
+            inference_engine = SlidingWindowInferenceEngine(
                 model=model,
-                slice_dimensions=(16, 320, 3),
-                vertical_stride=8
+                slice_size=16,
+                stride=8
             )
 
             # Add it to the list
             inference_engines.append(inference_engine)
 
+        # Instantiate the steering angle generation engine
+        steering_engine = SteeringEngine(
+            max_average_variation=40,
+            proportional_multiplier=0.1,
+            derivative_multiplier=0.5,
+            ideal_center_x=IDEAL_CENTER_X,
+            center_y_high=20,
+            center_y_low=40,
+            steering_limit=100
+        )
+
         # Load and perform inference on the images
-        self.image_list, self.image_data = load_images(inference_engines, image_folder)
+        self.image_list, self.image_data\
+            = process_images(image_folder, inference_engines, steering_engine, MARKER_RADIUS, HEAT_MAP_OPACITY)
 
         # Set the global image height and width variables
         image_height, image_width = self.image_list[0].shape[:2]
@@ -117,6 +131,18 @@ class Visualizer(QWidget):
     # Update the image in the display
     def update_display(self, num_frames):
 
+        # Update the index of the current image by whatever number is provided
+        self.image_index += num_frames
+
+        # If it is past the last image, reset it to zero or above; if it has gone below zero, reset it to the last image
+        # Calculate how far it has gone beyond the relevant limit and set it to that distance past the opposite limit
+        total_frames = len(self.image_list)
+        if self.image_index >= total_frames:
+            delta_from_last_image = self.image_index - total_frames 
+            self.image_index = delta_from_last_image
+        elif self.image_index < 0:
+            self.image_index = len(self.image_list) + self.image_index
+
         # Get the image that we should display from the list
         image = self.image_list[self.image_index]
 
@@ -138,140 +164,20 @@ class Visualizer(QWidget):
             # Print the name and value in a single line
             print(name, value, sep=': ')
 
-        # Update the index of the current image by whatever number is provided
-        self.image_index += num_frames
-
-        # If it has passed the last image, reset it to 0
-        if self.image_index == len(self.image_list):
-            self.image_index = 0
-
     # Listen for key presses and update the display
     def keyPressEvent(self, event):
 
         # If the key is the left arrow key
-        if event.key() == Qt.Key_Left:
+        if event.key() == Qt.Key_Right:
 
             # Go to the next frame
             self.update_display(1)
 
         # If it is the right arrow key
-        elif event.key() == Qt.Key_Right:
+        elif event.key() == Qt.Key_Left:
 
             # Go to the previous frame
             self.update_display(-1)
-
-
-# Load and process the image with the provided inference engine
-def load_images(inference_engines, image_folder):
-
-    # Notify the user that we have started loading the images
-    print('Loading images...')
-
-    # Instantiate the steering angle generation engine
-    steering_engine = SteeringEngine(
-        max_average_variation=40,
-        steering_multiplier=0.1,
-        ideal_center_x=IDEAL_CENTER_X,
-        steering_limit=0.2
-    )
-
-    # List that we will add processed images to
-    image_list = []
-
-    # List of file names of images
-    image_names = sorted(os.listdir(image_folder))
-
-    # List of image metadata for display
-    image_data = []
-
-    # Loop over each of the images in the folder
-    for image_name in image_names:
-
-        # Print out the file name of the image
-        print('Loaded {}'.format(image_name))
-
-        # Load the image from disk, using its fully qualified path
-        image_path = image_folder + '/' + image_name
-        image = misc.imread(image_path)
-
-        # List of points on the lines
-        all_line_positions = []
-
-        # With each of the provided engines
-        for inference_engine in inference_engines:
-
-            # Perform inference on the current image, adding the results to the list of points
-            all_line_positions.append(inference_engine.infer(image))
-
-        # Calculate a steering angle from the points
-        values = steering_engine.compute_steering_angle(*all_line_positions)
-
-        # Set the steering angle and error to large negative values if None is returned
-        if values is None:
-            steering_angle = -5
-            error = -5
-
-        else:
-            # Extract steering angle and error from the return values
-            steering_angle, error = values
-
-        # Remove the outliers from each of the lists and keep the outliers in a separate list
-        all_line_positions_without_outliers = []
-        all_line_positions_outliers_only = []
-        for line_positions in all_line_positions:
-
-            # Add the outlier-free points to one list
-            line_positions_without_outliers = remove_outliers(line_positions, 40)
-            all_line_positions_without_outliers.append(line_positions_without_outliers)
-
-            # Find the points that are in the original list but not in the outlier-free list (that is, the outliers)
-            all_positions_set = set(line_positions)
-            outlier_free_set = set(line_positions_without_outliers)
-            line_positions_outliers_only = list(all_positions_set - outlier_free_set)
-
-            # Add it to the outlier-only list
-            all_line_positions_outliers_only.append(line_positions_outliers_only)
-
-        # Calculate the center of the road from the steering angle
-        center_x = int(steering_engine.ideal_center_x - error)
-
-        # Create a vertical blue line at the same X position as the predicted center of the road
-        image[:, center_x] = [0, 0, 255]
-
-        # Create a vertical black line at the predefined center of the image
-        image[:, IDEAL_CENTER_X] = 0
-
-        # Combine the two road lines with the lists of outliers, along with their corresponding colors
-        lines_and_colors = [
-            (all_line_positions_without_outliers[0], [0, 0, 255]),
-            (all_line_positions_without_outliers[1], [0, 255, 0]),
-            (all_line_positions_outliers_only[0], [255, 0, 0]),
-            (all_line_positions_outliers_only[1], [255, 255, 0])
-        ]
-
-        # For each of the two road lines
-        for line_positions, color in lines_and_colors:
-
-            # For each of the positions which include horizontal and vertical values
-            for position in line_positions:
-
-                # Calculate the four bounds of the marker to be placed
-                bounds = [int(round(center + offset)) for center in position for offset in (-MARKER_RADIUS, MARKER_RADIUS)]
-
-                # Create a black square within the bounds
-                image[bounds[2]:bounds[3], bounds[0]:bounds[1]] = color
-
-        # Add the prepared image to the list
-        image_list.append(image)
-
-        # Add the corresponding name, center position, error, and steering angle to the data list
-        image_data.append((image_name, center_x, error, steering_angle))
-
-    # Notify the user that loading is complete
-    print('Loading complete!')
-
-    # Return the images and their corresponding names
-    return image_list, image_data
 
 
 # If this file is being run directly, instantiate the ManualSelection class

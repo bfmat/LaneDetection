@@ -1,6 +1,5 @@
-from keras.models import Model, Sequential
-from keras.layers import Input, Dense, Flatten, Lambda
-from keras.layers.merge import Concatenate
+from keras.models import Sequential
+from keras.layers import Dense, Flatten
 from keras.layers.pooling import MaxPooling2D
 from keras.layers.convolutional import Conv2D
 
@@ -14,9 +13,13 @@ def wide_slice_model(slice_dimensions):
     # Hyperbolic tangent activation function
     activation = 'tanh'
 
+    # Initialize the sequential model
+    model = Sequential()
+
     # Input shape is provided, but add the channel axis to it
     input_shape = slice_dimensions + (3,)
 
+<<<<<<< HEAD
     # Define the input
     input_layer = Input(shape=input_shape)
 
@@ -61,6 +64,34 @@ def wide_slice_model(slice_dimensions):
         inputs=input_layer,
         outputs=output_layer
     )
+=======
+    # Four convolutional layers
+    model.add(Conv2D(
+        input_shape=input_shape,
+        kernel_size=4,
+        filters=8,
+        activation=activation
+    ))
+
+    model.add(Conv2D(
+        kernel_size=3,
+        filters=8,
+        activation=activation
+    ))
+
+    model.add(Conv2D(
+        kernel_size=3,
+        filters=8,
+        activation=activation
+    ))
+
+    model.add(MaxPooling2D(pool_size=3))
+
+    # Flatten and pass straight to the output layer
+    model.add(Flatten())
+    model.add(Dense(16, activation=activation))
+    model.add(Dense(1))
+>>>>>>> 6111d3260f798d54a3c4653be8ad151d54834b1e
 
     # Compile model with Adadelta optimizer
     model.compile(

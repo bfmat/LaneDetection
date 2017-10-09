@@ -1,5 +1,7 @@
 from __future__ import print_function
+
 import time
+
 from keras.callbacks import ModelCheckpoint
 
 
