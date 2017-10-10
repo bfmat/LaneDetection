@@ -37,29 +37,8 @@ class SteeringEngine:
         self.center_y_low = center_y_low
         self.steering_limit = steering_limit
 
-    # Compute a steering angle. given points on each road line
-    def compute_steering_angle(self, all_points):
-
-        # Remove the outliers from each set of points
-        all_points_no_outliers = [remove_outliers(points, self.max_average_variation) for points in all_points]
-
-        # If all the points were considered outliers, and the lists are empty
-        for points in all_points_no_outliers:
-            if not points:
-
-                # Exit early and return None
-                return None
-
-        # Calculate the lines of best fit for each set of points
-        lines_of_best_fit = [line_of_best_fit(points) for points in all_points_no_outliers]
-
-        # Calculate the horizontal position of each line at the defined vertical position, for both vertical positions
-        all_horizontal_positions = [[(center_y - line[0]) / line[1] for line in lines_of_best_fit]
-                                    for center_y in (self.center_y_high, self.center_y_low)]
-
-        # Calculate the average of the two positions, which is the center of the road
-        center_x_all = [sum(horizontal_positions) / len(horizontal_positions)
-                        for horizontal_positions in all_horizontal_positions]
+    # Compute a steering angle. given points down the center of the road
+    def compute_steering_angle(self, center_points):
 
         # Calculate the proportional error from the ideal center
         center_x_high = center_x_all[0]
