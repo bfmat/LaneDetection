@@ -1,7 +1,5 @@
 from __future__ import division
 
-import math
-
 
 # A system for calculating points on a line down the center of the lane based on a tensor of predictions for each window
 # Created by brendon-ai, October 2017
@@ -34,7 +32,7 @@ def calculate_lane_center_positions(prediction_tensor, minimum_prediction_confid
             center_position_scaled = [center_position_element * (image_shape_element / prediction_tensor_shape_element)
                                       for center_position_element, image_shape_element, prediction_tensor_shape_element
                                       in zip(center_position, original_image_shape, prediction_tensor.shape)]
-            center_position_offset = [element + window_size for element in center_position_scaled]
+            center_position_offset = [element + (window_size // 2) for element in center_position_scaled]
 
             # Add the processed position to the list
             center_positions.append(center_position_offset)
@@ -78,34 +76,3 @@ def find_peak_in_direction(collection, starting_index, reversed_iteration_direct
     else:
         peak_center = int(round((initial_sufficient_value_index + final_sufficient_value_index) / 2))
         return peak_center
-
-
-# Remove all outliers from a list of points given a line of best fit
-def remove_outliers(points, max_variation):
-
-    # List with outliers removed that we will return
-    output_points = []
-
-    # Iterate over each of the points
-    for point in points:
-
-        # Number of points that this point was within the permitted distance of
-        valid_comparisons = 0
-
-        # Iterate over each of the points again
-        for comparison_point in points:
-
-            # Calculate the Pythagorean distance between the two points
-            distance = math.sqrt(((point[0] - comparison_point[0]) ** 2) + ((point[1] - comparison_point[1]) ** 2))
-
-            # If the value is within the permitted maximum
-            if distance < max_variation:
-
-                # Increment the counter for this point
-                valid_comparisons += 1
-
-        # If this point was within the required distance of at least three points including itself (so two others)
-        if valid_comparisons >= 3:
-            output_points.append(point)
-
-    return output_points
