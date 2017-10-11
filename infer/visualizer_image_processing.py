@@ -67,30 +67,27 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
         right_line_prediction_tensor=prediction_tensors[1],
         minimum_prediction_confidence=0.7,
         original_image_shape=image.shape,
-        window_size=inference_engine.window_size
+        window_size=inference_engines[0].window_size
     )
 
-    import sys
-    sys.exit()
-    # Calculate a steering angle from the points
-    steering_angle = steering_engine.compute_steering_angle(center_line_positions)
-
-    # Set the steering angle and error to large negative values if None is returned
-    if steering_angle is None:
-        steering_angle = -5
-        error = -5
-
-    # Otherwise, compute the error from the steering angle
-    else:
-        error = steering_angle / steering_engine.proportional_multiplier
-
-    # Calculate the center of the road from the steering angle
-    center_x = int(steering_engine.ideal_center_x - error)
+    # # Calculate a steering angle from the points
+    # steering_angle = steering_engine.compute_steering_angle(center_line_positions)
+    #
+    # # Set the steering angle and error to large negative values if None is returned
+    # if steering_angle is None:
+    #     steering_angle = -5
+    #     error = -5
+    #
+    # # Otherwise, compute the error from the steering angle
+    # else:
+    #     error = steering_angle / steering_engine.proportional_multiplier
+    #
+    # # Calculate the center of the road from the steering angle
+    # center_x = int(steering_engine.ideal_center_x - error)
 
     # Combine the two road lines with the lists of outliers, along with their corresponding colors
     lines_and_colors = [
-        (all_line_positions[0], [0, 0, 255]),
-        (all_line_positions[1], [0, 255, 0]),
+        (center_line_positions, [0, 0, 255]),
     ]
 
     # Copy the image twice for use in the heat map section of the user interface
@@ -110,7 +107,7 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
         _apply_heat_map(heat_map_image, inference_engine.last_prediction_tensor, heat_map_colors, heat_map_opacity)
 
     # Add the relevant lines and points to the main image and scale it to double its original size
-    _add_markers(image, steering_engine, marker_radius, center_x, lines_and_colors)
+    _add_markers(image, steering_engine, marker_radius, 0, lines_and_colors)
     image = imresize(image, 200, interp='nearest')
 
     # Concatenate the two small images together and then concatenate them to the main image
@@ -118,7 +115,7 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
     tiled_image = numpy.concatenate((image, concatenated_heat_map_image), axis=0)
 
     # Return relevant metadata about the image as well as the image itself
-    return tiled_image, (center_x, error, steering_angle)
+    return tiled_image, (0, 0, 0)
 
 
 # Add lines and points to an image
