@@ -29,7 +29,7 @@ HEAT_MAP_OPACITY = 0.7
 IDEAL_CENTER_X = 160
 
 # Labels for each of the elements of an image data tuple
-IMAGE_DATA_LABELS = ('File name', 'Predicted center', 'Error from center', 'Steering angle')
+IMAGE_DATA_LABELS = ('File name', 'Steering angle')
 
 
 # Main PyQt5 QWidget class

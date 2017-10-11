@@ -70,22 +70,10 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
         window_size=inference_engines[0].window_size
     )
 
-    # # Calculate a steering angle from the points
-    # steering_angle = steering_engine.compute_steering_angle(center_line_positions)
-    #
-    # # Set the steering angle and error to large negative values if None is returned
-    # if steering_angle is None:
-    #     steering_angle = -5
-    #     error = -5
-    #
-    # # Otherwise, compute the error from the steering angle
-    # else:
-    #     error = steering_angle / steering_engine.proportional_multiplier
-    #
-    # # Calculate the center of the road from the steering angle
-    # center_x = int(steering_engine.ideal_center_x - error)
+    # Calculate a steering angle from the points
+    steering_angle = steering_engine.compute_steering_angle(center_line_positions)
 
-    # Combine the two road lines with the lists of outliers, along with their corresponding colors
+    # Display the center line only in blue
     lines_and_colors = [
         (center_line_positions, [0, 0, 255]),
     ]
@@ -115,7 +103,7 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
     tiled_image = numpy.concatenate((image, concatenated_heat_map_image), axis=0)
 
     # Return relevant metadata about the image as well as the image itself
-    return tiled_image, (0, 0, 0)
+    return tiled_image, (steering_angle,)
 
 
 # Add lines and points to an image
