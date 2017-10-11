@@ -66,15 +66,15 @@ def find_peak_in_direction(collection, starting_index, reversed_iteration_direct
         # Get the value of the collection corresponding to the current index
         current_element = collection[i]
 
+        # Set the final value to the current one before testing whether to break from the loop
+        final_sufficient_value_index = i
+
         # If the value is greater than or equal to the threshold and it is the first such value, record its index
         if current_element >= minimum_value and initial_sufficient_value_index is None:
             initial_sufficient_value_index = i
 
-        # If the value is less than the threshold and there have already been values greater than it
+        # If the value is less than the threshold and there were already values greater than it, break out of the loop
         elif current_element < minimum_value and initial_sufficient_value_index is not None:
-
-            # Set the final index to the current index and break out of the loop
-            final_sufficient_value_index = i
             break
 
     # If a peak has not been found, simply return None

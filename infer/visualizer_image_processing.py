@@ -140,7 +140,7 @@ def _add_markers(image, steering_engine, marker_radius, center_x, lines_and_colo
             bounds = [int(round(center + offset)) for center in position for offset in (-marker_radius, marker_radius)]
 
             # Create a black square within the bounds
-            image[bounds[2]:bounds[3], bounds[0]:bounds[1]] = color
+            image[bounds[0]:bounds[1], bounds[2]:bounds[3]] = color
 
 
 # Display a translucent multi-colored heat map over an image (modifying it in place), given a tensor of
