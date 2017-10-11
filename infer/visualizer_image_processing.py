@@ -79,23 +79,6 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
         # Compute the error from the steering angle
         error = steering_angle / steering_engine.proportional_multiplier
 
-    # Remove the outliers from each of the lists and keep the outliers in a separate list
-    all_line_positions_without_outliers = []
-    all_line_positions_outliers_only = []
-    for line_positions in all_line_positions:
-
-        # Add the outlier-free points to one list
-        line_positions_without_outliers = remove_outliers(line_positions, 40)
-        all_line_positions_without_outliers.append(line_positions_without_outliers)
-
-        # Find the points that are in the original list but not in the outlier-free list (that is, the outliers)
-        all_positions_set = set(line_positions)
-        outlier_free_set = set(line_positions_without_outliers)
-        line_positions_outliers_only = list(all_positions_set - outlier_free_set)
-
-        # Add it to the outlier-only list
-        all_line_positions_outliers_only.append(line_positions_outliers_only)
-
     # Calculate the center of the road from the steering angle
     center_x = int(steering_engine.ideal_center_x - error)
 
