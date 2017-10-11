@@ -6,6 +6,13 @@ from __future__ import division
 # Created by brendon-ai, October 2017
 
 
+# Value by which the offset of the search starting position is increased each time road edges could not be found
+STARTING_POSITION_OFFSET_INCREMENT = 5
+
+# Maximum absolute value that the offset can have before we give up and break out of the loop
+STARTING_POSITION_OFFSET_MAXIMUM = 50
+
+
 # Calculate the center line of a tensor of predictions of an arbitrary size, with a minimum confidence for the line
 # and scale it so that the output maps onto locations in the original source image
 def calculate_lane_center_positions(left_line_prediction_tensor, right_line_prediction_tensor,
@@ -21,13 +28,34 @@ def calculate_lane_center_positions(left_line_prediction_tensor, right_line_pred
     # Iterate over the rows backwards, going from the bottom to the top
     for y_position in range(len(left_line_prediction_tensor) - 1, -1, -1):
 
-        # Find the peak in both directions from the last center position
-        peak_indices = [find_peak_in_direction(prediction_tensor[y_position], starting_position,
-                        reversed_iteration_direction, minimum_prediction_confidence)
-                        for prediction_tensor, reversed_iteration_direction
-                        in zip((left_line_prediction_tensor, right_line_prediction_tensor), (True, False))]
+        # Initialize the road edge indices to a list containing None
+        peak_indices = [None]
 
-        # If a peak could be found in both directions
+        # We will gradually increase the magnitude of the offset of the starting position until road edges are found
+        starting_position_offset = 0
+
+        # Loop until two road edges have been found
+        while None in peak_indices:
+
+            # Try to find the peak in both directions from the last center position
+            peak_indices = [find_peak_in_direction(prediction_tensor[y_position], starting_position,
+                            reversed_iteration_direction, minimum_prediction_confidence)
+                            for prediction_tensor, reversed_iteration_direction
+                            in zip((left_line_prediction_tensor, right_line_prediction_tensor), (True, False))]
+
+            # If the offset is currently positive or zero, increment it
+            if starting_position_offset >= 0:
+                starting_position_offset += STARTING_POSITION_OFFSET_INCREMENT
+
+            # Invert the sign of the offset on every iteration so we will try every offset within an increasing range
+            starting_position_offset *= -1
+
+            # Break out of the loop if the offset has become unreasonably large
+            # If this happens, the image probably has no valid starting position so we will just give up
+            if abs(starting_position_offset) > STARTING_POSITION_OFFSET_MAXIMUM:
+                break
+
+        # If a valid solution has been found (we haven't broken out due to a large offset)
         if None not in peak_indices:
 
             # Calculate the average of the two peaks and add the Y position of the row to the tuple
@@ -40,7 +68,7 @@ def calculate_lane_center_positions(left_line_prediction_tensor, right_line_pred
             # Scale and offset it so that it corresponds to the correct position within the original image
             center_position_scaled = [center_position_element * (image_shape_element / prediction_tensor_shape_element)
                                       for center_position_element, image_shape_element, prediction_tensor_shape_element
-                                      in zip(center_position, original_image_shape, prediction_tensor.shape)]
+                                      in zip(center_position, original_image_shape, left_line_prediction_tensor.shape)]
             center_position_offset = [element + (window_size // 2) for element in center_position_scaled]
 
             # Add the processed position to the list
