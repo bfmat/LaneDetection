@@ -3,7 +3,6 @@ from __future__ import division
 import numpy
 
 from skimage.util import view_as_windows
-from ..infer.lane_center_calculation import calculate_lane_center_positions
 
 
 # A system for efficiently running inference on sections of an image using sliding windows and calculating points down

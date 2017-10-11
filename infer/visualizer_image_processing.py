@@ -4,7 +4,7 @@ import os
 import numpy
 
 from scipy.misc import imread, imresize
-from ..infer.steering_engine import remove_outliers
+from ..infer.lane_center_calculation import calculate_lane_center_positions
 
 
 # A collection of functions required for loading and processing the data for the visualizer
@@ -58,14 +58,23 @@ def process_images(image_folder, inference_engines, steering_engine, marker_radi
 # Perform all necessary processing on a single image to prepare it for visualization
 def _process_single_image(image, inference_engines, steering_engine, marker_radius, heat_map_opacity):
 
-    # List of points on the lines
+    # List of points on the center line
     all_line_positions = []
 
     # With each of the provided engines
     for inference_engine in inference_engines:
 
         # Perform inference on the current image, adding the results to the list of points
-        all_line_positions.append(inference_engine.infer(image))
+        prediction_tensor = inference_engine.infer(image)
+
+        # Calculate the center line positions and add them to the list
+        center_line_positions = calculate_lane_center_positions(
+            prediction_tensor=prediction_tensor,
+            minimum_prediction_confidence=0.7,
+            original_image_shape=image.shape,
+            window_size=inference_engine.window_size
+        )
+        all_line_positions.append(center_line_positions)
 
     # Calculate a steering angle from the points
     steering_angle = steering_engine.compute_steering_angle(all_line_positions)
@@ -75,8 +84,8 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
         steering_angle = -5
         error = -5
 
+    # Otherwise, compute the error from the steering angle
     else:
-        # Compute the error from the steering angle
         error = steering_angle / steering_engine.proportional_multiplier
 
     # Calculate the center of the road from the steering angle
@@ -84,10 +93,8 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
 
     # Combine the two road lines with the lists of outliers, along with their corresponding colors
     lines_and_colors = [
-        (all_line_positions_without_outliers[0], [0, 0, 255]),
-        (all_line_positions_without_outliers[1], [0, 255, 0]),
-        (all_line_positions_outliers_only[0], [255, 0, 0]),
-        (all_line_positions_outliers_only[1], [255, 255, 0])
+        (all_line_positions[0], [0, 0, 255]),
+        (all_line_positions[1], [0, 255, 0]),
     ]
 
     # Copy the image twice for use in the heat map section of the user interface
