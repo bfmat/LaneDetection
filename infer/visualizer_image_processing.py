@@ -58,26 +58,22 @@ def process_images(image_folder, inference_engines, steering_engine, marker_radi
 # Perform all necessary processing on a single image to prepare it for visualization
 def _process_single_image(image, inference_engines, steering_engine, marker_radius, heat_map_opacity):
 
-    # List of points on the center line
-    all_line_positions = []
+    # With each of the provided engines, perform inference on the current image, calculating a prediction tensor
+    prediction_tensors = [inference_engine.infer(image) for inference_engine in inference_engines]
 
-    # With each of the provided engines
-    for inference_engine in inference_engines:
+    # Calculate the center line positions and add them to the list
+    center_line_positions = calculate_lane_center_positions(
+        left_line_prediction_tensor=prediction_tensors[0],
+        right_line_prediction_tensor=prediction_tensors[1],
+        minimum_prediction_confidence=0.7,
+        original_image_shape=image.shape,
+        window_size=inference_engine.window_size
+    )
 
-        # Perform inference on the current image, adding the results to the list of points
-        prediction_tensor = inference_engine.infer(image)
-
-        # Calculate the center line positions and add them to the list
-        center_line_positions = calculate_lane_center_positions(
-            prediction_tensor=prediction_tensor,
-            minimum_prediction_confidence=0.7,
-            original_image_shape=image.shape,
-            window_size=inference_engine.window_size
-        )
-        all_line_positions.append(center_line_positions)
-
+    import sys
+    sys.exit()
     # Calculate a steering angle from the points
-    steering_angle = steering_engine.compute_steering_angle(all_line_positions)
+    steering_angle = steering_engine.compute_steering_angle(center_line_positions)
 
     # Set the steering angle and error to large negative values if None is returned
     if steering_angle is None:

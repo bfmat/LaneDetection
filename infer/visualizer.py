@@ -70,7 +70,7 @@ class Visualizer(QWidget):
             # Get the fully qualified path of the model
             model_path = '{}/{}'.format(model_folder, model_name)
 
-            # Create the model and load the weights from the file (load_model does not work with lambda layers)
+            # Load the model
             model = load_model(model_path)
 
             # Create a sliding window inference engine with the model
