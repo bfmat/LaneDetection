@@ -1,7 +1,6 @@
 from __future__ import division, print_function
 
 import os
-import sys
 import numpy
 
 from scipy.misc import imread, imresize

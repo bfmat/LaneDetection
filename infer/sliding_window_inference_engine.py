@@ -1,3 +1,5 @@
+from __future__ import division
+
 import numpy
 
 from skimage.util import view_as_windows
@@ -60,7 +62,15 @@ class SlidingWindowInferenceEngine:
         # Save the prediction tensor so external scripts can access it if desired
         self.last_prediction_tensor = predictions_row_arranged
 
-        return predictions_row_arranged
+        # Calculate the center positions with the prediction tensor
+        lane_center_positions = calculate_lane_center_positions(
+            prediction_tensor=predictions_row_arranged,
+            minimum_prediction_confidence=0.7,
+            original_image_shape=image.shape,
+            window_size=self.window_size
+        )
+
+        return lane_center_positions
 
 
 # Calculate the center line of a tensor of predictions of an arbitrary size, with a minimum confidence for the line
