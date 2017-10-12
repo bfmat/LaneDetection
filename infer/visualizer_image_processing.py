@@ -62,7 +62,7 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
     prediction_tensors = [inference_engine.infer(image) for inference_engine in inference_engines]
 
     # Calculate the center line positions and add them to the list
-    center_line_positions = calculate_lane_center_positions(
+    center_line_positions, outer_road_lines = calculate_lane_center_positions(
         left_line_prediction_tensor=prediction_tensors[0],
         right_line_prediction_tensor=prediction_tensors[1],
         minimum_prediction_confidence=0.7,
@@ -73,9 +73,11 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
     # Calculate a steering angle from the points
     steering_angle = steering_engine.compute_steering_angle(center_line_positions)
 
-    # Display the center line only in blue
+    # Display the center line in blue and the outer lines in red and green
     lines_and_colors = [
         (center_line_positions, [0, 0, 255]),
+        (outer_road_lines[0], [255, 0, 0]),
+        (outer_road_lines[1], [0, 255, 0])
     ]
 
     # Copy the image twice for use in the heat map section of the user interface

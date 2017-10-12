@@ -18,12 +18,28 @@ STARTING_POSITION_OFFSET_MAXIMUM = 50
 def calculate_lane_center_positions(left_line_prediction_tensor, right_line_prediction_tensor,
                                     minimum_prediction_confidence, original_image_shape, window_size):
 
+    # A function to process a single point and scale it so that it corresponds to a position on the original image
+    def scale_position(position):
+
+        # Scale and offset the point so that it corresponds to the correct position within the original image
+        center_position_scaled = [center_position_element * (image_shape_element / prediction_tensor_shape_element)
+                                  for center_position_element, image_shape_element, prediction_tensor_shape_element
+                                  in zip(position, original_image_shape, left_line_prediction_tensor.shape)]
+        center_position_offset = [element + (window_size // 2) for element in center_position_scaled]
+
+        # Round the processed position to an integer and return it
+        center_position_integer = [int(value) for value in center_position_offset]
+        return center_position_integer
+
     # Add the center points of the rows to a list
     center_positions = []
 
     # Record the center position every iteration to use as the starting position later
     # Use the center of the image as an initial value
     starting_position = left_line_prediction_tensor.shape[1] // 2
+
+    # List of lists of corresponding positions on two road lines, which must be transposed before external use
+    all_corresponding_outer_positions = []
 
     # Iterate over the rows backwards, going from the bottom to the top
     for y_position in range(len(left_line_prediction_tensor) - 1, -1, -1):
@@ -58,6 +74,10 @@ def calculate_lane_center_positions(left_line_prediction_tensor, right_line_pred
         # If a valid solution has been found (we haven't broken out due to a large offset)
         if None not in peak_indices:
 
+            # Add the points on the two peaks to a list after combining them with Y positions
+            corresponding_outer_positions = [scale_position((y_position, peak_index)) for peak_index in peak_indices]
+            all_corresponding_outer_positions.append(corresponding_outer_positions)
+
             # Calculate the average of the two peaks and add the Y position of the row to the tuple
             center_x_position = sum(peak_indices) / len(peak_indices)
             center_position = (y_position, center_x_position)
@@ -65,17 +85,15 @@ def calculate_lane_center_positions(left_line_prediction_tensor, right_line_pred
             # Use the center position, rounded to an integer, as the starting position
             starting_position = int(center_position[1])
 
-            # Scale and offset it so that it corresponds to the correct position within the original image
-            center_position_scaled = [center_position_element * (image_shape_element / prediction_tensor_shape_element)
-                                      for center_position_element, image_shape_element, prediction_tensor_shape_element
-                                      in zip(center_position, original_image_shape, left_line_prediction_tensor.shape)]
-            center_position_offset = [element + (window_size // 2) for element in center_position_scaled]
+            # Scale the position and add it to the list
+            center_position_processed = scale_position(center_position)
+            center_positions.append(center_position_processed)
 
-            # Round the processed position to an integer and add it to the list
-            center_position_integer = [int(value) for value in center_position_offset]
-            center_positions.append(center_position_integer)
+    # Transpose the list of points in the outer lines
+    outer_road_lines = zip(*all_corresponding_outer_positions)
 
-    return center_positions
+    # Return both the center line and the outer lines
+    return center_positions, outer_road_lines
 
 
 # A function to traverse a collection from an arbitrary point to the end, finding the first value above a certain
