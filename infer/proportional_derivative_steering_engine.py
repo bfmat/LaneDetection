@@ -28,6 +28,9 @@ class SteeringEngine:
     # Maximum permitted absolute value for the steering angle
     steering_limit = None
 
+    # Line of best fit through the points on the center of the road, accessible to external scripts
+    center_line_of_best_fit = None
+
     # Set global variables provided as arguments
     def __init__(self, max_average_variation, proportional_multiplier, derivative_multiplier,
                  ideal_center_x, center_y_high, center_y_low, steering_limit):
@@ -47,10 +50,10 @@ class SteeringEngine:
             return None
 
         # Compute the line of best fit for the center line
-        line = line_of_best_fit(center_points)
+        self.center_line_of_best_fit = line_of_best_fit(center_points)
 
         # Calculate two points on the line at the predefined high and low positions
-        center_x_high, center_x_low = [(y_position * line[1]) + line[0]
+        center_x_high, center_x_low = [(y_position * self.center_line_of_best_fit[1]) + self.center_line_of_best_fit[0]
                                        for y_position in (self.center_y_high, self.center_y_low)]
 
         # Calculate the proportional error from the ideal center

@@ -3,6 +3,7 @@ from __future__ import division, print_function
 import os
 import numpy
 
+from skimage.draw import line_aa
 from scipy.misc import imread, imresize
 from ..infer.lane_center_calculation import calculate_lane_center_positions
 
@@ -73,13 +74,6 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
     # Calculate a steering angle from the points
     steering_angle = steering_engine.compute_steering_angle(center_line_positions)
 
-    # Display the center line in blue and the outer lines in red and green
-    lines_and_colors = [
-        (center_line_positions, [0, 0, 255]),
-        (outer_road_lines[0], [255, 0, 0]),
-        (outer_road_lines[1], [0, 255, 0])
-    ]
-
     # Copy the image twice for use in the heat map section of the user interface
     heat_map_images = [numpy.copy(image) for _ in range(2)]
 
@@ -96,6 +90,25 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
     for heat_map_image, inference_engine in zip(heat_map_images, inference_engines):
         _apply_heat_map(heat_map_image, inference_engine.last_prediction_tensor, heat_map_colors, heat_map_opacity)
 
+    # Calculate two points on the line of best fit
+    line = steering_engine.center_line_of_best_fit
+    y_positions = (0, image.shape[0] - 1)
+    x_positions = [int(round((y_position * line[1]) + line[0])) for y_position in y_positions]
+
+    # Transpose the list of Y positions followed by X positions and format it into a suitable list
+    formatted_arguments = [value for position in zip(y_positions, x_positions) for value in position]
+
+    # Calculate the line of best fit and draw it on the screen
+    y_indices, x_indices, values = line_aa(*formatted_arguments)
+    image[y_indices, x_indices, 1] = values
+
+    # Display the center line in blue and the outer lines in red and green
+    lines_and_colors = [
+        (center_line_positions, [0, 0, 255]),
+        (outer_road_lines[0], [255, 0, 0]),
+        (outer_road_lines[1], [0, 255, 0])
+    ]
+
     # Add the relevant lines and points to the main image and scale it to double its original size
     _add_markers(image, steering_engine, marker_radius, 0, lines_and_colors)
     image = imresize(image, 200, interp='nearest')
@@ -108,7 +121,7 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
     return tiled_image, (steering_angle,)
 
 
-# Add lines and points to an image
+# Add lines and points to the main image
 def _add_markers(image, steering_engine, marker_radius, center_x, lines_and_colors):
 
     # Create a vertical blue line at the same X position as the predicted center of the road, if possible
