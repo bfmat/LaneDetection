@@ -59,11 +59,11 @@ def calculate_lane_center_positions(left_line_prediction_tensor, right_line_pred
         if None not in peak_indices:
 
             # Calculate the average of the two peaks and add the Y position of the row to the tuple
-            center_x_position = int(sum(peak_indices) / len(peak_indices))
+            center_x_position = sum(peak_indices) / len(peak_indices)
             center_position = (y_position, center_x_position)
 
-            # Use the unmodified center position as the starting position
-            starting_position = center_position[1]
+            # Use the center position, rounded to an integer, as the starting position
+            starting_position = int(center_position[1])
 
             # Scale and offset it so that it corresponds to the correct position within the original image
             center_position_scaled = [center_position_element * (image_shape_element / prediction_tensor_shape_element)
@@ -71,8 +71,9 @@ def calculate_lane_center_positions(left_line_prediction_tensor, right_line_pred
                                       in zip(center_position, original_image_shape, left_line_prediction_tensor.shape)]
             center_position_offset = [element + (window_size // 2) for element in center_position_scaled]
 
-            # Add the processed position to the list
-            center_positions.append(center_position_offset)
+            # Round the processed position to an integer and add it to the list
+            center_position_integer = [int(value) for value in center_position_offset]
+            center_positions.append(center_position_integer)
 
     return center_positions
 
@@ -82,34 +83,19 @@ def calculate_lane_center_positions(left_line_prediction_tensor, right_line_pred
 # and returning the synthetic interpolated list index of that peak
 def find_peak_in_direction(collection, starting_index, reversed_iteration_direction, minimum_value):
 
-    # Storage for the indices of the first and last values that passed the threshold
+    # Storage for the indices of the first value that passed the threshold
     initial_sufficient_value_index = None
-    final_sufficient_value_index = None
 
     # Iterate over the row, starting at the center and continuing to the end in the provided direction
     ending_index = 0 if reversed_iteration_direction else len(collection) - 1
     iteration_step = -1 if reversed_iteration_direction else 1
     for i in range(starting_index, ending_index, iteration_step):
 
-        # Get the value of the collection corresponding to the current index
-        current_element = collection[i]
-
-        # Set the final value to the current one before testing whether to break from the loop
-        final_sufficient_value_index = i
-
-        # If the value is greater than or equal to the threshold and it is the first such value, record its index
-        if current_element >= minimum_value and initial_sufficient_value_index is None:
+        # If the current value is greater than or equal to the threshold, record its index and stop iterating
+        if collection[i] >= minimum_value:
             initial_sufficient_value_index = i
-
-        # If the value is less than the threshold and there were already values greater than it, break out of the loop
-        elif current_element < minimum_value and initial_sufficient_value_index is not None:
             break
 
-    # If a peak has not been found, simply return None
-    if initial_sufficient_value_index is None:
-        return None
+    # Return the index, which will be None if a sufficient value could not be found
+    return initial_sufficient_value_index
 
-    # Otherwise, return the average of the two indices, rounded to the nearest integer
-    else:
-        peak_center = int(round((initial_sufficient_value_index + final_sufficient_value_index) / 2))
-        return peak_center
