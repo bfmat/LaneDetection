@@ -3,7 +3,7 @@ from __future__ import division, print_function
 import os
 import numpy
 
-from skimage.draw import line_aa
+from skimage.draw import line
 from scipy.misc import imread, imresize
 from ..infer.lane_center_calculation import calculate_lane_center_positions
 
@@ -91,16 +91,16 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
         _apply_heat_map(heat_map_image, inference_engine.last_prediction_tensor, heat_map_colors, heat_map_opacity)
 
     # Calculate two points on the line of best fit
-    line = steering_engine.center_line_of_best_fit
+    line_parameters = steering_engine.center_line_of_best_fit
     y_positions = (0, image.shape[0] - 1)
-    x_positions = [int(round((y_position * line[1]) + line[0])) for y_position in y_positions]
+    x_positions = [int(round((y_position * line_parameters[1]) + line_parameters[0])) for y_position in y_positions]
 
     # Transpose the list of Y positions followed by X positions and format it into a suitable list
     formatted_arguments = [value for position in zip(y_positions, x_positions) for value in position]
 
     # Calculate the line of best fit and draw it on the screen
-    y_indices, x_indices, values = line_aa(*formatted_arguments)
-    image[y_indices, x_indices, 1] = values
+    y_indices, x_indices = line(*formatted_arguments)[:2]
+    image[y_indices, x_indices] = 0
 
     # Display the center line in blue and the outer lines in red and green
     lines_and_colors = [
