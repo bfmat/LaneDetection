@@ -130,9 +130,6 @@ def _add_markers(image, steering_engine, marker_radius, center_x, lines_and_colo
     except:
         pass
 
-    # Create a vertical black line at the predefined center of the image
-    image[:, steering_engine.ideal_center_x] = 0
-
     # For each of the two road lines
     for line_positions, color in lines_and_colors:
 
