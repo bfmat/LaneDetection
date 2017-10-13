@@ -19,10 +19,8 @@ class SteeringEngine:
     # Ideal horizontal position for the center of the road
     ideal_center_x = None
 
-    # Vertical positions at which the center of the road is calculated
-    # Having two allows for calculation of the derivative term
-    center_y_high = None
-    center_y_low = None
+    # Vertical position at which the center of the road is calculated
+    center_y = None
 
     # Maximum permitted absolute value for the steering angle
     steering_limit = None
@@ -32,13 +30,12 @@ class SteeringEngine:
 
     # Set global variables provided as arguments
     def __init__(self, proportional_multiplier, derivative_multiplier, max_distance_from_line,
-                 ideal_center_x, center_y_high, center_y_low, steering_limit):
+                 ideal_center_x, center_y, steering_limit):
         self.proportional_multiplier = proportional_multiplier
         self.derivative_multiplier = derivative_multiplier
         self.max_distance_from_line = max_distance_from_line
         self.ideal_center_x = ideal_center_x
-        self.center_y_high = center_y_high
-        self.center_y_low = center_y_low
+        self.center_y = center_y
         self.steering_limit = steering_limit
 
     # Compute a steering angle. given points down the center of the road
@@ -51,21 +48,18 @@ class SteeringEngine:
         if len(center_points_without_outliers) < 2:
             return None
 
+        # Get the slope and intercept from the line of best fit
+        line_intercept, line_slope = self.center_line_of_best_fit
 
         # Calculate two points on the line at the predefined high and low positions
-        center_x_high, center_x_low = [(y_position * self.center_line_of_best_fit[1]) + self.center_line_of_best_fit[0]
-                                       for y_position in (self.center_y_high, self.center_y_low)]
+        center_x = (self.center_y * line_slope) + line_intercept
 
         # Calculate the proportional error from the ideal center
-        proportional_error = self.ideal_center_x - center_x_high
+        proportional_error = self.ideal_center_x - center_x
 
-        # Calculate the derivative error which is the inverse of the slope of the line
-        # Using the inverse avoids the error approaching infinity as the line becomes vertical
-        derivative_error = (center_x_high - center_x_low) / (self.center_y_high - self.center_y_low)
-
-        # Multiply the error by the steering multiplier
+        # Multiply the error by the steering multiplier, and the slope of the line by the derivative multiplier
         steering_angle = (proportional_error * self.proportional_multiplier)\
-                         + (derivative_error * self.derivative_multiplier)
+                         + (line_slope * self.derivative_multiplier)
 
         # If the steering angle is greater than the maximum, set it to the maximum
         if steering_angle > self.steering_limit:

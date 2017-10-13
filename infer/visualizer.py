@@ -89,8 +89,7 @@ class Visualizer(QWidget):
             derivative_multiplier=0.5,
             max_distance_from_line=10,
             ideal_center_x=IDEAL_CENTER_X,
-            center_y_high=20,
-            center_y_low=40,
+            center_y=20,
             steering_limit=100
         )
 
