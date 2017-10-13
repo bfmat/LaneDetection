@@ -55,7 +55,7 @@ def calculate_lane_center_positions(left_line_prediction_tensor, right_line_pred
 
             # Try to find the peak in both directions from the last center position
             peak_indices = [find_peak_in_direction(prediction_tensor[y_position], starting_position,
-                            reversed_iteration_direction, minimum_prediction_confidence)
+                                                   reversed_iteration_direction, minimum_prediction_confidence)
                             for prediction_tensor, reversed_iteration_direction
                             in zip((left_line_prediction_tensor, right_line_prediction_tensor), (True, False))]
 

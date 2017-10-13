@@ -102,9 +102,12 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
     y_indices, x_indices = line(*formatted_arguments)[:2]
     image[y_indices, x_indices] = 0
 
+    # Remove the outliers from the center line positions
+    center_line_positions_without_outliers = steering_engine.remove_outliers(center_line_positions)
+
     # Display the center line in blue and the outer lines in red and green
     lines_and_colors = [
-        (center_line_positions, [0, 0, 255]),
+        (center_line_positions_without_outliers, [0, 0, 255]),
         (outer_road_lines[0], [255, 0, 0]),
         (outer_road_lines[1], [0, 255, 0])
     ]
