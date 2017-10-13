@@ -66,7 +66,7 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
     center_line_positions, outer_road_lines = calculate_lane_center_positions(
         left_line_prediction_tensor=prediction_tensors[0],
         right_line_prediction_tensor=prediction_tensors[1],
-        minimum_prediction_confidence=0.7,
+        minimum_prediction_confidence=0.95,
         original_image_shape=image.shape,
         window_size=inference_engines[0].window_size
     )
@@ -110,7 +110,7 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
     ]
 
     # Add the relevant lines and points to the main image and scale it to double its original size
-    _add_markers(image, steering_engine, marker_radius, 0, lines_and_colors)
+    _add_markers(image, marker_radius, lines_and_colors)
     image = imresize(image, 200, interp='nearest')
 
     # Concatenate the two small images together and then concatenate them to the main image
@@ -122,13 +122,7 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
 
 
 # Add lines and points to the main image
-def _add_markers(image, steering_engine, marker_radius, center_x, lines_and_colors):
-
-    # Create a vertical blue line at the same X position as the predicted center of the road, if possible
-    try:
-        image[:, center_x] = [0, 0, 255]
-    except:
-        pass
+def _add_markers(image, marker_radius, lines_and_colors):
 
     # For each of the two road lines
     for line_positions, color in lines_and_colors:
