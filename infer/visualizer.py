@@ -29,7 +29,7 @@ HEAT_MAP_OPACITY = 0.7
 IDEAL_CENTER_X = 160
 
 # Labels for each of the elements of an image data tuple
-IMAGE_DATA_LABELS = ('File name', 'Predicted center', 'Error from center', 'Steering angle')
+IMAGE_DATA_LABELS = ('File name', 'Steering angle')
 
 
 # Main PyQt5 QWidget class
@@ -70,14 +70,14 @@ class Visualizer(QWidget):
             # Get the fully qualified path of the model
             model_path = '{}/{}'.format(model_folder, model_name)
 
-            # Create the model and load the weights from the file (load_model does not work with lambda layers)
+            # Load the model
             model = load_model(model_path)
 
             # Create a sliding window inference engine with the model
             inference_engine = SlidingWindowInferenceEngine(
                 model=model,
                 slice_size=16,
-                stride=8
+                stride=4
             )
 
             # Add it to the list
@@ -85,12 +85,11 @@ class Visualizer(QWidget):
 
         # Instantiate the steering angle generation engine
         steering_engine = SteeringEngine(
-            max_average_variation=40,
             proportional_multiplier=0.1,
             derivative_multiplier=0.5,
+            max_distance_from_line=10,
             ideal_center_x=IDEAL_CENTER_X,
-            center_y_high=20,
-            center_y_low=40,
+            center_y=20,
             steering_limit=100
         )
 

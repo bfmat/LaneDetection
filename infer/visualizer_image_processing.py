@@ -1,11 +1,11 @@
 from __future__ import division, print_function
 
 import os
-import sys
 import numpy
 
+from skimage.draw import line
 from scipy.misc import imread, imresize
-from ..infer.steering_engine import remove_outliers
+from ..infer.lane_center_calculation import calculate_lane_center_positions
 
 
 # A collection of functions required for loading and processing the data for the visualizer
@@ -59,54 +59,20 @@ def process_images(image_folder, inference_engines, steering_engine, marker_radi
 # Perform all necessary processing on a single image to prepare it for visualization
 def _process_single_image(image, inference_engines, steering_engine, marker_radius, heat_map_opacity):
 
-    # List of points on the lines
-    all_line_positions = []
+    # With each of the provided engines, perform inference on the current image, calculating a prediction tensor
+    prediction_tensors = [inference_engine.infer(image) for inference_engine in inference_engines]
 
-    # With each of the provided engines
-    for inference_engine in inference_engines:
-
-        # Perform inference on the current image, adding the results to the list of points
-        all_line_positions.append(inference_engine.infer(image))
+    # Calculate the center line positions and add them to the list
+    center_line_positions, outer_road_lines = calculate_lane_center_positions(
+        left_line_prediction_tensor=prediction_tensors[0],
+        right_line_prediction_tensor=prediction_tensors[1],
+        minimum_prediction_confidence=0.95,
+        original_image_shape=image.shape,
+        window_size=inference_engines[0].window_size
+    )
 
     # Calculate a steering angle from the points
-    steering_angle = steering_engine.compute_steering_angle(all_line_positions)
-
-    # Set the steering angle and error to large negative values if None is returned
-    if steering_angle is None:
-        steering_angle = -5
-        error = -5
-
-    else:
-        # Compute the error from the steering angle
-        error = steering_angle / steering_engine.proportional_multiplier
-
-    # Remove the outliers from each of the lists and keep the outliers in a separate list
-    all_line_positions_without_outliers = []
-    all_line_positions_outliers_only = []
-    for line_positions in all_line_positions:
-
-        # Add the outlier-free points to one list
-        line_positions_without_outliers = remove_outliers(line_positions, 40)
-        all_line_positions_without_outliers.append(line_positions_without_outliers)
-
-        # Find the points that are in the original list but not in the outlier-free list (that is, the outliers)
-        all_positions_set = set(line_positions)
-        outlier_free_set = set(line_positions_without_outliers)
-        line_positions_outliers_only = list(all_positions_set - outlier_free_set)
-
-        # Add it to the outlier-only list
-        all_line_positions_outliers_only.append(line_positions_outliers_only)
-
-    # Calculate the center of the road from the steering angle
-    center_x = int(steering_engine.ideal_center_x - error)
-
-    # Combine the two road lines with the lists of outliers, along with their corresponding colors
-    lines_and_colors = [
-        (all_line_positions_without_outliers[0], [0, 0, 255]),
-        (all_line_positions_without_outliers[1], [0, 255, 0]),
-        (all_line_positions_outliers_only[0], [255, 0, 0]),
-        (all_line_positions_outliers_only[1], [255, 255, 0])
-    ]
+    steering_angle = steering_engine.compute_steering_angle(center_line_positions)
 
     # Copy the image twice for use in the heat map section of the user interface
     heat_map_images = [numpy.copy(image) for _ in range(2)]
@@ -124,8 +90,30 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
     for heat_map_image, inference_engine in zip(heat_map_images, inference_engines):
         _apply_heat_map(heat_map_image, inference_engine.last_prediction_tensor, heat_map_colors, heat_map_opacity)
 
+    # Calculate two points on the line of best fit
+    line_parameters = steering_engine.center_line_of_best_fit
+    y_positions = (0, image.shape[0] - 1)
+    x_positions = [int(round((y_position * line_parameters[1]) + line_parameters[0])) for y_position in y_positions]
+
+    # Transpose the list of Y positions followed by X positions and format it into a suitable list
+    formatted_arguments = [value for position in zip(y_positions, x_positions) for value in position]
+
+    # Calculate the line of best fit and draw it on the screen
+    y_indices, x_indices = line(*formatted_arguments)[:2]
+    image[y_indices, x_indices] = 0
+
+    # Remove the outliers from the center line positions
+    center_line_positions_without_outliers = steering_engine.remove_outliers(center_line_positions)
+
+    # Display the center line in blue and the outer lines in red and green
+    lines_and_colors = [
+        (center_line_positions_without_outliers, [0, 0, 255]),
+        (outer_road_lines[0], [255, 0, 0]),
+        (outer_road_lines[1], [0, 255, 0])
+    ]
+
     # Add the relevant lines and points to the main image and scale it to double its original size
-    _add_markers(image, steering_engine, marker_radius, center_x, lines_and_colors)
+    _add_markers(image, marker_radius, lines_and_colors)
     image = imresize(image, 200, interp='nearest')
 
     # Concatenate the two small images together and then concatenate them to the main image
@@ -133,20 +121,11 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
     tiled_image = numpy.concatenate((image, concatenated_heat_map_image), axis=0)
 
     # Return relevant metadata about the image as well as the image itself
-    return tiled_image, (center_x, error, steering_angle)
+    return tiled_image, (steering_angle,)
 
 
-# Add lines and points to an image
-def _add_markers(image, steering_engine, marker_radius, center_x, lines_and_colors):
-
-    # Create a vertical blue line at the same X position as the predicted center of the road, if possible
-    try:
-        image[:, center_x] = [0, 0, 255]
-    except:
-        pass
-
-    # Create a vertical black line at the predefined center of the image
-    image[:, steering_engine.ideal_center_x] = 0
+# Add lines and points to the main image
+def _add_markers(image, marker_radius, lines_and_colors):
 
     # For each of the two road lines
     for line_positions, color in lines_and_colors:
@@ -158,7 +137,7 @@ def _add_markers(image, steering_engine, marker_radius, center_x, lines_and_colo
             bounds = [int(round(center + offset)) for center in position for offset in (-marker_radius, marker_radius)]
 
             # Create a black square within the bounds
-            image[bounds[2]:bounds[3], bounds[0]:bounds[1]] = color
+            image[bounds[0]:bounds[1], bounds[2]:bounds[3]] = color
 
 
 # Display a translucent multi-colored heat map over an image (modifying it in place), given a tensor of
