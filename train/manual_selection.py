@@ -1,12 +1,14 @@
+from __future__ import print_function
+
 import os
 import sys
 import uuid
-import cv2
 import random
 
-from PyQt5.QtWidgets import QLabel, QWidget, QApplication
-from PyQt5.QtGui import QPixmap, QImage
+from scipy.misc import imread, imsave
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPixmap, QImage
+from PyQt5.QtWidgets import QLabel, QWidget, QApplication
 
 
 # Program which allows a user to select the position of a road line in a wide image
@@ -51,7 +53,7 @@ class ManualSelection(QWidget):
 
         # Check that the number of command line arguments is correct
         if len(sys.argv) != 3:
-            print('Usage: {} <input image folder> <output image folder>'.format(sys.argv[0]))
+            print('Usage:', sys.argv[0], '<input image folder> <output image folder>')
             sys.exit()
 
         # Load the images from the path supplied as a command line argument
@@ -81,6 +83,7 @@ class ManualSelection(QWidget):
         # Display the initial image
         self.update_current_image()
 
+    # Listen for mouse clicks and record their positions
     def mousePressEvent(self, mouse_event):
 
         # Record the current mouse position to the window path list as a two-element tuple
@@ -91,6 +94,7 @@ class ManualSelection(QWidget):
         )
         self.road_line_path.append(mouse_position)
 
+    # Listen for key presses and update the image when the space bar is pressed
     def keyPressEvent(self, key_event):
 
         # Check if the space bar was pressed
@@ -113,14 +117,13 @@ class ManualSelection(QWidget):
 
         # Get the path corresponding to the current index and load the image from disk
         current_path = self.image_paths[self.current_image_index]
-        self.current_image = cv2.imread(current_path)
+        self.current_image = imread(current_path)
 
         # Convert the NumPy array into a QImage for display
         height, width, channel = self.current_image.shape
         bytes_per_line = channel * width
-        current_image_qimage_bgr = QImage(self.current_image.data, width, height, bytes_per_line, QImage.Format_RGB888)
-        current_image_qimage_rgb = current_image_qimage_bgr.rgbSwapped()
-        current_image_qpixmap = QPixmap(current_image_qimage_rgb).scaled(WINDOW_WIDTH, WINDOW_HEIGHT)
+        current_image_qimage = QImage(self.current_image.data, width, height, bytes_per_line, QImage.Format_RGB888)
+        current_image_qpixmap = QPixmap(current_image_qimage).scaled(WINDOW_WIDTH, WINDOW_HEIGHT)
 
         # Set the image scaling factor to the window width divided by the image width
         # This must be an integer for everything to work properly
@@ -164,11 +167,14 @@ def save_training_data(image, road_line_path, output_folder):
         # Slice the image's NumPy array representation
         image_slice = image[vertical_slice_start:vertical_slice_end, :, :]
 
-        # Use the Unix time and the position of the current road line point in the file name
-        file_name = '{}/x{}_y{}_{}.jpg'.format(output_folder, road_line_point[0], road_line_point[1], uuid.uuid4())
+        # Only save the image if the height of the slice is as expected and it is not clipped by the edge of the image
+        if image_slice.shape[0] == OUTPUT_HEIGHT:
 
-        # Save the image
-        cv2.imwrite(file_name, image_slice)
+            # Use the Unix time and the position of the current road line point in the file name
+            file_name = '{}/x{}_y{}_{}.png'.format(output_folder, road_line_point[0], road_line_point[1], uuid.uuid4())
+
+            # Save the image
+            imsave(file_name, image_slice)
 
 
 # If this file is being run directly, instantiate the ManualSelection class
