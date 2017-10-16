@@ -70,7 +70,7 @@ class SteeringEngine:
             steering_angle = -self.steering_limit
 
         # Return the steering angle and the error
-        return steering_angle
+        return steering_angle, proportional_error, line_slope
 
     # Remove the outliers from a set of points given a line of best fit and a maximum directly horizontal distance
     # that a point can be away from the line in order to not be considered an outlier
