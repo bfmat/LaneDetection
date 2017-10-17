@@ -72,7 +72,7 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
     )
 
     # Calculate a steering angle from the points
-    steering_angle = steering_engine.compute_steering_angle(center_line_positions)
+    steering_angle = steering_engine.compute_steering_angle(center_line_positions)[0]
 
     # Copy the image twice for use in the heat map section of the user interface
     heat_map_images = [numpy.copy(image) for _ in range(2)]
