@@ -3,13 +3,13 @@ from __future__ import print_function
 import os
 import sys
 
-from keras.models import load_model
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtWidgets import QLabel, QWidget, QApplication
-from ..infer import SteeringEngine, SlidingWindowInferenceEngine
-from ..infer.visualizer_image_processing import process_images
+from keras.models import load_model
 
+from ..infer import SteeringEngine, SlidingWindowInferenceEngine
+from ..visualizer.visualizer_image_processing import process_images
 
 # Program which demonstrates the effectiveness or ineffectiveness of a lane detection model
 # by displaying an image and highlighting the areas in which it predicts there are road lines
