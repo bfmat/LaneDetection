@@ -29,6 +29,9 @@ def process_images(image_folder, inference_engines, steering_engine, marker_radi
     # List of image metadata for display
     all_image_data = []
 
+    # List of steering angles for return
+    steering_angles = []
+
     # Loop over each of the images in the folder
     for image_name in image_names:
 
@@ -40,20 +43,21 @@ def process_images(image_folder, inference_engines, steering_engine, marker_radi
         image = imread(image_path)
 
         # Process the image and add various markings to it, recording metadata returned for display purposes
-        processed_image, image_data =\
+        processed_image, steering_angle =\
             _process_single_image(image, inference_engines, steering_engine, marker_radius, heat_map_opacity)
 
-        # Add the prepared image to the list
+        # Add the prepared image and the steering angle to their corresponding lists
         image_list.append(processed_image)
+        steering_angles.append(steering_angle)
 
-        # Add the corresponding name, center position, error, and steering angle to the data list
-        all_image_data.append((image_name,) + image_data)
+        # Add the corresponding steering angle to the data list
+        all_image_data.append((image_name, steering_angle))
 
     # Notify the user that loading is complete
     print('Loading complete!')
 
     # Return the images and their corresponding names
-    return image_list, all_image_data
+    return image_list, steering_angles, all_image_data
 
 
 # Perform all necessary processing on a single image to prepare it for visualization
@@ -120,8 +124,8 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
     concatenated_heat_map_image = numpy.concatenate(heat_map_images, axis=1)
     tiled_image = numpy.concatenate((image, concatenated_heat_map_image), axis=0)
 
-    # Return relevant metadata about the image as well as the image itself
-    return tiled_image, (steering_angle,)
+    # Return the steering angle and the image
+    return tiled_image, steering_angle
 
 
 # Add lines and points to the main image

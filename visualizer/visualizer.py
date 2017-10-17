@@ -4,7 +4,7 @@ import os
 import sys
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap, QImage
+from PyQt5.QtGui import QPixmap, QImage, QPainter, QColor, QPen
 from PyQt5.QtWidgets import QLabel, QWidget, QApplication
 from keras.models import load_model
 
@@ -29,8 +29,14 @@ HEAT_MAP_OPACITY = 0.7
 # The ideal position for the center of the image
 IDEAL_CENTER_X = 160
 
+# Height of the line graph section of the UI
+LINE_GRAPH_HEIGHT = 500
+
 # Labels for each of the elements of an image data tuple
 IMAGE_DATA_LABELS = ('File name', 'Steering angle')
+
+# The number of lists of points that will be drawn on the line graph
+POINT_LIST_COUNT = 1
 
 
 # Main PyQt5 QWidget class
@@ -47,6 +53,12 @@ class Visualizer(QWidget):
 
     # The label that displays the current image
     image_box = None
+
+    # List of lists of points to be drawn on the line graph
+    line_point_lists = [[]] * POINT_LIST_COUNT
+
+    # List of steering angles corresponding to the images
+    steering_angles = []
 
     # Call various initialization functions
     def __init__(self):
@@ -86,8 +98,8 @@ class Visualizer(QWidget):
 
         # Instantiate the steering angle generation engine
         steering_engine = SteeringEngine(
-            proportional_multiplier=0.1,
-            derivative_multiplier=0.5,
+            proportional_multiplier=0.0025,
+            derivative_multiplier=0,
             max_distance_from_line=10,
             ideal_center_x=IDEAL_CENTER_X,
             center_y=20,
@@ -95,7 +107,7 @@ class Visualizer(QWidget):
         )
 
         # Load and perform inference on the images
-        self.image_list, self.image_data\
+        self.image_list, self.steering_angles, self.image_data\
             = process_images(image_folder, inference_engines, steering_engine, MARKER_RADIUS, HEAT_MAP_OPACITY)
 
         # Set the global image height and width variables
@@ -112,7 +124,8 @@ class Visualizer(QWidget):
         window_height = image_height * SCALING_FACTOR
 
         # Set the size, position, title, and color scheme of the window
-        self.setFixedSize(window_width, window_height)
+        # Use the image box size plus a predefined height that will be occupied by the line graph
+        self.setFixedSize(window_width, window_height + LINE_GRAPH_HEIGHT)
         self.move(100, 100)
         self.setWindowTitle('Manual Training Data Selection')
 
@@ -155,6 +168,14 @@ class Visualizer(QWidget):
         # Fill the image box with the picture
         self.image_box.setPixmap(current_image_qpixmap)
 
+        # Add a new point to the line graph
+        y_point = self.get_line_graph_y_position(self.steering_angles[self.image_index])
+        self.line_point_lists[0].append([400, y_point])
+
+        # Shift all the points on the graph left by 5 pixels
+        for point in self.line_point_lists[0]:
+            point[0] -= 5
+
         # Print a blank line to separate this image from the last
         print()
 
@@ -178,6 +199,51 @@ class Visualizer(QWidget):
 
             # Go to the previous frame
             self.update_display(-1)
+
+    # Called when it is time to redraw
+    def paintEvent(self, event):
+
+        # Initialize the drawing tool
+        painter = QPainter(self)
+
+        # Draw a jagged line over a list of points
+        def paint_line(point_list, color):
+
+            # Configure the line color and width
+            pen = QPen()
+            pen.setColor(color)
+            pen.setWidth(3)
+            painter.setPen(pen)
+
+            # Iterate over the points and draw a line between each consecutive pair
+            for i in range(1, len(point_list)):
+                previous_point = point_list[i - 1]
+                current_point = point_list[i]
+                line_parameters = current_point + previous_point
+                painter.drawLine(*line_parameters)
+                print(line_parameters)
+
+        # Calculate the Y points on the graph for steering angles of -0.1, 0.0, and 0.1 respectively
+        y_negative = self.get_line_graph_y_position(-0.1)
+        y_zero = self.get_line_graph_y_position(0.0)
+        y_positive = self.get_line_graph_y_position(0.1)
+
+        # Draw the three grid lines
+        start_x_position = 0
+        end_x_position = self.width() - 1
+        paint_line([[start_x_position, y_negative], [end_x_position, y_negative]], QColor(0, 0, 0))
+        paint_line([[start_x_position, y_zero], [end_x_position, y_zero]], QColor(0, 0, 0))
+        paint_line([[start_x_position, y_positive], [end_x_position, y_positive]], QColor(0, 0, 0))
+
+        # Draw each of the lists of points on the graph
+        for point_list in self.line_point_lists:
+            paint_line(point_list, QColor(0, 0, 0))
+
+    # Take an arbitrary steering angle, return the Y position that angle would correspond to on the graph
+    @staticmethod
+    def get_line_graph_y_position(steering_angle):
+        y_point = -int(steering_angle * 800) + 669
+        return y_point
 
 
 # If this file is being run directly, instantiate the ManualSelection class
