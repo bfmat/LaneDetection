@@ -27,10 +27,16 @@ MARKER_RADIUS = 2
 HEAT_MAP_OPACITY = 0.7
 
 # The ideal position for the center of the image
-IDEAL_CENTER_X = 160
+IDEAL_CENTER_X = 190
 
 # Height of the line graph section of the UI
 LINE_GRAPH_HEIGHT = 300
+
+# Height of the border section above and below the guide lines on the line graph
+LINE_GRAPH_BORDER_HEIGHT = 20
+
+# The absolute value of the steering angle at which the positive and negative line graph guide lines are drawn
+LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE = 0.1
 
 # Labels for each of the elements of an image data tuple
 IMAGE_DATA_LABELS = ('File name', 'Steering angle')
@@ -60,9 +66,16 @@ class Visualizer(QWidget):
     # List of steering angles corresponding to the images
     steering_angles = []
 
+    # Vertical center of the line graph
+    line_graph_center = None
+
+    # Multiplier to convert a steering angle into pixels from the vertical center of the line graph
+    line_graph_multiplier = None
+
     # Call various initialization functions
     def __init__(self):
 
+        # Call the superclass initializer
         super(Visualizer, self).__init__()
 
         # Check that the number of command line arguments is correct
@@ -113,6 +126,12 @@ class Visualizer(QWidget):
         # Set the global image height and width variables
         image_height, image_width = self.image_list[0].shape[:2]
 
+        # Calculate the height of one vertical half of the line graph ignoring the border
+        half_graph_height_minus_border = (LINE_GRAPH_HEIGHT / 2) - LINE_GRAPH_BORDER_HEIGHT
+
+        # Use that, divided by the predefined guide line steering angle, to calculate the line graph multiplier
+        self.line_graph_multiplier = int(half_graph_height_minus_border / LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE)
+
         # Set up the UI
         self.init_ui(image_height, image_width)
 
@@ -122,6 +141,9 @@ class Visualizer(QWidget):
         # The window's size is that of the image times SCALING_FACTOR
         window_width = image_width * SCALING_FACTOR
         window_height = image_height * SCALING_FACTOR
+
+        # Calculate the center of the line graph using the height of the image as an upper limit of the graph
+        self.line_graph_center = window_height + (LINE_GRAPH_HEIGHT // 2)
 
         # Set the size, position, title, and color scheme of the window
         # Use the image box size plus a predefined height that will be occupied by the line graph
@@ -224,12 +246,11 @@ class Visualizer(QWidget):
                 current_point = point_list[i]
                 line_parameters = current_point + previous_point
                 painter.drawLine(*line_parameters)
-                print(line_parameters)
 
         # Calculate the Y points on the graph for steering angles of -0.1, 0.0, and 0.1 respectively
-        y_negative = self.get_line_graph_y_position(-0.1)
-        y_zero = self.get_line_graph_y_position(0.0)
-        y_positive = self.get_line_graph_y_position(0.1)
+        y_negative = self.get_line_graph_y_position(-LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE)
+        y_zero = self.get_line_graph_y_position(0)
+        y_positive = self.get_line_graph_y_position(LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE)
 
         # Draw the three grid lines
         start_x_position = 0
@@ -243,9 +264,8 @@ class Visualizer(QWidget):
             paint_line(point_list, QColor(0, 0, 0))
 
     # Take an arbitrary steering angle, return the Y position that angle would correspond to on the graph
-    @staticmethod
-    def get_line_graph_y_position(steering_angle):
-        y_point = -int(steering_angle * 800) + 669
+    def get_line_graph_y_position(self, steering_angle):
+        y_point = -int(steering_angle * self.line_graph_multiplier) + self.line_graph_center
         return y_point
 
 
