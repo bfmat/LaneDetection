@@ -30,7 +30,7 @@ HEAT_MAP_OPACITY = 0.7
 IDEAL_CENTER_X = 160
 
 # Height of the line graph section of the UI
-LINE_GRAPH_HEIGHT = 500
+LINE_GRAPH_HEIGHT = 300
 
 # Labels for each of the elements of an image data tuple
 IMAGE_DATA_LABELS = ('File name', 'Steering angle')
@@ -168,13 +168,16 @@ class Visualizer(QWidget):
         # Fill the image box with the picture
         self.image_box.setPixmap(current_image_qpixmap)
 
-        # Add a new point to the line graph
+        # Add a new point to the line graph five pixels left of the right edge
         y_point = self.get_line_graph_y_position(self.steering_angles[self.image_index])
-        self.line_point_lists[0].append([400, y_point])
+        self.line_point_lists[0].append([self.width() - 5, y_point])
 
         # Shift all the points on the graph left by 5 pixels
         for point in self.line_point_lists[0]:
             point[0] -= 5
+
+        # Force PyQt to repaint all of the lines
+        self.repaint()
 
         # Print a blank line to separate this image from the last
         print()
