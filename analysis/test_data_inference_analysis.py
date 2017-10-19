@@ -14,10 +14,12 @@ from ..infer import SteeringEngine, SlidingWindowInferenceEngine
 # using the bottom of the image instead of the top to avoid extreme fluctuation
 
 
-# The number of error values returned by the steering engine
-NUM_ERRORS = 2
+# List of descriptions output before their corresponding error values
+ERROR_DESCRIPTIONS = [
+    'Standard deviation of the position of the car with respect to the center of the road:',
+    'Standard deviation of the apparent slope of the center of the road with respect to the car:'
+]
 
-error_names = ['proportional', 'derivative']
 
 # Check that the number of command line arguments is correct
 if len(sys.argv) != 4:
@@ -46,8 +48,11 @@ for argument in sys.argv[2:]:
         stride=4
     )
 
+# Get the expected number of error values
+num_errors = len(ERROR_DESCRIPTIONS)
+
 # List of accumulators for the squared proportional error and line slope
-accumulators = [0] * NUM_ERRORS
+accumulators = [0] * num_errors
 
 # Get the folder name from the command line arguments
 # and iterate over all of the files in the folder
@@ -62,11 +67,11 @@ for file_name in file_names:
     # Run the sliding window inference engine on the image
     predictions = inference_engine.infer(image)
 
-    # Get a proportional error and line slope (used as the derivative error) based on the predictions
+    # Get a proportional error and line slope (used as the derivative error) using the predictions
     errors = steering_engine.compute_steering_angle(predictions)[1:]
 
     # Add the squares of each of the errors to their corresponding accumulators
-    for i in range(NUM_ERRORS):
+    for i in range(num_errors):
         accumulators[i] += errors[i] ** 2
 
     # Notify the user that we have analyzed the current image
@@ -76,8 +81,7 @@ for file_name in file_names:
 num_files = len(file_names)
 
 # Calculate and print the standard deviation with respect to both errors, one at a time
-for accumulator, error_name in zip(accumulators, error_names):
+for accumulator, error_description in zip(accumulators, ERROR_DESCRIPTIONS):
     variance = accumulator / num_files
     standard_deviation = math.sqrt(variance)
-    print('Standard deviation with respect to the', error_name, 'error:',
-          standard_deviation)
+    print(error_description, standard_deviation)
