@@ -48,16 +48,19 @@ class SlidingWindowInferenceEngine:
     def infer(self, image):
 
         # Slice up the image into windows
-        image_slices = view_as_windows(image, (self.window_size, self.window_size, 3), self.stride)
+        image_slices = view_as_windows(
+            image, (self.window_size, self.window_size, 3), self.stride)
 
         # Flatten the window array so that there is only one non-window dimension
-        image_slices_flat = numpy.reshape(image_slices, (-1,) + image_slices.shape[-3:])
+        image_slices_flat = numpy.reshape(
+            image_slices, (-1,) + image_slices.shape[-3:])
 
         # Run a prediction on all of the windows at once
         predictions = self.model.predict(image_slices_flat)
 
         # Reshape the predictions to have the same initial two dimensions as the original list of image slices
-        predictions_row_arranged = numpy.reshape(predictions, image_slices.shape[:2])
+        predictions_row_arranged = numpy.reshape(
+            predictions, image_slices.shape[:2])
 
         # Save the prediction tensor so external scripts can access it if desired
         self.last_prediction_tensor = predictions_row_arranged
