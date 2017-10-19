@@ -1,5 +1,6 @@
-# IDE files
+# Editor files
 .idea
+.vscode
 
 # Compiled bytecode
 *.py[cod]
