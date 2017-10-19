@@ -57,3 +57,5 @@ for file_name in os.listdir(folder_path):
     predictions = inference_engine.infer(image)
 
     # Get a proportional error and line slope (used as the derivative error) based on the predictions
+    proportional_error, line_slope\
+        = steering_engine.compute_steering_angle(predictions)

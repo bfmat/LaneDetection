@@ -38,7 +38,7 @@ class SteeringEngine:
         self.center_y = center_y
         self.steering_limit = steering_limit
 
-    # Compute a steering angle. given points down the center of the road
+    # Compute a steering angle, given points down the center of the road
     def compute_steering_angle(self, center_points):
 
         # Remove the outliers from the points
