@@ -25,10 +25,12 @@ def calculate_lane_center_positions(left_line_prediction_tensor, right_line_pred
         center_position_scaled = [center_position_element * (image_shape_element / prediction_tensor_shape_element)
                                   for center_position_element, image_shape_element, prediction_tensor_shape_element
                                   in zip(position, original_image_shape, left_line_prediction_tensor.shape)]
-        center_position_offset = [element + (window_size // 2) for element in center_position_scaled]
+        center_position_offset = [
+            element + (window_size // 2) for element in center_position_scaled]
 
         # Round the processed position to an integer and return it
-        center_position_integer = [int(value) for value in center_position_offset]
+        center_position_integer = [int(value)
+                                   for value in center_position_offset]
         return center_position_integer
 
     # Add the center points of the rows to a list
@@ -75,8 +77,10 @@ def calculate_lane_center_positions(left_line_prediction_tensor, right_line_pred
         if None not in peak_indices:
 
             # Add the points on the two peaks to a list after combining them with Y positions
-            corresponding_outer_positions = [scale_position((y_position, peak_index)) for peak_index in peak_indices]
-            all_corresponding_outer_positions.append(corresponding_outer_positions)
+            corresponding_outer_positions = [scale_position(
+                (y_position, peak_index)) for peak_index in peak_indices]
+            all_corresponding_outer_positions.append(
+                corresponding_outer_positions)
 
             # Calculate the average of the two peaks and add the Y position of the row to the tuple
             center_x_position = sum(peak_indices) / len(peak_indices)
@@ -116,4 +120,3 @@ def find_peak_in_direction(collection, starting_index, reversed_iteration_direct
 
     # Return the index, which will be None if a sufficient value could not be found
     return initial_sufficient_value_index
-

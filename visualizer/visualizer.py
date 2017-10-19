@@ -80,7 +80,8 @@ class Visualizer(QWidget):
 
         # Check that the number of command line arguments is correct
         if len(sys.argv) != 3:
-            print('Usage: {} <trained model folder> <image folder>'.format(sys.argv[0]))
+            print('Usage: {} <trained model folder> <image folder>'.format(
+                sys.argv[0]))
             sys.exit()
 
         # Process the paths to the model and image provided as command line arguments
@@ -127,10 +128,12 @@ class Visualizer(QWidget):
         image_height, image_width = self.image_list[0].shape[:2]
 
         # Calculate the height of one vertical half of the line graph ignoring the border
-        half_graph_height_minus_border = (LINE_GRAPH_HEIGHT / 2) - LINE_GRAPH_BORDER_HEIGHT
+        half_graph_height_minus_border = (
+            LINE_GRAPH_HEIGHT / 2) - LINE_GRAPH_BORDER_HEIGHT
 
         # Use that, divided by the predefined guide line steering angle, to calculate the line graph multiplier
-        self.line_graph_multiplier = int(half_graph_height_minus_border / LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE)
+        self.line_graph_multiplier = int(
+            half_graph_height_minus_border / LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE)
 
         # Set up the UI
         self.init_ui(image_height, image_width)
@@ -173,7 +176,7 @@ class Visualizer(QWidget):
         # Calculate how far it has gone beyond the relevant limit and set it to that distance past the opposite limit
         total_frames = len(self.image_list)
         if self.image_index >= total_frames:
-            delta_from_last_image = self.image_index - total_frames 
+            delta_from_last_image = self.image_index - total_frames
             self.image_index = delta_from_last_image
         elif self.image_index < 0:
             self.image_index = len(self.image_list) + self.image_index
@@ -184,14 +187,17 @@ class Visualizer(QWidget):
         # Convert the NumPy array into a QImage for display
         height, width, channel = image.shape
         bytes_per_line = channel * width
-        current_image_qimage = QImage(image.data, width, height, bytes_per_line, QImage.Format_RGB888)
-        current_image_qpixmap = QPixmap(current_image_qimage).scaled(self.image_box.width(), self.image_box.height())
+        current_image_qimage = QImage(
+            image.data, width, height, bytes_per_line, QImage.Format_RGB888)
+        current_image_qpixmap = QPixmap(current_image_qimage).scaled(
+            self.image_box.width(), self.image_box.height())
 
         # Fill the image box with the picture
         self.image_box.setPixmap(current_image_qpixmap)
 
         # Add a new point to the line graph five pixels left of the right edge
-        y_point = self.get_line_graph_y_position(self.steering_angles[self.image_index])
+        y_point = self.get_line_graph_y_position(
+            self.steering_angles[self.image_index])
         self.line_point_lists[0].append([self.width() - 5, y_point])
 
         # Shift all the points on the graph left by 5 pixels
@@ -248,16 +254,21 @@ class Visualizer(QWidget):
                 painter.drawLine(*line_parameters)
 
         # Calculate the Y points on the graph for steering angles of -0.1, 0.0, and 0.1 respectively
-        y_negative = self.get_line_graph_y_position(-LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE)
+        y_negative = self.get_line_graph_y_position(
+            -LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE)
         y_zero = self.get_line_graph_y_position(0)
-        y_positive = self.get_line_graph_y_position(LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE)
+        y_positive = self.get_line_graph_y_position(
+            LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE)
 
         # Draw the three grid lines
         start_x_position = 0
         end_x_position = self.width() - 1
-        paint_line([[start_x_position, y_negative], [end_x_position, y_negative]], QColor(0, 0, 0))
-        paint_line([[start_x_position, y_zero], [end_x_position, y_zero]], QColor(0, 0, 0))
-        paint_line([[start_x_position, y_positive], [end_x_position, y_positive]], QColor(0, 0, 0))
+        paint_line([[start_x_position, y_negative], [
+                   end_x_position, y_negative]], QColor(0, 0, 0))
+        paint_line([[start_x_position, y_zero], [
+                   end_x_position, y_zero]], QColor(0, 0, 0))
+        paint_line([[start_x_position, y_positive], [
+                   end_x_position, y_positive]], QColor(0, 0, 0))
 
         # Draw each of the lists of points on the graph
         for point_list in self.line_point_lists:
@@ -265,7 +276,8 @@ class Visualizer(QWidget):
 
     # Take an arbitrary steering angle, return the Y position that angle would correspond to on the graph
     def get_line_graph_y_position(self, steering_angle):
-        y_point = -int(steering_angle * self.line_graph_multiplier) + self.line_graph_center
+        y_point = -int(steering_angle *
+                       self.line_graph_multiplier) + self.line_graph_center
         return y_point
 
 

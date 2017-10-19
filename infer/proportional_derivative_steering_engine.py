@@ -16,6 +16,7 @@ class SteeringEngine:
 
     # Distance off of the line of best fit a point must be to be considered an outlier
     max_distance_from_line = None
+
     # Ideal horizontal position for the center of the road
     ideal_center_x = None
 
