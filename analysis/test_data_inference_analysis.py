@@ -18,6 +18,16 @@ if len(sys.argv) != 4:
         'Usage:', sys.argv[0], '<folder of images> <trained model one> <trained model two>')
     sys.exit()
 
+# Create a steering engine
+steering_engine = SteeringEngine(
+    proportional_multiplier=0.0025,
+    derivative_multiplier=0,
+    max_distance_from_line=10,
+    ideal_center_x=190,
+    center_y=20,
+    steering_limit=100
+)
+
 # Load the supplied Keras models
 models = []
 for argument in sys.argv[2:]:
@@ -46,4 +56,4 @@ for file_name in os.listdir(folder_path):
     # Run the sliding window inference engine on the image
     predictions = inference_engine.infer(image)
 
-    # Calculate a steering angle based on the predictions
+    # Get a proportional error and line slope (used as the derivative error) based on the predictions

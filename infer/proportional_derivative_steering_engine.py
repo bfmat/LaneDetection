@@ -59,7 +59,7 @@ class SteeringEngine:
 
         # Multiply the error by the steering multiplier, and the slope of the line by the derivative multiplier
         steering_angle = (proportional_error * self.proportional_multiplier)\
-                         + (line_slope * self.derivative_multiplier)
+            + (line_slope * self.derivative_multiplier)
 
         # If the steering angle is greater than the maximum, set it to the maximum
         if steering_angle > self.steering_limit:
@@ -103,7 +103,8 @@ class SteeringEngine:
                 x_position = position[1]
 
                 # Calculate the X position that lies on the line corresponding to the Y position of the current point
-                predicted_x_position = (self.center_line_of_best_fit[1] * y_position) + self.center_line_of_best_fit[0]
+                predicted_x_position = (
+                    self.center_line_of_best_fit[1] * y_position) + self.center_line_of_best_fit[0]
 
                 # If the distance between the predicted and actual X positions is greater than the greatest so far,
                 # set the greatest distance variables to correspond to the current position
@@ -131,6 +132,7 @@ def line_of_best_fit(points):
 
     # Use the normal equation to find the line of best fit
     y_transpose = y.transpose()
-    line_parameters = numpy.linalg.pinv(y_transpose.dot(y)).dot(y_transpose).dot(x)
+    line_parameters = numpy.linalg.pinv(
+        y_transpose.dot(y)).dot(y_transpose).dot(x)
 
     return line_parameters
