@@ -6,7 +6,7 @@ import numpy
 
 from keras.models import load_model
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap, QImage, QPainter, QColor, QPen
+from PyQt5.QtGui import QPixmap, QImage, QPainter, QColor, QPen, QPalette, QFont
 from PyQt5.QtWidgets import QLabel, QWidget, QApplication
 
 from ..infer import SteeringEngine, SlidingWindowInferenceEngine
@@ -163,11 +163,21 @@ class Visualizer(QWidget):
         # Calculate the right bound of the line graph, by offsetting it a certain amount from the right edge
         self.line_graph_right_bound = self.width() - LINE_GRAPH_LABEL_SIZE
 
+        # Use white text on a dark gray background
+        palette = QPalette()
+        palette.setColor(QPalette.Foreground, Qt.black)
+        palette.setColor(QPalette.Background, Qt.lightGray)
+        self.setPalette(palette)
+
         # Initialize the image box that holds the video frames
         self.image_box = QLabel(self)
         self.image_box.setAlignment(Qt.AlignCenter)
         self.image_box.setFixedSize(window_width, window_height)
         self.image_box.move(0, 0)
+
+        # Font to use for the labels
+        font = QFont('Source Sans Pro')
+        font.setPointSize(12)
 
         # Create labels on the bar graph for the steering angles at which guide lines are drawn
         steering_angle_range = numpy.arange(-LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE,
@@ -175,11 +185,11 @@ class Visualizer(QWidget):
         for steering_angle in steering_angle_range:
             y_position = self.get_line_graph_y_position(steering_angle)
             line_graph_label = QLabel(self)
+            line_graph_label.setFont(font)
             line_graph_label.move(self.line_graph_right_bound, y_position)
             line_graph_label.setFixedSize(
-                LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE, LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE)
-            line_graph_label.setText('meme')
-            print(line_graph_label.text())
+                LINE_GRAPH_LABEL_SIZE, LINE_GRAPH_LABEL_SIZE)
+            line_graph_label.setText(str(steering_angle))
 
         # Make the window exist
         self.show()
