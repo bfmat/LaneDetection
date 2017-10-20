@@ -182,13 +182,18 @@ class Visualizer(QWidget):
         # Create labels on the bar graph for the steering angles at which guide lines are drawn
         for steering_angle in [-LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE, 0, LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE]:
 
-            # Calculate the Y position at which to draw the label based on the steering angle
-            y_position = self.get_line_graph_y_position(steering_angle)
+            # Calculate the Y position at which to center the label based on the steering angle
+            y_position_center = self.get_line_graph_y_position(steering_angle)
+
+            # Offset it by half of the label size, because the coordinates correspond to the top left corner
+            y_position_offset = y_position_center - \
+                (LINE_GRAPH_LABEL_SIZE // 2)
 
             # Create and format the label
             line_graph_label = QLabel(self)
             line_graph_label.setFont(font)
-            line_graph_label.move(self.line_graph_right_bound, y_position)
+            line_graph_label.move(
+                self.line_graph_right_bound, y_position_offset)
             line_graph_label.setAlignment(Qt.AlignCenter)
             line_graph_label.setFixedSize(
                 LINE_GRAPH_LABEL_SIZE, LINE_GRAPH_LABEL_SIZE)
