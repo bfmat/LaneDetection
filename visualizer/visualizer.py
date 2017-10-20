@@ -180,13 +180,16 @@ class Visualizer(QWidget):
         font.setPointSize(12)
 
         # Create labels on the bar graph for the steering angles at which guide lines are drawn
-        steering_angle_range = numpy.arange(-LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE,
-                                            LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE, LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE)
-        for steering_angle in steering_angle_range:
+        for steering_angle in [-LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE, 0, LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE]:
+
+            # Calculate the Y position at which to draw the label based on the steering angle
             y_position = self.get_line_graph_y_position(steering_angle)
+
+            # Create and format the label
             line_graph_label = QLabel(self)
             line_graph_label.setFont(font)
             line_graph_label.move(self.line_graph_right_bound, y_position)
+            line_graph_label.setAlignment(Qt.AlignCenter)
             line_graph_label.setFixedSize(
                 LINE_GRAPH_LABEL_SIZE, LINE_GRAPH_LABEL_SIZE)
             line_graph_label.setText(str(steering_angle))
