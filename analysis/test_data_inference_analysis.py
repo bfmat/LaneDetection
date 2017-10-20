@@ -14,6 +14,9 @@ from ..infer import SteeringEngine, SlidingWindowInferenceEngine
 # using the bottom of the image instead of the top to avoid extreme fluctuation
 
 
+# Number of images to process per notification provided to the user
+NUM_IMAGES_TO_NOTIFY_USER = 10
+
 # List of descriptions output before their corresponding error values
 ERROR_DESCRIPTIONS = [
     'Standard deviation of the position of the car with respect to the center of the road:',
@@ -58,7 +61,11 @@ accumulators = [0] * num_errors
 # and iterate over all of the files in the folder
 folder_path = os.path.expanduser(sys.argv[1])
 file_names = os.listdir(folder_path)
-for file_name in file_names:
+num_files = len(file_names)
+for i in range(num_files):
+
+    # Get the current file name using the index
+    file_name = file_names[i]
 
     # Format the full path of the image and load it from disk
     file_path = '{}/{}'.format(folder_path, file_name)
@@ -71,14 +78,12 @@ for file_name in file_names:
     errors = steering_engine.compute_steering_angle(predictions)[1:]
 
     # Add the squares of each of the errors to their corresponding accumulators
-    for i in range(num_errors):
-        accumulators[i] += errors[i] ** 2
+    for j in range(num_errors):
+        accumulators[j] += errors[j] ** 2
 
-    # Notify the user that we have analyzed the current image
-    print('Analyzed image', file_name)
-
-# Get the number of files in the folder, which is used to calculate the variance
-num_files = len(file_names)
+    # Notify the user every predefined number of images how many we have loaded
+    if i % NUM_IMAGES_TO_NOTIFY_USER == 0:
+        print('Loaded image', i, 'of', num_files)
 
 # Calculate and print the standard deviation with respect to both errors, one at a time
 for accumulator, error_description in zip(accumulators, ERROR_DESCRIPTIONS):
