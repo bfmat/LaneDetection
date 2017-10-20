@@ -44,7 +44,8 @@ def process_images(image_folder, inference_engines, steering_engine, marker_radi
 
         # Process the image and add various markings to it, recording metadata returned for display purposes
         processed_image, steering_angle =\
-            _process_single_image(image, inference_engines, steering_engine, marker_radius, heat_map_opacity)
+            _process_single_image(
+                image, inference_engines, steering_engine, marker_radius, heat_map_opacity)
 
         # Add the prepared image and the steering angle to their corresponding lists
         image_list.append(processed_image)
@@ -64,7 +65,8 @@ def process_images(image_folder, inference_engines, steering_engine, marker_radi
 def _process_single_image(image, inference_engines, steering_engine, marker_radius, heat_map_opacity):
 
     # With each of the provided engines, perform inference on the current image, calculating a prediction tensor
-    prediction_tensors = [inference_engine.infer(image) for inference_engine in inference_engines]
+    prediction_tensors = [inference_engine.infer(
+        image) for inference_engine in inference_engines]
 
     # Calculate the center line positions and add them to the list
     center_line_positions, outer_road_lines = calculate_lane_center_positions(
@@ -76,7 +78,8 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
     )
 
     # Calculate a steering angle from the points
-    steering_angle = steering_engine.compute_steering_angle(center_line_positions)[0]
+    steering_angle = steering_engine.compute_steering_angle(center_line_positions)[
+        0]
 
     # Copy the image twice for use in the heat map section of the user interface
     heat_map_images = [numpy.copy(image) for _ in range(2)]
@@ -92,22 +95,26 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
 
     # Apply the heat map in place to the copied images, using a different inference engine for each
     for heat_map_image, inference_engine in zip(heat_map_images, inference_engines):
-        _apply_heat_map(heat_map_image, inference_engine.last_prediction_tensor, heat_map_colors, heat_map_opacity)
+        _apply_heat_map(heat_map_image, inference_engine.last_prediction_tensor,
+                        heat_map_colors, heat_map_opacity)
 
     # Calculate two points on the line of best fit
     line_parameters = steering_engine.center_line_of_best_fit
     y_positions = (0, image.shape[0] - 1)
-    x_positions = [int(round((y_position * line_parameters[1]) + line_parameters[0])) for y_position in y_positions]
+    x_positions = [int(round((y_position * line_parameters[1]) +
+                             line_parameters[0])) for y_position in y_positions]
 
     # Transpose the list of Y positions followed by X positions and format it into a suitable list
-    formatted_arguments = [value for position in zip(y_positions, x_positions) for value in position]
+    formatted_arguments = [value for position in zip(
+        y_positions, x_positions) for value in position]
 
     # Calculate the line of best fit and draw it on the screen
     y_indices, x_indices = line(*formatted_arguments)[:2]
     image[y_indices, x_indices] = 0
 
     # Remove the outliers from the center line positions
-    center_line_positions_without_outliers = steering_engine.remove_outliers(center_line_positions)
+    center_line_positions_without_outliers = steering_engine.remove_outliers(
+        center_line_positions)
 
     # Display the center line in blue and the outer lines in red and green
     lines_and_colors = [
@@ -120,9 +127,19 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
     _add_markers(image, marker_radius, lines_and_colors)
     image = imresize(image, 200, interp='nearest')
 
+    # Add a black border around the edge of all three images before tiling them
+    for image in heat_map_images + [image]:
+
+        # Set the beginning and ending rows of both dimensions
+        for x in [0, image.shape[1] - 1]:
+            image[:, x] = 0
+        for y in [0, image.shape[0] - 1]:
+            image[y] = 0
+
     # Concatenate the two small images together and then concatenate them to the main image
     concatenated_heat_map_image = numpy.concatenate(heat_map_images, axis=1)
-    tiled_image = numpy.concatenate((image, concatenated_heat_map_image), axis=0)
+    tiled_image = numpy.concatenate(
+        (image, concatenated_heat_map_image), axis=0)
 
     # Return the steering angle and the image
     return tiled_image, steering_angle
@@ -138,7 +155,8 @@ def _add_markers(image, marker_radius, lines_and_colors):
         for position in line_positions:
 
             # Calculate the four bounds of the marker to be placed
-            bounds = [int(round(center + offset)) for center in position for offset in (-marker_radius, marker_radius)]
+            bounds = [int(round(center + offset))
+                      for center in position for offset in (-marker_radius, marker_radius)]
 
             # Create a black square within the bounds
             image[bounds[0]:bounds[1], bounds[2]:bounds[3]] = color
@@ -162,7 +180,8 @@ def _apply_heat_map(image, prediction_tensor, colors, heat_map_opacity):
             for dimension, block_dimension in zip((y, x), heat_map_block_shape)
             for offset in (0, 1)
         ]
-        block = image[block_bounds[0]:block_bounds[1], block_bounds[2]:block_bounds[3]]
+        block = image[block_bounds[0]:block_bounds[1],
+                      block_bounds[2]:block_bounds[3]]
 
         # Color calculated in the following loop
         interpolated_color = []
@@ -181,12 +200,14 @@ def _apply_heat_map(image, prediction_tensor, colors, heat_map_opacity):
                 # Find the proportion of the distance between the previous heat key and the current one
                 # that the heat value of the current prediction cell is
                 previous_heat_value = previous_item[0]
-                interpolation_value = (current_prediction - previous_heat_value) / (heat_value - previous_heat_value)
+                interpolation_value = (
+                    current_prediction - previous_heat_value) / (heat_value - previous_heat_value)
 
                 # Loop over the previous and current color tuples and interpolate via a weighted average
                 previous_color = previous_item[1]
                 for previous, current in zip(previous_color, color):
-                    weighted_average = (previous * (1 - interpolation_value)) + (current * interpolation_value)
+                    weighted_average = (
+                        previous * (1 - interpolation_value)) + (current * interpolation_value)
                     interpolated_color.append(weighted_average)
 
                 # Exit the loop because we have already completed the interpolation
@@ -200,4 +221,5 @@ def _apply_heat_map(image, prediction_tensor, colors, heat_map_opacity):
         color_block[:, :] = interpolated_color
 
         # Color the block correspondingly, using the supplied opacity value and the calculated color
-        block[:] = (block * (1 - heat_map_opacity)) + (color_block * heat_map_opacity)
+        block[:] = (block * (1 - heat_map_opacity)) + \
+            (color_block * heat_map_opacity)
