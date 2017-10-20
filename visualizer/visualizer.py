@@ -2,11 +2,12 @@ from __future__ import print_function
 
 import os
 import sys
+import numpy
 
+from keras.models import load_model
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QImage, QPainter, QColor, QPen
 from PyQt5.QtWidgets import QLabel, QWidget, QApplication
-from keras.models import load_model
 
 from ..infer import SteeringEngine, SlidingWindowInferenceEngine
 from ..visualizer.visualizer_image_processing import process_images
@@ -15,7 +16,6 @@ from ..visualizer.visualizer_image_processing import process_images
 # Program which demonstrates the effectiveness or ineffectiveness of a lane detection model
 # by displaying an image and highlighting the areas in which it predicts there are road lines
 # Created by brendon-ai, September 2017
-
 
 # Scaling factor for the input image, which defines the size of the window
 SCALING_FACTOR = 3
@@ -34,6 +34,9 @@ LINE_GRAPH_HEIGHT = 300
 
 # Height of the border section above and below the guide lines on the line graph
 LINE_GRAPH_BORDER_HEIGHT = 20
+
+# Width and height of the labels on the horizontal edge of the bar graph
+LINE_GRAPH_LABEL_SIZE = 40
 
 # The absolute value of the steering angle at which the positive and negative line graph guide lines are drawn
 LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE = 0.1
@@ -71,6 +74,9 @@ class Visualizer(QWidget):
 
     # Multiplier to convert a steering angle into pixels from the vertical center of the line graph
     line_graph_multiplier = None
+
+    # The right bound of the line graph
+    line_graph_right_bound = None
 
     # Call various initialization functions
     def __init__(self):
@@ -154,11 +160,26 @@ class Visualizer(QWidget):
         self.move(100, 100)
         self.setWindowTitle('Manual Training Data Selection')
 
+        # Calculate the right bound of the line graph, by offsetting it a certain amount from the right edge
+        self.line_graph_right_bound = self.width() - LINE_GRAPH_LABEL_SIZE
+
         # Initialize the image box that holds the video frames
         self.image_box = QLabel(self)
         self.image_box.setAlignment(Qt.AlignCenter)
         self.image_box.setFixedSize(window_width, window_height)
         self.image_box.move(0, 0)
+
+        # Create labels on the bar graph for the steering angles at which guide lines are drawn
+        steering_angle_range = numpy.arange(-LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE,
+                                            LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE, LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE)
+        for steering_angle in steering_angle_range:
+            y_position = self.get_line_graph_y_position(steering_angle)
+            line_graph_label = QLabel(self)
+            line_graph_label.move(self.line_graph_right_bound, y_position)
+            line_graph_label.setFixedSize(
+                LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE, LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE)
+            line_graph_label.setText('meme')
+            print(line_graph_label.text())
 
         # Make the window exist
         self.show()
@@ -198,7 +219,7 @@ class Visualizer(QWidget):
         # Add a new point to the line graph five pixels left of the right edge
         y_point = self.get_line_graph_y_position(
             self.steering_angles[self.image_index])
-        self.line_point_lists[0].append([self.width() - 5, y_point])
+        self.line_point_lists[0].append([self.line_graph_right_bound, y_point])
 
         # Shift all the points on the graph left by 5 pixels
         for point in self.line_point_lists[0]:
@@ -232,7 +253,7 @@ class Visualizer(QWidget):
             self.update_display(-1)
 
     # Called when it is time to redraw
-    def paintEvent(self, event):
+    def paintEvent(self, _):
 
         # Initialize the drawing tool
         painter = QPainter(self)
@@ -262,7 +283,7 @@ class Visualizer(QWidget):
 
         # Draw the three grid lines
         start_x_position = 0
-        end_x_position = self.width() - 1
+        end_x_position = self.line_graph_right_bound
         paint_line([[start_x_position, y_negative], [
                    end_x_position, y_negative]], QColor(0, 0, 0))
         paint_line([[start_x_position, y_zero], [
