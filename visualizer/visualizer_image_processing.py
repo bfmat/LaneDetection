@@ -132,9 +132,9 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
 
         # Set the beginning and ending rows of both dimensions
         for x in [0, image.shape[1] - 1]:
-            image[:, x] = 0
+            image[:, x] = 192
         for y in [0, image.shape[0] - 1]:
-            image[y] = 0
+            image[y] = 192
 
     # Concatenate the two small images together and then concatenate them to the main image
     concatenated_heat_map_image = numpy.concatenate(heat_map_images, axis=1)
