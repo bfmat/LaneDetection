@@ -40,15 +40,15 @@ LINE_GRAPH_BORDER_HEIGHT = 20
 
 # Size (width and height) and font of the labels on the horizontal edge of the bar graph
 LINE_GRAPH_LABEL_SIZE = 40
-LINE_GRAPH_LABELS_FONT = QFont(UI_FONT_NAME, 12)
+LINE_GRAPH_LABELS_FONT_SIZE = 12
 
 # The absolute value of the steering angle at which the positive and negative line graph guide lines are drawn
 LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE = 0.1
 
 # The height, text contents, and font of the labels that identify the heat maps in the user interface
 HEAT_MAP_LABELS_HEIGHT = 50
-HEAT_MAP_LABELS_TEXT = ['Yellow line heat map', 'White line heat map']
-HEAT_MAP_LABELS_FONT = QFont(UI_FONT_NAME, 16)
+HEAT_MAP_LABELS_TEXT = ['Left line heat map', 'Right line heat map']
+HEAT_MAP_LABELS_FONT_SIZE = 16
 
 # Labels for each of the elements of an image data tuple
 IMAGE_DATA_LABELS = ['File name', 'Steering angle']
@@ -87,6 +87,10 @@ class Visualizer(QWidget):
     # The right bound of the line graph
     line_graph_right_bound = None
 
+    # Fonts for the line graph and heat map labels
+    line_graph_labels_font = None
+    heat_map_labels_font = None
+
     # Call various initialization functions
     def __init__(self):
 
@@ -95,9 +99,13 @@ class Visualizer(QWidget):
 
         # Check that the number of command line arguments is correct
         if len(sys.argv) != 3:
-            print('Usage: {} <trained model folder> <image folder>'.format(
-                sys.argv[0]))
+            print('Usage:', sys.argv[0],
+                  '<trained model folder> <image folder>')
             sys.exit()
+
+        # Generate the fonts for the line graph and heat map
+        self.line_graph_labels_font, self.heat_map_labels_font = [QFont(
+            UI_FONT_NAME, font_size) for font_size in [LINE_GRAPH_LABELS_FONT_SIZE, HEAT_MAP_LABELS_FONT_SIZE]]
 
         # Process the paths to the model and image provided as command line arguments
         model_folder = os.path.expanduser(sys.argv[1])
@@ -204,7 +212,7 @@ class Visualizer(QWidget):
 
             # Create and format the label
             heat_map_label = QLabel(self)
-            heat_map_label.setFont(HEAT_MAP_LABELS_FONT)
+            heat_map_label.setFont(self.heat_map_labels_font)
             heat_map_label.setAlignment(Qt.AlignCenter)
             heat_map_label.move(x_position, y_position)
             heat_map_label.setFixedSize(label_width, HEAT_MAP_LABELS_HEIGHT)
@@ -222,7 +230,7 @@ class Visualizer(QWidget):
 
             # Create and format the label
             line_graph_label = QLabel(self)
-            line_graph_label.setFont(LINE_GRAPH_LABELS_FONT)
+            line_graph_label.setFont(self.line_graph_labels_font)
             line_graph_label.move(
                 self.line_graph_right_bound, y_position_offset)
             line_graph_label.setAlignment(Qt.AlignCenter)
