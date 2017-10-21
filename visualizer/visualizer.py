@@ -2,7 +2,6 @@ from __future__ import print_function
 
 import os
 import sys
-import numpy
 
 from keras.models import load_model
 from PyQt5.QtCore import Qt
@@ -352,7 +351,8 @@ class Visualizer(QWidget):
         for point_list in self.line_point_lists:
             paint_line(point_list, QColor(0, 0, 0))
 
-    # Take an arbitrary steering angle, return the Y position that angle would correspond to on the graph
+    # Take an arbitrary steering angle, return the Y position
+    # that the angle would correspond to on the graph
     def get_line_graph_y_position(self, steering_angle):
         y_point = -int(steering_angle *
                        self.line_graph_multiplier) + self.line_graph_center
