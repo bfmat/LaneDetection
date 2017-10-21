@@ -17,6 +17,9 @@ from ..visualizer.visualizer_image_processing import process_images
 # by displaying an image and highlighting the areas in which it predicts there are road lines
 # Created by brendon-ai, September 2017
 
+# Font used in varying sizes throughout the user interface
+UI_FONT_NAME = 'Source Sans Pro'
+
 # Scaling factor for the input image, which defines the size of the window
 SCALING_FACTOR = 3
 
@@ -35,14 +38,20 @@ LINE_GRAPH_HEIGHT = 300
 # Height of the border section above and below the guide lines on the line graph
 LINE_GRAPH_BORDER_HEIGHT = 20
 
-# Width and height of the labels on the horizontal edge of the bar graph
+# Size (width and height) and font of the labels on the horizontal edge of the bar graph
 LINE_GRAPH_LABEL_SIZE = 40
+LINE_GRAPH_LABELS_FONT = QFont(UI_FONT_NAME, 12)
 
 # The absolute value of the steering angle at which the positive and negative line graph guide lines are drawn
 LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE = 0.1
 
+# The height, text contents, and font of the labels that identify the heat maps in the user interface
+HEAT_MAP_LABELS_HEIGHT = 50
+HEAT_MAP_LABELS_TEXT = ['Yellow line heat map', 'White line heat map']
+HEAT_MAP_LABELS_FONT = QFont(UI_FONT_NAME, 16)
+
 # Labels for each of the elements of an image data tuple
-IMAGE_DATA_LABELS = ('File name', 'Steering angle')
+IMAGE_DATA_LABELS = ['File name', 'Steering angle']
 
 # The number of lists of points that will be drawn on the line graph
 POINT_LIST_COUNT = 1
@@ -151,14 +160,18 @@ class Visualizer(QWidget):
         window_width = image_width * SCALING_FACTOR
         window_height = image_height * SCALING_FACTOR
 
-        # Calculate the center of the line graph using the height of the image as an upper limit of the graph
-        self.line_graph_center = window_height + (LINE_GRAPH_HEIGHT // 2)
+        # Calculate the center of the line graph using the height of the image
+        # plus the height of the line graph label as an upper limit of the graph
+        self.line_graph_center = window_height + \
+            HEAT_MAP_LABELS_HEIGHT + (LINE_GRAPH_HEIGHT // 2)
 
         # Set the size, position, title, and color scheme of the window
-        # Use the image box size plus a predefined height that will be occupied by the line graph
-        self.setFixedSize(window_width, window_height + LINE_GRAPH_HEIGHT)
+        # Use the image box size plus the predefined height that will
+        # be occupied by the line graph and the label below the heat maps
+        self.setFixedSize(window_width, window_height +
+                          HEAT_MAP_LABELS_HEIGHT + LINE_GRAPH_HEIGHT)
         self.move(100, 100)
-        self.setWindowTitle('Manual Training Data Selection')
+        self.setWindowTitle('Autonomous Driving System Visualizer')
 
         # Calculate the right bound of the line graph, by offsetting it a certain amount from the right edge
         self.line_graph_right_bound = self.width() - LINE_GRAPH_LABEL_SIZE
@@ -175,9 +188,27 @@ class Visualizer(QWidget):
         self.image_box.setFixedSize(window_width, window_height)
         self.image_box.move(0, 0)
 
-        # Font to use for the labels
-        font = QFont('Source Sans Pro')
-        font.setPointSize(12)
+        # Create labels below the image box that identify the two heat maps
+        # Create two labels in a loop
+        for i in range(2):
+
+            # The width of the label will be half of the width of the main image box, rounded to an integer
+            label_width = int(round(window_width / 2))
+
+            # Get the X position by multiplying the width by the index
+            x_position = label_width * i
+
+            # The Y position is equal to the bottom of the main image box,
+            # which is equal to its height since its Y position is zero
+            y_position = window_height
+
+            # Create and format the label
+            heat_map_label = QLabel(self)
+            heat_map_label.setFont(HEAT_MAP_LABELS_FONT)
+            heat_map_label.setAlignment(Qt.AlignCenter)
+            heat_map_label.move(x_position, y_position)
+            heat_map_label.setFixedSize(label_width, HEAT_MAP_LABELS_HEIGHT)
+            heat_map_label.setText(HEAT_MAP_LABELS_TEXT[i])
 
         # Create labels on the bar graph for the steering angles at which guide lines are drawn
         for steering_angle in [-LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE, 0, LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE]:
@@ -191,7 +222,7 @@ class Visualizer(QWidget):
 
             # Create and format the label
             line_graph_label = QLabel(self)
-            line_graph_label.setFont(font)
+            line_graph_label.setFont(LINE_GRAPH_LABELS_FONT)
             line_graph_label.move(
                 self.line_graph_right_bound, y_position_offset)
             line_graph_label.setAlignment(Qt.AlignCenter)
