@@ -97,9 +97,9 @@ class Visualizer(QWidget):
         super(Visualizer, self).__init__()
 
         # Check that the number of command line arguments is correct
-        if len(sys.argv) != 3:
+        if len(sys.argv) != 4:
             print('Usage:', sys.argv[0],
-                  '<trained model folder> <image folder>')
+                  '<image folder> <left line trained model> <right line trained model>')
             sys.exit()
 
         # Generate the fonts for the line graph and heat map
@@ -107,17 +107,15 @@ class Visualizer(QWidget):
             UI_FONT_NAME, font_size) for font_size in [LINE_GRAPH_LABELS_FONT_SIZE, HEAT_MAP_LABELS_FONT_SIZE]]
 
         # Process the paths to the model and image provided as command line arguments
-        model_folder = os.path.expanduser(sys.argv[1])
-        image_folder = os.path.expanduser(sys.argv[2])
+        image_folder = os.path.expanduser(sys.argv[1])
+        model_paths = [os.path.expanduser(model_path)
+                       for model_path in sys.argv[2:]]
 
         # Array of inference engines
         inference_engines = []
 
         # Get the models from the folder
-        for model_name in os.listdir(model_folder):
-
-            # Get the fully qualified path of the model
-            model_path = '{}/{}'.format(model_folder, model_name)
+        for model_path in model_paths:
 
             # Load the model
             model = load_model(model_path)
@@ -138,8 +136,8 @@ class Visualizer(QWidget):
             derivative_multiplier=0,
             max_distance_from_line=10,
             ideal_center_x=IDEAL_CENTER_X,
-            center_y=20,
-            steering_limit=100
+            center_y=0,
+            steering_limit=0.2
         )
 
         # Load and perform inference on the images
