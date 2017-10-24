@@ -26,11 +26,8 @@ def process_images(image_folder, inference_engines, steering_engine, marker_radi
     # List of file names of images
     image_names = sorted(os.listdir(image_folder))
 
-    # List of image metadata for display
+    # List of image data
     all_image_data = []
-
-    # List of steering angles for return
-    steering_angles = []
 
     # Loop over each of the images in the folder
     for image_name in image_names:
@@ -43,22 +40,21 @@ def process_images(image_folder, inference_engines, steering_engine, marker_radi
         image = imread(image_path)
 
         # Process the image and add various markings to it, recording metadata returned for display purposes
-        processed_image, steering_angle =\
+        processed_image, output_values =\
             _process_single_image(
                 image, inference_engines, steering_engine, marker_radius, heat_map_opacity)
 
         # Add the prepared image and the steering angle to their corresponding lists
         image_list.append(processed_image)
-        steering_angles.append(steering_angle)
 
         # Add the corresponding steering angle to the data list
-        all_image_data.append((image_name, steering_angle))
+        all_image_data.append((image_name,) + output_values)
 
     # Notify the user that loading is complete
     print('Loading complete!')
 
-    # Return the images and their corresponding names
-    return image_list, steering_angles, all_image_data
+    # Return the images and their corresponding data
+    return image_list, all_image_data
 
 
 # Perform all necessary processing on a single image to prepare it for visualization
@@ -77,9 +73,9 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
         window_size=inference_engines[0].window_size
     )
 
-    # Calculate a steering angle from the points
-    steering_angle = steering_engine.compute_steering_angle(center_line_positions)[
-        0]
+    # Calculate a steering angle and errors from the points
+    output_values = steering_engine.compute_steering_angle(
+        center_line_positions)
 
     # Copy the image twice for use in the heat map section of the user interface
     heat_map_images = [numpy.copy(image) for _ in range(2)]
@@ -142,7 +138,7 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
         (image, concatenated_heat_map_image), axis=0)
 
     # Return the steering angle and the image
-    return tiled_image, steering_angle
+    return tiled_image, output_values
 
 
 # Add lines and points to the main image

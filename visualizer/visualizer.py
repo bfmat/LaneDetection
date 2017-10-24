@@ -72,7 +72,7 @@ class Visualizer(QWidget):
     # List of NumPy images
     image_list = None
 
-    # List of image file names
+    # List of image file names, steering angles, and errors
     image_data = []
 
     # The image we are currently on
@@ -84,9 +84,6 @@ class Visualizer(QWidget):
     # List of lists of points to be drawn on the line graph
     # One line for every color in the list of colors
     line_point_lists = [[]] * len(LINE_COLORS_AND_LABELS)
-
-    # List of steering angles corresponding to the images
-    steering_angles = []
 
     # Vertical center of the line graph
     line_graph_center = None
@@ -153,8 +150,8 @@ class Visualizer(QWidget):
         )
 
         # Load and perform inference on the images
-        self.image_list, self.steering_angles, self.image_data\
-            = process_images(image_folder, inference_engines, steering_engine, MARKER_RADIUS, HEAT_MAP_OPACITY)
+        self.image_list, self.image_data = process_images(
+            image_folder, inference_engines, steering_engine, MARKER_RADIUS, HEAT_MAP_OPACITY)
 
         # Set the global image height and width variables
         image_height, image_width = self.image_list[0].shape[:2]
@@ -315,7 +312,7 @@ class Visualizer(QWidget):
 
         # Add a new point to the line graph five pixels left of the right edge
         y_point = self.get_line_graph_y_position(
-            self.steering_angles[self.image_index])
+            self.image_data[self.image_index][1])
         self.line_point_lists[0].append([self.line_graph_right_bound, y_point])
 
         # Shift all the points on the graph left by 5 pixels
