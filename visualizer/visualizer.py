@@ -58,8 +58,12 @@ HEAT_MAP_LABELS_FONT_SIZE = 16
 # Labels for each of the elements of an image data tuple
 IMAGE_DATA_LABELS = ['File name', 'Steering angle']
 
-# The number of lists of points that will be drawn on the line graph
-POINT_LIST_COUNT = 1
+# The descriptions and corresponding colors of the lines that will be drawn on the line graph
+LINE_COLORS_AND_LABELS = [
+    ('Steering angle', (255, 0, 0)),
+    ('Proportional error', (0, 255, 0)),
+    ('Derivative error', (0, 0, 255))
+]
 
 
 # Main PyQt5 QWidget class
@@ -78,7 +82,8 @@ class Visualizer(QWidget):
     image_box = None
 
     # List of lists of points to be drawn on the line graph
-    line_point_lists = [[]] * POINT_LIST_COUNT
+    # One line for every color in the list of colors
+    line_point_lists = [[]] * len(LINE_COLORS_AND_LABELS)
 
     # List of steering angles corresponding to the images
     steering_angles = []
@@ -323,8 +328,12 @@ class Visualizer(QWidget):
         # Print a blank line to separate this image from the last
         print()
 
-        # Print some metadata about the image, with the labels provided in IMAGE_DATA_LABELS
-        for name, value in zip(IMAGE_DATA_LABELS, self.image_data[self.image_index]):
+        # Print the file name of the image, which is the first element of the data collection
+        print('File name:', self.image_data[self.image_index][0])
+
+        # Print some metadata about the image, with the labels provided
+        image_data_labels = zip(*LINE_COLORS_AND_LABELS)[0]
+        for name, value in zip(image_data_labels, self.image_data[self.image_index][1:]):
 
             # Print the name and value in a single line
             print(name, value, sep=': ')
