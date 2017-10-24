@@ -93,8 +93,9 @@ class Visualizer(QWidget):
     line_graph_right_bound = None
 
     # Fonts for the line graph and heat map labels
-    line_graph_labels_font = None
     heat_map_labels_font = None
+    line_graph_labels_font = None
+    line_graph_legend_font = None
 
     # Call various initialization functions
     def __init__(self):
@@ -109,8 +110,8 @@ class Visualizer(QWidget):
             sys.exit()
 
         # Generate the fonts for the line graph and heat map
-        self.line_graph_labels_font, self.heat_map_labels_font = [QFont(
-            UI_FONT_NAME, font_size) for font_size in [LINE_GRAPH_LABELS_FONT_SIZE, HEAT_MAP_LABELS_FONT_SIZE]]
+        self.heat_map_labels_font, self.line_graph_labels_font, self.line_graph_legend_font = [QFont(
+            UI_FONT_NAME, font_size) for font_size in [HEAT_MAP_LABELS_FONT_SIZE, LINE_GRAPH_LABELS_FONT_SIZE, LINE_GRAPH_LEGEND_FONT_SIZE]]
 
         # Process the paths to the model and image provided as command line arguments
         image_folder = os.path.expanduser(sys.argv[1])
@@ -208,6 +209,9 @@ class Visualizer(QWidget):
         # Create numerical labels next to the line graph
         self.create_line_graph_labels()
 
+        # Create a legend below the line graph
+        self.create_line_graph_legend(image_box_width, image_box_height)
+
         # Make the window exist
         self.show()
 
@@ -260,6 +264,20 @@ class Visualizer(QWidget):
             line_graph_label.setFixedSize(
                 LINE_GRAPH_LABEL_SIZE, LINE_GRAPH_LABEL_SIZE)
             line_graph_label.setText(str(steering_angle))
+
+    # Create a legend below the line graph describing the various lines
+    def create_line_graph_legend(self, image_box_width, image_box_height):
+
+        # Create and configure a label extending to the left, right, and bottom edges of the screen,
+        # and with its top edge aligned with the bottom of the bar graph, including the border area
+        line_graph_legend = QLabel(self)
+        line_graph_legend.setAlignment(Qt.AlignCenter)
+        line_graph_legend.setFont(self.line_graph_legend_font)
+        line_graph_legend.setFixedSize(
+            image_box_width, LINE_GRAPH_LEGEND_HEIGHT)
+        legend_top_edge = image_box_height + HEAT_MAP_LABELS_HEIGHT + LINE_GRAPH_HEIGHT
+        line_graph_legend.move(0, legend_top_edge)
+        line_graph_legend.setText('Placeholder')
 
     # Update the image in the image box
     def update_display(self, num_frames):
