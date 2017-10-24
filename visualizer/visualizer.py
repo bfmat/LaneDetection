@@ -37,14 +37,20 @@ LINE_GRAPH_HEIGHT = 300
 # Height of the border section above and below the guide lines on the line graph
 LINE_GRAPH_BORDER_HEIGHT = 20
 
-# Size (width and height) and font of the labels on the horizontal edge of the bar graph
+# Size (width and height) and font size of the labels on the horizontal edge of the line graph
 LINE_GRAPH_LABEL_SIZE = 40
 LINE_GRAPH_LABELS_FONT_SIZE = 12
 
-# The absolute value of the steering angle at which the positive and negative line graph guide lines are drawn
+# Height and font size of the legend labels below the line graph
+LINE_GRAPH_LEGEND_HEIGHT = 30
+LINE_GRAPH_LEGEND_FONT_SIZE = 12
+
+# The absolute value of the steering angle at which the
+# positive and negative line graph guide lines are drawn
 LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE = 0.1
 
-# The height, text contents, and font of the labels that identify the heat maps in the user interface
+# The height, text contents, and font of the labels
+# that identify the heat maps in the user interface
 HEAT_MAP_LABELS_HEIGHT = 50
 HEAT_MAP_LABELS_TEXT = ['Left line heat map', 'Right line heat map']
 HEAT_MAP_LABELS_FONT_SIZE = 16
@@ -161,21 +167,24 @@ class Visualizer(QWidget):
     # Initialize the user interface
     def init_ui(self, image_height, image_width):
 
-        # The window's size is that of the image times SCALING_FACTOR
-        window_width = image_width * SCALING_FACTOR
-        window_height = image_height * SCALING_FACTOR
+        # The size of the image box is that of the original image times SCALING_FACTOR
+        image_box_width = image_width * SCALING_FACTOR
+        image_box_height = image_height * SCALING_FACTOR
 
         # Calculate the center of the line graph using the height of the image
         # plus the height of the line graph label as an upper limit of the graph
-        self.line_graph_center = window_height + \
+        self.line_graph_center = image_box_height + \
             HEAT_MAP_LABELS_HEIGHT + (LINE_GRAPH_HEIGHT // 2)
 
+        # To calculate the window size, use the image box size plus the predefined height that will
+        # be occupied by the line graph, corresponding legend, and the label below the heat maps
+        window_width = image_box_width
+        window_height = image_box_height + HEAT_MAP_LABELS_HEIGHT + \
+            LINE_GRAPH_HEIGHT + LINE_GRAPH_LEGEND_HEIGHT
+
         # Set the size, position, title, and color scheme of the window
-        # Use the image box size plus the predefined height that will
-        # be occupied by the line graph and the label below the heat maps
-        self.setFixedSize(window_width, window_height +
-                          HEAT_MAP_LABELS_HEIGHT + LINE_GRAPH_HEIGHT)
-        self.move(100, 100)
+        self.setFixedSize(window_width, window_height)
+        self.move(0, 0)
         self.setWindowTitle('Autonomous Driving System Visualizer')
 
         # Calculate the right bound of the line graph, by offsetting it a certain amount from the right edge
@@ -190,22 +199,36 @@ class Visualizer(QWidget):
         # Initialize the image box that holds the video frames
         self.image_box = QLabel(self)
         self.image_box.setAlignment(Qt.AlignCenter)
-        self.image_box.setFixedSize(window_width, window_height)
+        self.image_box.setFixedSize(image_box_width, image_box_height)
         self.image_box.move(0, 0)
 
         # Create labels below the image box that identify the two heat maps
+        self.create_heat_map_labels(image_box_width, image_box_height)
+
+        # Create numerical labels next to the line graph
+        self.create_line_graph_labels()
+
+        # Make the window exist
+        self.show()
+
+        # Display the initial image
+        self.update_display(1)
+
+    # Create labels below the heat maps in the image box that identify their function
+    def create_heat_map_labels(self, image_box_width, image_box_height):
+
         # Create two labels in a loop
         for i in range(2):
 
             # The width of the label will be half of the width of the main image box, rounded to an integer
-            label_width = int(round(window_width / 2))
+            label_width = int(round(image_box_width / 2))
 
             # Get the X position by multiplying the width by the index
             x_position = label_width * i
 
             # The Y position is equal to the bottom of the main image box,
             # which is equal to its height since its Y position is zero
-            y_position = window_height
+            y_position = image_box_height
 
             # Create and format the label
             heat_map_label = QLabel(self)
@@ -215,7 +238,10 @@ class Visualizer(QWidget):
             heat_map_label.setFixedSize(label_width, HEAT_MAP_LABELS_HEIGHT)
             heat_map_label.setText(HEAT_MAP_LABELS_TEXT[i])
 
-        # Create labels on the bar graph for the steering angles at which guide lines are drawn
+    # Create labels on the line graph for the steering angles at which guide lines are drawn
+    def create_line_graph_labels(self):
+
+        # Iterate over the three relevant steering angles
         for steering_angle in [-LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE, 0, LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE]:
 
             # Calculate the Y position at which to center the label based on the steering angle
@@ -235,13 +261,7 @@ class Visualizer(QWidget):
                 LINE_GRAPH_LABEL_SIZE, LINE_GRAPH_LABEL_SIZE)
             line_graph_label.setText(str(steering_angle))
 
-        # Make the window exist
-        self.show()
-
-        # Display the initial image
-        self.update_display(1)
-
-    # Update the image in the display
+    # Update the image in the image box
     def update_display(self, num_frames):
 
         # Update the index of the current image by whatever number is provided
