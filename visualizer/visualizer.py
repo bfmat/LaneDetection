@@ -58,11 +58,12 @@ HEAT_MAP_LABELS_FONT_SIZE = 16
 # Labels for each of the elements of an image data tuple
 IMAGE_DATA_LABELS = ['File name', 'Steering angle']
 
-# The descriptions, multipliers, and corresponding colors of the lines that will be drawn on the line graph
+# The descriptions, multipliers, and corresponding colors
+# of the lines that will be drawn on the line graph
 LINE_DATA = [
-    ('Steering angle', 10, QColor(255, 0, 0)),
-    ('Proportional error', 0.01, QColor(0, 255, 0)),
-    ('Derivative error', 1, QColor(0, 1, 255))
+    ('Steering angle', 10, 'yellow', 'tenths of motor rotations'),
+    ('Proportional error', 0.01, 'cyan', 'hundreds of pixels'),
+    ('Derivative error', 1, 'magenta', 'slope of line')
 ]
 
 
@@ -279,7 +280,24 @@ class Visualizer(QWidget):
             image_box_width, LINE_GRAPH_LEGEND_HEIGHT)
         legend_top_edge = image_box_height + HEAT_MAP_LABELS_HEIGHT + LINE_GRAPH_HEIGHT
         line_graph_legend.move(0, legend_top_edge)
-        line_graph_legend.setText('Placeholder')
+
+        # Create a description string that describes all of the lines
+        line_descriptions = ''
+
+        # Iterate over the configuration data for each of the lines
+        for line_name, _, color_name, unit_description in LINE_DATA:
+
+            # Format a string that describes the line, using inline color notation
+            line_description = '<font color=\'' + color_name + \
+                '\'>■</font>: ' + line_name + \
+                ' (' + unit_description + ') '
+
+            # Add it to the main description string
+            line_descriptions += line_description
+
+        print(line_descriptions)
+        # Set the text in the legend to the description string
+        line_graph_legend.setText(line_descriptions)
 
     # Update the image in the image box
     def update_display(self, num_frames):
@@ -337,9 +355,11 @@ class Visualizer(QWidget):
         # Print the file name of the image, which is the first element of the data collection
         print('File name:', self.image_data[self.image_index][0])
 
-        # Print some metadata about the image, with the labels provided
-        image_data_labels = zip(*LINE_DATA)[0]
-        for name, value in zip(image_data_labels, self.image_data[self.image_index][1:]):
+        # Print some metadata about the image, with the labels provided in the line data
+        for line_data, value in zip(LINE_DATA, self.image_data[self.image_index][1:]):
+
+            # Extract the name from the line data
+            name = line_data[0]
 
             # Print the name and value in a single line
             print(name, value, sep=': ')
@@ -400,7 +420,11 @@ class Visualizer(QWidget):
 
         # Draw each of the lists of points on the graph with their corresponding colors
         for point_list, line_data in zip(self.line_point_lists, LINE_DATA):
-            color = line_data[2]
+
+            # Get the color corresponding to the name in the line data
+            color_name = line_data[2]
+            color = QColor()
+            color.setNamedColor(color_name)
             paint_line(point_list, color)
 
     # Take an arbitrary steering angle, return the Y position
