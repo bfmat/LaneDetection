@@ -5,6 +5,7 @@ import numpy
 
 from skimage.draw import line
 from scipy.misc import imread, imresize
+from ..visualizer.errors import UnusableImageError
 from ..infer.lane_center_calculation import calculate_lane_center_positions
 
 
@@ -32,23 +33,29 @@ def process_images(image_folder, inference_engines, steering_engine, marker_radi
     # Loop over each of the images in the folder
     for image_name in image_names:
 
-        # Print out the file name of the image
-        print('Loaded {}'.format(image_name))
-
         # Load the image from disk, using its fully qualified path
         image_path = image_folder + '/' + image_name
         image = imread(image_path)
 
-        # Process the image and add various markings to it, recording metadata returned for display purposes
-        processed_image, output_values =\
-            _process_single_image(
-                image, inference_engines, steering_engine, marker_radius, heat_map_opacity)
+        # Try to process the image and add various markings to it, recording metadata returned for display purposes
+        try:
+            processed_image, output_values = \
+                _process_single_image(
+                    image, inference_engines, steering_engine, marker_radius, heat_map_opacity)
+
+        # If a problem is encountered, skip this image and print an error message
+        except UnusableImageError:
+            print('Failed to load', image_name)
+            continue
 
         # Add the prepared image and the steering angle to their corresponding lists
         image_list.append(processed_image)
 
         # Add the corresponding steering angle to the data list
         all_image_data.append((image_name,) + output_values)
+
+        # Print out the file name of the image
+        print('Loaded', image_name)
 
     # Notify the user that loading is complete
     print('Loading complete!')
@@ -77,6 +84,10 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
     output_values = steering_engine.compute_steering_angle(
         center_line_positions)
 
+    # If None was returned, throw an error
+    if output_values is None:
+        raise UnusableImageError('steering angle calculation failed')
+
     # Copy the image twice for use in the heat map section of the user interface
     heat_map_images = [numpy.copy(image) for _ in range(2)]
 
@@ -104,9 +115,8 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
     formatted_arguments = [value for position in zip(
         y_positions, x_positions) for value in position]
 
-    # Calculate the line of best fit and draw it on the screen
+    # Calculate the line of best fit
     y_indices, x_indices = line(*formatted_arguments)[:2]
-    image[y_indices, x_indices] = 0
 
     # Remove the outliers from the center line positions
     center_line_positions_without_outliers = steering_engine.remove_outliers(
@@ -168,12 +178,12 @@ def _apply_heat_map(image, prediction_tensor, colors, heat_map_opacity):
                             for image_dimension, prediction_dimension in zip(image.shape, prediction_tensor.shape)]
 
     # Iterate over both dimensions of the image
-    for y, x in numpy.ndindex(prediction_tensor.shape):
+    for y_position, x_position in numpy.ndindex(prediction_tensor.shape):
 
         # Find the bounds of the corresponding heat map box in the image and slice out the box
         block_bounds = [
             int(round((dimension + offset) * block_dimension))
-            for dimension, block_dimension in zip((y, x), heat_map_block_shape)
+            for dimension, block_dimension in zip((y_position, x_position), heat_map_block_shape)
             for offset in (0, 1)
         ]
         block = image[block_bounds[0]:block_bounds[1],
@@ -187,7 +197,7 @@ def _apply_heat_map(image, prediction_tensor, colors, heat_map_opacity):
 
         # Compute the color from the dictionary by iterating over it and finding the first one that is greater than
         # the prediction tensor value corresponding to the image
-        current_prediction = prediction_tensor[y, x]
+        current_prediction = prediction_tensor[y_position, x_position]
         for heat_value, color in colors.iteritems():
 
             # If the first value is equal to zero, skip the first iteration because the previous value is not yet set
