@@ -83,7 +83,7 @@ class Visualizer(QWidget):
 
     # List of lists of points to be drawn on the line graph
     # One line for every color in the list of colors
-    line_point_lists = [[]] * len(LINE_COLORS_AND_LABELS)
+    line_point_lists = [[] for _ in range(len(LINE_COLORS_AND_LABELS))]
 
     # Vertical center of the line graph
     line_graph_center = None
@@ -310,14 +310,19 @@ class Visualizer(QWidget):
         # Fill the image box with the picture
         self.image_box.setPixmap(current_image_qpixmap)
 
-        # Add a new point to the line graph five pixels left of the right edge
-        y_point = self.get_line_graph_y_position(
-            self.image_data[self.image_index][1])
-        self.line_point_lists[0].append([self.line_graph_right_bound, y_point])
+        # Iterate over the lists of points, each corresponding to one of the elements in the current
+        # list of image data, not including the file name, which is the first element of the list
+        for point_list, data_value in zip(self.line_point_lists, self.image_data[self.image_index][1:]):
 
-        # Shift all the points on the graph left by 5 pixels
-        for point in self.line_point_lists[0]:
-            point[0] -= 5
+            # Add the new point to the line graph five pixels left of the right edge
+            y_point = self.get_line_graph_y_position(data_value)
+
+            # Add a point to the list at the current Y position and five pixels left of the right bound of the graph
+            point_list.append([self.line_graph_right_bound, y_point])
+
+            # Shift all the points on the graph left by 5 pixels
+            for point in point_list:
+                point[0] -= 5
 
         # Force PyQt to repaint all of the lines
         self.repaint()
