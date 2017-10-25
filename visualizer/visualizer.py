@@ -45,9 +45,9 @@ LINE_GRAPH_LABELS_FONT_SIZE = 12
 LINE_GRAPH_LEGEND_HEIGHT = 30
 LINE_GRAPH_LEGEND_FONT_SIZE = 12
 
-# The absolute value of the steering angle at which the
+# The absolute value of the unscaled number at which the
 # positive and negative line graph guide lines are drawn
-LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE = 0.1
+LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE = 1
 
 # The height, text contents, and font of the labels
 # that identify the heat maps in the user interface
@@ -58,11 +58,11 @@ HEAT_MAP_LABELS_FONT_SIZE = 16
 # Labels for each of the elements of an image data tuple
 IMAGE_DATA_LABELS = ['File name', 'Steering angle']
 
-# The descriptions and corresponding colors of the lines that will be drawn on the line graph
-LINE_COLORS_AND_LABELS = [
-    ('Steering angle', (255, 0, 0)),
-    ('Proportional error', (0, 255, 0)),
-    ('Derivative error', (0, 0, 255))
+# The descriptions, multipliers, and corresponding colors of the lines that will be drawn on the line graph
+LINE_DATA = [
+    ('Steering angle', 10, QColor(255, 0, 0)),
+    ('Proportional error', 0.01, QColor(0, 255, 0)),
+    ('Derivative error', 1, QColor(0, 1, 255))
 ]
 
 
@@ -83,7 +83,7 @@ class Visualizer(QWidget):
 
     # List of lists of points to be drawn on the line graph
     # One line for every color in the list of colors
-    line_point_lists = [[] for _ in range(len(LINE_COLORS_AND_LABELS))]
+    line_point_lists = [[] for _ in range(len(LINE_DATA))]
 
     # Vertical center of the line graph
     line_graph_center = None
@@ -312,10 +312,14 @@ class Visualizer(QWidget):
 
         # Iterate over the lists of points, each corresponding to one of the elements in the current
         # list of image data, not including the file name, which is the first element of the list
-        for point_list, data_value in zip(self.line_point_lists, self.image_data[self.image_index][1:]):
+        for point_list, data_value, line_data in zip(self.line_point_lists, self.image_data[self.image_index][1:], LINE_DATA):
+
+            # Scale the data value by its corresponding multiplier
+            multiplier = line_data[1]
+            data_value_scaled = data_value * multiplier
 
             # Add the new point to the line graph five pixels left of the right edge
-            y_point = self.get_line_graph_y_position(data_value)
+            y_point = self.get_line_graph_y_position(data_value_scaled)
 
             # Add a point to the list at the current Y position and five pixels left of the right bound of the graph
             point_list.append([self.line_graph_right_bound, y_point])
@@ -334,7 +338,7 @@ class Visualizer(QWidget):
         print('File name:', self.image_data[self.image_index][0])
 
         # Print some metadata about the image, with the labels provided
-        image_data_labels = zip(*LINE_COLORS_AND_LABELS)[0]
+        image_data_labels = zip(*LINE_DATA)[0]
         for name, value in zip(image_data_labels, self.image_data[self.image_index][1:]):
 
             # Print the name and value in a single line
@@ -394,9 +398,10 @@ class Visualizer(QWidget):
         paint_line([[start_x_position, y_positive], [
                    end_x_position, y_positive]], QColor(0, 0, 0))
 
-        # Draw each of the lists of points on the graph
-        for point_list in self.line_point_lists:
-            paint_line(point_list, QColor(0, 0, 0))
+        # Draw each of the lists of points on the graph with their corresponding colors
+        for point_list, line_data in zip(self.line_point_lists, LINE_DATA):
+            color = line_data[2]
+            paint_line(point_list, color)
 
     # Take an arbitrary steering angle, return the Y position
     # that the angle would correspond to on the graph
