@@ -295,7 +295,6 @@ class Visualizer(QWidget):
             # Add it to the main description string
             line_descriptions += line_description
 
-        print(line_descriptions)
         # Set the text in the legend to the description string
         line_graph_legend.setText(line_descriptions)
 
