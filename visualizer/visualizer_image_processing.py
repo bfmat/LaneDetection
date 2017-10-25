@@ -115,8 +115,9 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
     formatted_arguments = [value for position in zip(
         y_positions, x_positions) for value in position]
 
-    # Calculate the line of best fit
+    # Draw the line of best fit
     y_indices, x_indices = line(*formatted_arguments)[:2]
+    image[y_indices, x_indices] = 0
 
     # Remove the outliers from the center line positions
     center_line_positions_without_outliers = steering_engine.remove_outliers(
