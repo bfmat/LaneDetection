@@ -5,6 +5,7 @@ import numpy
 
 from skimage.draw import line
 from scipy.misc import imread, imresize
+from numpy.linalg.linalg import LinAlgError
 from ..visualizer.errors import UnusableImageError
 from ..infer.lane_center_calculation import calculate_lane_center_positions
 
@@ -44,7 +45,7 @@ def process_images(image_folder, inference_engines, steering_engine, marker_radi
                     image, inference_engines, steering_engine, marker_radius, heat_map_opacity)
 
         # If a problem is encountered, skip this image and print an error message
-        except UnusableImageError:
+        except (UnusableImageError, LinAlgError):
             print('Failed to load', image_name)
             continue
 
@@ -67,7 +68,8 @@ def process_images(image_folder, inference_engines, steering_engine, marker_radi
 # Perform all necessary processing on a single image to prepare it for visualization
 def _process_single_image(image, inference_engines, steering_engine, marker_radius, heat_map_opacity):
 
-    # With each of the provided engines, perform inference on the current image, calculating a prediction tensor
+    # With each of the provided engines, perform inference
+    # on the current image, calculating a prediction tensor
     prediction_tensors = [inference_engine.infer(
         image) for inference_engine in inference_engines]
 
