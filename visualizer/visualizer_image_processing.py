@@ -77,7 +77,7 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
     center_line_positions, outer_road_lines = calculate_lane_center_positions(
         left_line_prediction_tensor=prediction_tensors[0],
         right_line_prediction_tensor=prediction_tensors[1],
-        minimum_prediction_confidence=0.95,
+        minimum_prediction_confidence=0.9,
         original_image_shape=image.shape,
         window_size=inference_engines[0].window_size
     )

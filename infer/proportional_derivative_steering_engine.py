@@ -80,6 +80,10 @@ class SteeringEngine:
         # Make a copy of the provided list
         positions = list(positions)
 
+        # A function to compute and store the line of best fit
+        def store_line_of_best_fit():
+            self.center_line_of_best_fit = line_of_best_fit(positions)
+
         # The previous value of the number of positions in the list
         previous_num_positions = None
 
@@ -90,7 +94,7 @@ class SteeringEngine:
             previous_num_positions = len(positions)
 
             # Compute the line of best fit for the center line with the latest position list
-            self.center_line_of_best_fit = line_of_best_fit(positions)
+            store_line_of_best_fit()
 
             # Keep track of the greatest horizontal distance from the line so far and its corresponding point
             greatest_distance_value = None
@@ -117,6 +121,9 @@ class SteeringEngine:
             # If the greatest distance is greater than the threshold, remove the corresponding point from the list
             if greatest_distance_value > self.max_distance_from_line:
                 positions.remove(greatest_distance_position)
+
+        # Update the line of best fit with the final points before exiting
+        store_line_of_best_fit()
 
         # Return the copied list
         return positions
