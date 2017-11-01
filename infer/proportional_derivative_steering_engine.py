@@ -2,7 +2,6 @@ from __future__ import division
 
 import numpy
 
-
 # A system for converting line positions on each side of the road to steering angles, using outlier detection and PID.
 # Created by brendon-ai, September 2017
 
@@ -30,8 +29,9 @@ class SteeringEngine:
     center_line_of_best_fit = None
 
     # Set global variables provided as arguments
-    def __init__(self, proportional_multiplier, derivative_multiplier, max_distance_from_line,
-                 ideal_center_x, center_y, steering_limit):
+    def __init__(self, proportional_multiplier, derivative_multiplier,
+                 max_distance_from_line, ideal_center_x, center_y,
+                 steering_limit):
         self.proportional_multiplier = proportional_multiplier
         self.derivative_multiplier = derivative_multiplier
         self.max_distance_from_line = max_distance_from_line
@@ -109,7 +109,8 @@ class SteeringEngine:
 
                 # Calculate the X position that lies on the line corresponding to the Y position of the current point
                 predicted_x_position = (
-                    self.center_line_of_best_fit[1] * y_position) + self.center_line_of_best_fit[0]
+                    self.center_line_of_best_fit[1] *
+                    y_position) + self.center_line_of_best_fit[0]
 
                 # If the distance between the predicted and actual X positions is greater than the greatest so far,
                 # set the greatest distance variables to correspond to the current position
