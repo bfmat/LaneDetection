@@ -11,7 +11,6 @@ from PyQt5.QtWidgets import QLabel, QWidget, QApplication
 from ..infer import SteeringEngine, SlidingWindowInferenceEngine
 from ..visualizer.visualizer_image_processing import process_images
 
-
 # Program which demonstrates the effectiveness or ineffectiveness of a lane detection model
 # by displaying an image and highlighting the areas in which it predicts there are road lines
 # Created by brendon-ai, September 2017
@@ -60,11 +59,9 @@ IMAGE_DATA_LABELS = ['File name', 'Steering angle']
 
 # The descriptions, multipliers, and corresponding colors
 # of the lines that will be drawn on the line graph
-LINE_DATA = [
-    ('Steering angle', 10, 'yellow', 'tenths of motor rotations'),
-    ('Proportional error', 0.01, 'cyan', 'hundreds of pixels'),
-    ('Derivative error', 1, 'magenta', 'slope of line')
-]
+LINE_DATA = [('Steering angle', 10, 'yellow', 'tenths of motor rotations'),
+             ('Proportional error', 0.01, 'cyan', 'hundreds of pixels'),
+             ('Derivative error', 1, 'magenta', 'slope of line')]
 
 
 # Main PyQt5 QWidget class
@@ -108,18 +105,26 @@ class Visualizer(QWidget):
 
         # Check that the number of command line arguments is correct
         if len(sys.argv) != 4:
-            print('Usage:', sys.argv[0],
-                  '<image folder> <left line trained model> <right line trained model>')
+            print(
+                'Usage:', sys.argv[0],
+                '<image folder> <left line trained model> <right line trained model>'
+            )
             sys.exit()
 
         # Generate the fonts for the line graph and heat map
-        self.heat_map_labels_font, self.line_graph_labels_font, self.line_graph_legend_font = [QFont(
-            UI_FONT_NAME, font_size) for font_size in [HEAT_MAP_LABELS_FONT_SIZE, LINE_GRAPH_LABELS_FONT_SIZE, LINE_GRAPH_LEGEND_FONT_SIZE]]
+        self.heat_map_labels_font, self.line_graph_labels_font, self.line_graph_legend_font = [
+            QFont(UI_FONT_NAME, font_size)
+            for font_size in [
+                HEAT_MAP_LABELS_FONT_SIZE, LINE_GRAPH_LABELS_FONT_SIZE,
+                LINE_GRAPH_LEGEND_FONT_SIZE
+            ]
+        ]
 
         # Process the paths to the model and image provided as command line arguments
         image_folder = os.path.expanduser(sys.argv[1])
-        model_paths = [os.path.expanduser(model_path)
-                       for model_path in sys.argv[2:]]
+        model_paths = [
+            os.path.expanduser(model_path) for model_path in sys.argv[2:]
+        ]
 
         # Array of inference engines
         inference_engines = []
@@ -132,10 +137,7 @@ class Visualizer(QWidget):
 
             # Create a sliding window inference engine with the model
             inference_engine = SlidingWindowInferenceEngine(
-                model=model,
-                slice_size=16,
-                stride=4
-            )
+                model=model, slice_size=16, stride=4)
 
             # Add it to the list
             inference_engines.append(inference_engine)
@@ -147,12 +149,12 @@ class Visualizer(QWidget):
             max_distance_from_line=10,
             ideal_center_x=IDEAL_CENTER_X,
             center_y=0,
-            steering_limit=0.2
-        )
+            steering_limit=0.2)
 
         # Load and perform inference on the images
         self.image_list, self.image_data = process_images(
-            image_folder, inference_engines, steering_engine, MARKER_RADIUS, HEAT_MAP_OPACITY)
+            image_folder, inference_engines, steering_engine, MARKER_RADIUS,
+            HEAT_MAP_OPACITY)
 
         # Set the global image height and width variables
         image_height, image_width = self.image_list[0].shape[:2]
@@ -162,8 +164,8 @@ class Visualizer(QWidget):
             LINE_GRAPH_HEIGHT / 2) - LINE_GRAPH_BORDER_HEIGHT
 
         # Use that, divided by the predefined guide line steering angle, to calculate the line graph multiplier
-        self.line_graph_multiplier = int(
-            half_graph_height_minus_border / LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE)
+        self.line_graph_multiplier = int(half_graph_height_minus_border /
+                                         LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE)
 
         # Set up the UI
         self.init_ui(image_height, image_width)
@@ -249,7 +251,10 @@ class Visualizer(QWidget):
     def create_line_graph_labels(self):
 
         # Iterate over the three relevant steering angles
-        for steering_angle in [-LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE, 0, LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE]:
+        for steering_angle in [
+                -LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE, 0,
+                LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE
+        ]:
 
             # Calculate the Y position at which to center the label based on the steering angle
             y_position_center = self.get_line_graph_y_position(steering_angle)
@@ -261,11 +266,11 @@ class Visualizer(QWidget):
             # Create and format the label
             line_graph_label = QLabel(self)
             line_graph_label.setFont(self.line_graph_labels_font)
-            line_graph_label.move(
-                self.line_graph_right_bound, y_position_offset)
+            line_graph_label.move(self.line_graph_right_bound,
+                                  y_position_offset)
             line_graph_label.setAlignment(Qt.AlignCenter)
-            line_graph_label.setFixedSize(
-                LINE_GRAPH_LABEL_SIZE, LINE_GRAPH_LABEL_SIZE)
+            line_graph_label.setFixedSize(LINE_GRAPH_LABEL_SIZE,
+                                          LINE_GRAPH_LABEL_SIZE)
             line_graph_label.setText(str(steering_angle))
 
     # Create a legend below the line graph describing the various lines
@@ -276,8 +281,8 @@ class Visualizer(QWidget):
         line_graph_legend = QLabel(self)
         line_graph_legend.setAlignment(Qt.AlignCenter)
         line_graph_legend.setFont(self.line_graph_legend_font)
-        line_graph_legend.setFixedSize(
-            image_box_width, LINE_GRAPH_LEGEND_HEIGHT)
+        line_graph_legend.setFixedSize(image_box_width,
+                                       LINE_GRAPH_LEGEND_HEIGHT)
         legend_top_edge = image_box_height + HEAT_MAP_LABELS_HEIGHT + LINE_GRAPH_HEIGHT
         line_graph_legend.move(0, legend_top_edge)
 
@@ -319,8 +324,8 @@ class Visualizer(QWidget):
         # Convert the NumPy array into a QImage for display
         height, width, channel = image.shape
         bytes_per_line = channel * width
-        current_image_qimage = QImage(
-            image.data, width, height, bytes_per_line, QImage.Format_RGB888)
+        current_image_qimage = QImage(image.data, width, height,
+                                      bytes_per_line, QImage.Format_RGB888)
         current_image_qpixmap = QPixmap(current_image_qimage).scaled(
             self.image_box.width(), self.image_box.height())
 
@@ -329,7 +334,9 @@ class Visualizer(QWidget):
 
         # Iterate over the lists of points, each corresponding to one of the elements in the current
         # list of image data, not including the file name, which is the first element of the list
-        for point_list, data_value, line_data in zip(self.line_point_lists, self.image_data[self.image_index][1:], LINE_DATA):
+        for point_list, data_value, line_data in zip(
+                self.line_point_lists, self.image_data[self.image_index][1:],
+                LINE_DATA):
 
             # Scale the data value by its corresponding multiplier
             multiplier = line_data[1]
@@ -355,7 +362,8 @@ class Visualizer(QWidget):
         print('File name:', self.image_data[self.image_index][0])
 
         # Print some metadata about the image, with the labels provided in the line data
-        for line_data, value in zip(LINE_DATA, self.image_data[self.image_index][1:]):
+        for line_data, value in zip(LINE_DATA,
+                                    self.image_data[self.image_index][1:]):
 
             # Extract the name from the line data
             name = line_data[0]
@@ -410,12 +418,14 @@ class Visualizer(QWidget):
         # Draw the three grid lines
         start_x_position = 0
         end_x_position = self.line_graph_right_bound
-        paint_line([[start_x_position, y_negative], [
-                   end_x_position, y_negative]], QColor(0, 0, 0))
-        paint_line([[start_x_position, y_zero], [
-                   end_x_position, y_zero]], QColor(0, 0, 0))
-        paint_line([[start_x_position, y_positive], [
-                   end_x_position, y_positive]], QColor(0, 0, 0))
+        paint_line(
+            [[start_x_position, y_negative], [end_x_position, y_negative]],
+            QColor(0, 0, 0))
+        paint_line([[start_x_position, y_zero], [end_x_position, y_zero]],
+                   QColor(0, 0, 0))
+        paint_line(
+            [[start_x_position, y_positive], [end_x_position, y_positive]],
+            QColor(0, 0, 0))
 
         # Draw each of the lists of points on the graph with their corresponding colors
         for point_list, line_data in zip(self.line_point_lists, LINE_DATA):

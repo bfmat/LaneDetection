@@ -1,6 +1,7 @@
 from __future__ import division, print_function
 
 import os
+import math
 import numpy
 
 from skimage.draw import line
@@ -9,15 +10,33 @@ from numpy.linalg.linalg import LinAlgError
 from ..visualizer.errors import UnusableImageError
 from ..infer.lane_center_calculation import calculate_lane_center_positions
 
-
 # A collection of functions required for loading and processing the data for the visualizer
 # including many of the elements that appear to be part of the interface but really are image
 # modifications, such as line markers, center lines, and the network prediction heat map
+# In addition, calculate the geometric mean of the error and of the derivative
+# of the error, using the bottom of the image instead of the top to avoid
+# extreme fluctuation, and print out the resulting information
 # Created by brendon-ai, October 2017
+
+# List of descriptions output before their corresponding error values
+ERROR_DESCRIPTIONS = [
+    'Standard deviation of the position of the car with respect to the center of the road:',
+    'Standard deviation of the apparent slope of the center of the road with respect to the car:'
+]
+
+# Get the expected number of error values
+num_errors = len(ERROR_DESCRIPTIONS)
+
+# List of accumulators for the squared proportional error and line slope
+accumulators = [0] * num_errors
+
+# The number of files we are loading
+num_files = None
 
 
 # Load and process the image with the provided inference engines and steering engine
-def process_images(image_folder, inference_engines, steering_engine, marker_radius, heat_map_opacity):
+def process_images(image_folder, inference_engines, steering_engine,
+                   marker_radius, heat_map_opacity):
 
     # Notify the user that we have started loading the images
     print('Loading images...')
@@ -27,6 +46,10 @@ def process_images(image_folder, inference_engines, steering_engine, marker_radi
 
     # List of file names of images
     image_names = sorted(os.listdir(image_folder))
+
+    # Set the global value containing the number of files
+    global num_files
+    num_files = len(image_names)
 
     # List of image data
     all_image_data = []
@@ -53,7 +76,7 @@ def process_images(image_folder, inference_engines, steering_engine, marker_radi
         image_list.append(processed_image)
 
         # Add the corresponding steering angle to the data list
-        all_image_data.append((image_name,) + output_values)
+        all_image_data.append((image_name, ) + output_values)
 
         # Print out the file name of the image
         print('Loaded', image_name)
@@ -61,17 +84,27 @@ def process_images(image_folder, inference_engines, steering_engine, marker_radi
     # Notify the user that loading is complete
     print('Loading complete!')
 
+    # Calculate and print the standard deviation with respect to both errors, one at a time
+    for accumulator, error_description in zip(accumulators,
+                                              ERROR_DESCRIPTIONS):
+        global num_files
+        variance = accumulator / num_files
+        standard_deviation = math.sqrt(variance)
+        print(error_description, standard_deviation)
+
     # Return the images and their corresponding data
     return image_list, all_image_data
 
 
 # Perform all necessary processing on a single image to prepare it for visualization
-def _process_single_image(image, inference_engines, steering_engine, marker_radius, heat_map_opacity):
+def _process_single_image(image, inference_engines, steering_engine,
+                          marker_radius, heat_map_opacity):
 
     # With each of the provided engines, perform inference
     # on the current image, calculating a prediction tensor
-    prediction_tensors = [inference_engine.infer(
-        image) for inference_engine in inference_engines]
+    prediction_tensors = [
+        inference_engine.infer(image) for inference_engine in inference_engines
+    ]
 
     # Calculate the center line positions and add them to the list
     center_line_positions, outer_road_lines = calculate_lane_center_positions(
@@ -79,8 +112,7 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
         right_line_prediction_tensor=prediction_tensors[1],
         minimum_prediction_confidence=0.9,
         original_image_shape=image.shape,
-        window_size=inference_engines[0].window_size
-    )
+        window_size=inference_engines[0].window_size)
 
     # Calculate a steering angle and errors from the points
     output_values = steering_engine.compute_steering_angle(
@@ -89,6 +121,11 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
     # If None was returned, throw an error
     if output_values is None:
         raise UnusableImageError('steering angle calculation failed')
+
+    # Get the errors from the output values and add them to their corresponding accumulators
+    errors = output_values[1:]
+    for j in range(num_errors):
+        accumulators[j] += errors[j]**2
 
     # Copy the image twice for use in the heat map section of the user interface
     heat_map_images = [numpy.copy(image) for _ in range(2)]
@@ -103,19 +140,25 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
     }
 
     # Apply the heat map in place to the copied images, using a different inference engine for each
-    for heat_map_image, inference_engine in zip(heat_map_images, inference_engines):
-        _apply_heat_map(heat_map_image, inference_engine.last_prediction_tensor,
+    for heat_map_image, inference_engine in zip(heat_map_images,
+                                                inference_engines):
+        _apply_heat_map(heat_map_image,
+                        inference_engine.last_prediction_tensor,
                         heat_map_colors, heat_map_opacity)
 
     # Calculate two points on the line of best fit
     line_parameters = steering_engine.center_line_of_best_fit
     y_positions = (0, image.shape[0] - 1)
-    x_positions = [int(round((y_position * line_parameters[1]) +
-                             line_parameters[0])) for y_position in y_positions]
+    x_positions = [
+        int(round((y_position * line_parameters[1]) + line_parameters[0]))
+        for y_position in y_positions
+    ]
 
     # Transpose the list of Y positions followed by X positions and format it into a suitable list
-    formatted_arguments = [value for position in zip(
-        y_positions, x_positions) for value in position]
+    formatted_arguments = [
+        value for position in zip(y_positions, x_positions)
+        for value in position
+    ]
 
     # Draw the line of best fit
     y_indices, x_indices = line(*formatted_arguments)[:2]
@@ -126,11 +169,9 @@ def _process_single_image(image, inference_engines, steering_engine, marker_radi
         center_line_positions)
 
     # Display the center line in blue and the outer lines in red and green
-    lines_and_colors = [
-        (center_line_positions_without_outliers, [0, 0, 255]),
-        (outer_road_lines[0], [255, 0, 0]),
-        (outer_road_lines[1], [0, 255, 0])
-    ]
+    lines_and_colors = [(center_line_positions_without_outliers,
+                         [0, 0, 255]), (outer_road_lines[0], [255, 0, 0]),
+                        (outer_road_lines[1], [0, 255, 0])]
 
     # Add the relevant lines and points to the main image and scale it to double its original size
     _add_markers(image, marker_radius, lines_and_colors)
@@ -164,8 +205,11 @@ def _add_markers(image, marker_radius, lines_and_colors):
         for position in line_positions:
 
             # Calculate the four bounds of the marker to be placed
-            bounds = [int(round(center + offset))
-                      for center in position for offset in (-marker_radius, marker_radius)]
+            bounds = [
+                int(round(center + offset))
+                for center in position
+                for offset in (-marker_radius, marker_radius)
+            ]
 
             # Create a black square within the bounds
             image[bounds[0]:bounds[1], bounds[2]:bounds[3]] = color
@@ -177,8 +221,11 @@ def _apply_heat_map(image, prediction_tensor, colors, heat_map_opacity):
 
     # Find the factor to calculate rectangular blocks in the image
     # that visually correspond to the positions in the prediction tensor
-    heat_map_block_shape = [image_dimension / prediction_dimension
-                            for image_dimension, prediction_dimension in zip(image.shape, prediction_tensor.shape)]
+    heat_map_block_shape = [
+        image_dimension / prediction_dimension
+        for image_dimension, prediction_dimension in zip(
+            image.shape, prediction_tensor.shape)
+    ]
 
     # Iterate over both dimensions of the image
     for y_position, x_position in numpy.ndindex(prediction_tensor.shape):
@@ -186,11 +233,12 @@ def _apply_heat_map(image, prediction_tensor, colors, heat_map_opacity):
         # Find the bounds of the corresponding heat map box in the image and slice out the box
         block_bounds = [
             int(round((dimension + offset) * block_dimension))
-            for dimension, block_dimension in zip((y_position, x_position), heat_map_block_shape)
+            for dimension, block_dimension in zip((
+                y_position, x_position), heat_map_block_shape)
             for offset in (0, 1)
         ]
-        block = image[block_bounds[0]:block_bounds[1],
-                      block_bounds[2]:block_bounds[3]]
+        block = image[block_bounds[0]:block_bounds[1], block_bounds[2]:
+                      block_bounds[3]]
 
         # Color calculated in the following loop
         interpolated_color = []
@@ -209,14 +257,15 @@ def _apply_heat_map(image, prediction_tensor, colors, heat_map_opacity):
                 # Find the proportion of the distance between the previous heat key and the current one
                 # that the heat value of the current prediction cell is
                 previous_heat_value = previous_item[0]
-                interpolation_value = (
-                    current_prediction - previous_heat_value) / (heat_value - previous_heat_value)
+                interpolation_value = (current_prediction - previous_heat_value
+                                       ) / (heat_value - previous_heat_value)
 
                 # Loop over the previous and current color tuples and interpolate via a weighted average
                 previous_color = previous_item[1]
                 for previous, current in zip(previous_color, color):
-                    weighted_average = (
-                        previous * (1 - interpolation_value)) + (current * interpolation_value)
+                    weighted_average = (previous *
+                                        (1 - interpolation_value)) + (
+                                            current * interpolation_value)
                     interpolated_color.append(weighted_average)
 
                 # Exit the loop because we have already completed the interpolation
