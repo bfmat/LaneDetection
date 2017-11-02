@@ -5,10 +5,10 @@ from __future__ import print_function
 import os
 import sys
 
-from keras.models import load_model
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QImage, QPainter, QColor, QPen, QPalette, QFont
 from PyQt5.QtWidgets import QLabel, QWidget, QApplication
+from keras.models import load_model
 
 from ..infer import SteeringEngine, SlidingWindowInferenceEngine
 from ..visualizer.visualizer_image_processing import process_images
@@ -146,7 +146,7 @@ class Visualizer(QWidget):
         steering_engine = SteeringEngine(
             proportional_multiplier=0.0025,
             derivative_multiplier=0,
-            max_distance_from_line=10,
+            max_distance_from_line=5,
             ideal_center_x=IDEAL_CENTER_X,
             center_y=0,
             steering_limit=0.2)

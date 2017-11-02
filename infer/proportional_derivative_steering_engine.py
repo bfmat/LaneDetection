@@ -131,7 +131,6 @@ class SteeringEngine:
 
 # Calculate a line of best fit for a set of points (Y, X format is assumed)
 def line_of_best_fit(points):
-    print points
     # Get an array of X positions from the points
     x = numpy.array([point[1] for point in points])
 
@@ -142,7 +141,5 @@ def line_of_best_fit(points):
     y_transpose = y.transpose()
     line_parameters = numpy.linalg.pinv(
         y_transpose.dot(y)).dot(y_transpose).dot(x)
-
-    print line_parameters
 
     return line_parameters
