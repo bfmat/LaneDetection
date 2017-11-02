@@ -114,8 +114,7 @@ def _process_single_image(image, inference_engines, steering_engine,
         window_size=inference_engines[0].window_size)
 
     # Calculate a steering angle and errors from the points
-    output_values = steering_engine.compute_steering_angle(
-        center_line_positions)
+    output_values = steering_engine.compute_steering_angle(center_line_positions)
 
     # If None was returned, throw an error
     if output_values is None:
@@ -164,12 +163,10 @@ def _process_single_image(image, inference_engines, steering_engine,
     image[y_indices, x_indices] = 0
 
     # Remove the outliers from the center line positions
-    center_line_positions_without_outliers = steering_engine.remove_outliers(
-        center_line_positions)
+    center_line_positions_without_outliers = steering_engine.remove_outliers(center_line_positions)
 
     # Display the center line in blue and the outer lines in red and green
-    lines_and_colors = [(center_line_positions_without_outliers,
-                         [0, 0, 255]), (outer_road_lines[0], [255, 0, 0]),
+    lines_and_colors = [(center_line_positions_without_outliers, [0, 0, 255]), (outer_road_lines[0], [255, 0, 0]),
                         (outer_road_lines[1], [0, 255, 0])]
 
     # Add the relevant lines and points to the main image and scale it to double its original size
@@ -233,8 +230,7 @@ def _apply_heat_map(image, prediction_tensor, colors, heat_map_opacity):
                 y_position, x_position), heat_map_block_shape)
             for offset in (0, 1)
         ]
-        block = image[block_bounds[0]:block_bounds[1], block_bounds[2]:
-        block_bounds[3]]
+        block = image[block_bounds[0]:block_bounds[1], block_bounds[2]:block_bounds[3]]
 
         # Color calculated in the following loop
         interpolated_color = []
