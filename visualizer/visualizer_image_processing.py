@@ -37,7 +37,6 @@ num_files = None
 # Load and process the image with the provided inference engines and steering engine
 def process_images(image_folder, inference_engines, steering_engine,
                    marker_radius, heat_map_opacity):
-
     # Notify the user that we have started loading the images
     print('Loading images...')
 
@@ -76,7 +75,7 @@ def process_images(image_folder, inference_engines, steering_engine,
         image_list.append(processed_image)
 
         # Add the corresponding steering angle to the data list
-        all_image_data.append((image_name, ) + output_values)
+        all_image_data.append((image_name,) + output_values)
 
         # Print out the file name of the image
         print('Loaded', image_name)
@@ -99,7 +98,6 @@ def process_images(image_folder, inference_engines, steering_engine,
 # Perform all necessary processing on a single image to prepare it for visualization
 def _process_single_image(image, inference_engines, steering_engine,
                           marker_radius, heat_map_opacity):
-
     # With each of the provided engines, perform inference
     # on the current image, calculating a prediction tensor
     prediction_tensors = [
@@ -125,7 +123,7 @@ def _process_single_image(image, inference_engines, steering_engine,
     # Get the errors from the output values and add them to their corresponding accumulators
     errors = output_values[1:]
     for j in range(num_errors):
-        accumulators[j] += errors[j]**2
+        accumulators[j] += errors[j] ** 2
 
     # Copy the image twice for use in the heat map section of the user interface
     heat_map_images = [numpy.copy(image) for _ in range(2)]
@@ -197,13 +195,11 @@ def _process_single_image(image, inference_engines, steering_engine,
 
 # Add lines and points to the main image
 def _add_markers(image, marker_radius, lines_and_colors):
-
     # For each of the two road lines
     for line_positions, color in lines_and_colors:
 
         # For each of the positions which include horizontal and vertical values
         for position in line_positions:
-
             # Calculate the four bounds of the marker to be placed
             bounds = [
                 int(round(center + offset))
@@ -218,7 +214,6 @@ def _add_markers(image, marker_radius, lines_and_colors):
 # Display a translucent multi-colored heat map over an image (modifying it in place), given a tensor of
 # predictions to base it on and a dictionary of colors with corresponding heat values to interpolate between
 def _apply_heat_map(image, prediction_tensor, colors, heat_map_opacity):
-
     # Find the factor to calculate rectangular blocks in the image
     # that visually correspond to the positions in the prediction tensor
     heat_map_block_shape = [
@@ -238,7 +233,7 @@ def _apply_heat_map(image, prediction_tensor, colors, heat_map_opacity):
             for offset in (0, 1)
         ]
         block = image[block_bounds[0]:block_bounds[1], block_bounds[2]:
-                      block_bounds[3]]
+        block_bounds[3]]
 
         # Color calculated in the following loop
         interpolated_color = []
@@ -265,7 +260,7 @@ def _apply_heat_map(image, prediction_tensor, colors, heat_map_opacity):
                 for previous, current in zip(previous_color, color):
                     weighted_average = (previous *
                                         (1 - interpolation_value)) + (
-                                            current * interpolation_value)
+                                           current * interpolation_value)
                     interpolated_color.append(weighted_average)
 
                 # Exit the loop because we have already completed the interpolation
@@ -280,4 +275,4 @@ def _apply_heat_map(image, prediction_tensor, colors, heat_map_opacity):
 
         # Color the block correspondingly, using the supplied opacity value and the calculated color
         block[:] = (block * (1 - heat_map_opacity)) + \
-            (color_block * heat_map_opacity)
+                   (color_block * heat_map_opacity)

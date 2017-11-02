@@ -68,7 +68,6 @@ LINE_DATA = [('Steering angle', 10, 'yellow', 'tenths of motor rotations'),
 
 # Main PyQt5 QWidget class
 class Visualizer(QWidget):
-
     # List of NumPy images
     image_list = None
 
@@ -133,7 +132,6 @@ class Visualizer(QWidget):
 
         # Get the models from the folder
         for model_path in model_paths:
-
             # Load the model
             model = load_model(model_path)
 
@@ -163,7 +161,7 @@ class Visualizer(QWidget):
 
         # Calculate the height of one vertical half of the line graph ignoring the border
         half_graph_height_minus_border = (
-            LINE_GRAPH_HEIGHT / 2) - LINE_GRAPH_BORDER_HEIGHT
+                                             LINE_GRAPH_HEIGHT / 2) - LINE_GRAPH_BORDER_HEIGHT
 
         # Use that, divided by the predefined guide line steering angle, to calculate the line graph multiplier
         self.line_graph_multiplier = int(half_graph_height_minus_border /
@@ -182,13 +180,13 @@ class Visualizer(QWidget):
         # Calculate the center of the line graph using the height of the image
         # plus the height of the line graph label as an upper limit of the graph
         self.line_graph_center = image_box_height + \
-            HEAT_MAP_LABELS_HEIGHT + (LINE_GRAPH_HEIGHT // 2)
+                                 HEAT_MAP_LABELS_HEIGHT + (LINE_GRAPH_HEIGHT // 2)
 
         # To calculate the window size, use the image box size plus the predefined height that will
         # be occupied by the line graph, corresponding legend, and the label below the heat maps
         window_width = image_box_width
         window_height = image_box_height + HEAT_MAP_LABELS_HEIGHT + \
-            LINE_GRAPH_HEIGHT + LINE_GRAPH_LEGEND_HEIGHT
+                        LINE_GRAPH_HEIGHT + LINE_GRAPH_LEGEND_HEIGHT
 
         # Set the size, position, title, and color scheme of the window
         self.setFixedSize(window_width, window_height)
@@ -230,7 +228,6 @@ class Visualizer(QWidget):
 
         # Create two labels in a loop
         for i in range(2):
-
             # The width of the label will be half of the width of the main image box, rounded to an integer
             label_width = int(round(image_box_width / 2))
 
@@ -253,17 +250,13 @@ class Visualizer(QWidget):
     def create_line_graph_labels(self):
 
         # Iterate over the three relevant steering angles
-        for steering_angle in [
-                -LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE, 0,
-                LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE
-        ]:
-
+        for steering_angle in [-LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE, 0, LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE]:
             # Calculate the Y position at which to center the label based on the steering angle
             y_position_center = self.get_line_graph_y_position(steering_angle)
 
             # Offset it by half of the label size, because the coordinates correspond to the top left corner
             y_position_offset = y_position_center - \
-                (LINE_GRAPH_LABEL_SIZE // 2)
+                                (LINE_GRAPH_LABEL_SIZE // 2)
 
             # Create and format the label
             line_graph_label = QLabel(self)
@@ -293,11 +286,10 @@ class Visualizer(QWidget):
 
         # Iterate over the configuration data for each of the lines
         for line_name, _, color_name, unit_description in LINE_DATA:
-
             # Format a string that describes the line, using inline color notation
             line_description = '<font color=\'' + color_name + \
-                '\'>■</font>: ' + line_name + \
-                ' (' + unit_description + ') '
+                               '\'>■</font>: ' + line_name + \
+                               ' (' + unit_description + ') '
 
             # Add it to the main description string
             line_descriptions += line_description
@@ -326,8 +318,7 @@ class Visualizer(QWidget):
         # Convert the NumPy array into a QImage for display
         height, width, channel = image.shape
         bytes_per_line = channel * width
-        current_image_qimage = QImage(image.data, width, height,
-                                      bytes_per_line, QImage.Format_RGB888)
+        current_image_qimage = QImage(image.data, width, height, bytes_per_line, QImage.Format_RGB888)
         current_image_qpixmap = QPixmap(current_image_qimage).scaled(
             self.image_box.width(), self.image_box.height())
 
@@ -336,9 +327,8 @@ class Visualizer(QWidget):
 
         # Iterate over the lists of points, each corresponding to one of the elements in the current
         # list of image data, not including the file name, which is the first element of the list
-        for point_list, data_value, line_data in zip(
-                self.line_point_lists, self.image_data[self.image_index][1:],
-                LINE_DATA):
+        for point_list, data_value, line_data in zip(self.line_point_lists, self.image_data[self.image_index][1:],
+                                                     LINE_DATA):
 
             # Scale the data value by its corresponding multiplier
             multiplier = line_data[1]
@@ -366,7 +356,6 @@ class Visualizer(QWidget):
         # Print some metadata about the image, with the labels provided in the line data
         for line_data, value in zip(LINE_DATA,
                                     self.image_data[self.image_index][1:]):
-
             # Extract the name from the line data
             name = line_data[0]
 
@@ -431,7 +420,6 @@ class Visualizer(QWidget):
 
         # Draw each of the lists of points on the graph with their corresponding colors
         for point_list, line_data in zip(self.line_point_lists, LINE_DATA):
-
             # Get the color corresponding to the name in the line data
             color_name = line_data[2]
             color = QColor()
