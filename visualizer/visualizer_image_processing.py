@@ -1,14 +1,15 @@
 from __future__ import division, print_function
 
-import os
 import math
-import numpy
+import os
 
-from skimage.draw import line
-from scipy.misc import imread, imresize
+import numpy
 from numpy.linalg.linalg import LinAlgError
-from ..visualizer.errors import UnusableImageError
+from scipy.misc import imread, imresize
+from skimage.draw import line
+
 from ..infer.lane_center_calculation import calculate_lane_center_positions
+from ..visualizer.errors import UnusableImageError
 
 # A collection of functions required for loading and processing the data for the visualizer
 # including many of the elements that appear to be part of the interface but really are image
@@ -207,7 +208,7 @@ def _add_markers(image, marker_radius, lines_and_colors):
                 for offset in (-marker_radius, marker_radius)
             ]
 
-            # Create a black square within the bounds
+            # Create a square within the bounds
             image[bounds[0]:bounds[1], bounds[2]:bounds[3]] = color
 
 
