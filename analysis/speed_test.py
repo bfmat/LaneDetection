@@ -8,7 +8,6 @@ from scipy.misc import imread
 from keras.models import load_model
 from ..infer import SlidingWindowInferenceEngine
 
-
 # A script for running an inference engine with a provided model and number of iterations
 # and seeing how long it takes to run with a variety of configurations
 # Created by brendon-ai, September 2017

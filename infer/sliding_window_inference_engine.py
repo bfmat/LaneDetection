@@ -4,7 +4,6 @@ import numpy
 
 from skimage.util import view_as_windows
 
-
 # A system for efficiently running inference on sections of an image using sliding windows and calculating points down
 # the center of the road based on the inference output
 # Created by brendon-ai, September 2017
@@ -16,7 +15,6 @@ MORE_THAN_CHANNELS = 6
 
 # Main class, instantiated with configuration and trained model
 class SlidingWindowInferenceEngine:
-
     # The Keras model used for inference on square sections of the image
     model = None
 

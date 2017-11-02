@@ -10,7 +10,6 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtWidgets import QLabel, QWidget, QApplication
 
-
 # Program which allows a user to select the position of a road line in a wide image
 # in order to create training data for a convolutional neural network
 # Created by brendon-ai, September 2017
@@ -26,7 +25,6 @@ OUTPUT_HEIGHT = 16
 
 # Main PyQt5 QWidget class
 class ManualSelection(QWidget):
-
     # The label that displays the current image
     image_box = None
 
@@ -139,7 +137,6 @@ class ManualSelection(QWidget):
 
 # Load paths of all of the files contained in a specific folder
 def get_image_paths(folder):
-
     # List to store file paths of images in
     image_paths = []
 
@@ -156,7 +153,6 @@ def get_image_paths(folder):
 
 # Slice and save data derived from a single image
 def save_training_data(image, road_line_path, output_folder):
-
     # For every point defined on the road line, we take a slice of the image centered on the point's vertical value
     for road_line_point in road_line_path:
 
@@ -169,7 +165,6 @@ def save_training_data(image, road_line_path, output_folder):
 
         # Only save the image if the height of the slice is as expected and it is not clipped by the edge of the image
         if image_slice.shape[0] == OUTPUT_HEIGHT:
-
             # Use the Unix time and the position of the current road line point in the file name
             file_name = '{}/x{}_y{}_{}.png'.format(output_folder, road_line_point[0], road_line_point[1], uuid.uuid4())
 

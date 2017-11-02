@@ -16,7 +16,6 @@ STARTING_POSITION_OFFSET_MAXIMUM = 50
 def calculate_lane_center_positions(
         left_line_prediction_tensor, right_line_prediction_tensor,
         minimum_prediction_confidence, original_image_shape, window_size):
-
     # A function to process a single point and scale it so that it corresponds to a position on the original image
     def scale_position(position):
 
@@ -25,7 +24,7 @@ def calculate_lane_center_positions(
             center_position_element *
             (image_shape_element / prediction_tensor_shape_element)
             for center_position_element,
-            image_shape_element, prediction_tensor_shape_element in zip(
+                image_shape_element, prediction_tensor_shape_element in zip(
                 position, original_image_shape,
                 left_line_prediction_tensor.shape)
         ]
@@ -86,7 +85,6 @@ def calculate_lane_center_positions(
 
         # If a valid solution has been found (we haven't broken out due to a large offset)
         if None not in peak_indices:
-
             # Add the points on the two peaks to a list after combining them with Y positions
             corresponding_outer_positions = [
                 scale_position((y_position, peak_index))
@@ -118,7 +116,6 @@ def calculate_lane_center_positions(
 # and returning the synthetic interpolated list index of that peak
 def find_peak_in_direction(collection, starting_index,
                            reversed_iteration_direction, minimum_value):
-
     # Storage for the indices of the first value that passed the threshold
     initial_sufficient_value_index = None
 

@@ -16,7 +16,6 @@ from ..train.common_train_features import train_and_save
 
 # Slice up an image into square windows given the horizontal position of the road line within it
 def slice_image(full_image, road_line_position, is_negative_example, num_random_negative_examples):
-
     # Compute a slice start and a slice end given a horizontal center point
     def compute_slice(center_position):
 
@@ -48,17 +47,16 @@ def slice_image(full_image, road_line_position, is_negative_example, num_random_
 
         # Pick a specified number of random negative examples
         for i in range(num_random_negative_examples):
+            # Choose a position randomly from the range
+            false_example_position = random.choice(tuple(false_example_range))
 
-                # Choose a position randomly from the range
-                false_example_position = random.choice(tuple(false_example_range))
+            # Slice out the negative example centered on the random point
+            false_slice_start, false_slice_end = compute_slice(false_example_position)
+            false_example = full_image[:, false_slice_start:false_slice_end, :]
 
-                # Slice out the negative example centered on the random point
-                false_slice_start, false_slice_end = compute_slice(false_example_position)
-                false_example = full_image[:, false_slice_start:false_slice_end, :]
-
-                # Add the image and the corresponding negative flag to the lists for return
-                image_list.append(false_example)
-                label_list.append(0)
+            # Add the image and the corresponding negative flag to the lists for return
+            image_list.append(false_example)
+            label_list.append(0)
 
         return image_list, label_list
 
@@ -69,7 +67,6 @@ def slice_image(full_image, road_line_position, is_negative_example, num_random_
 
 # Gather the images and labels from a specified folder
 def get_data(image_folders):
-
     # List of images and labels
     image_list = []
     label_list = []

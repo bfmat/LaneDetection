@@ -8,7 +8,6 @@ from keras.layers.convolutional import Conv2D
 
 
 def sliding_window_model(window_size):
-
     # Hyperbolic tangent activation function
     activation = 'tanh'
 

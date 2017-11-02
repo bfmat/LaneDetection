@@ -11,7 +11,6 @@ from keras.callbacks import ModelCheckpoint
 
 # Train a model given all of the necessary parameters and train it with snapshots
 def train_and_save(model, trained_model_folder, images, labels, epochs, batch_size, validation_split):
-
     # Print a summary of the model architecture
     print('\nSummary of model:')
     print(model.summary())
@@ -28,6 +27,6 @@ def train_and_save(model, trained_model_folder, images, labels, epochs, batch_si
         validation_split=validation_split,
         callbacks=[ModelCheckpoint(
             '{}/batch={}-epoch={{epoch:d}}-val_loss={{val_loss:f}}.h5'
-            .format(trained_model_folder, unix_time)
+                .format(trained_model_folder, unix_time)
         )]
     )
