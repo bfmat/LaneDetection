@@ -48,7 +48,7 @@ LINE_GRAPH_LEGEND_FONT_SIZE = 12
 
 # The absolute value of the unscaled number at which the
 # positive and negative line graph guide lines are drawn
-LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE = 1
+LINE_GRAPH_GUIDE_LINE_ABSOLUTE_VALUE = 1
 
 # The height, text contents, and font of the labels
 # that identify the heat maps in the user interface
@@ -148,8 +148,9 @@ class Visualizer(QWidget):
             derivative_multiplier=0,
             max_distance_from_line=5,
             ideal_center_x=IDEAL_CENTER_X,
-            center_y=0,
-            steering_limit=0.2)
+            center_y=60,
+            steering_limit=0.2
+        )
 
         # Load and perform inference on the images
         self.image_list, self.image_data = process_images(
@@ -165,7 +166,7 @@ class Visualizer(QWidget):
 
         # Use that, divided by the predefined guide line steering angle, to calculate the line graph multiplier
         self.line_graph_multiplier = int(half_graph_height_minus_border /
-                                         LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE)
+                                         LINE_GRAPH_GUIDE_LINE_ABSOLUTE_VALUE)
 
         # Set up the UI
         self.init_ui(image_height, image_width)
@@ -250,7 +251,7 @@ class Visualizer(QWidget):
     def create_line_graph_labels(self):
 
         # Iterate over the three relevant steering angles
-        for steering_angle in [-LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE, 0, LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE]:
+        for steering_angle in [-LINE_GRAPH_GUIDE_LINE_ABSOLUTE_VALUE, 0, LINE_GRAPH_GUIDE_LINE_ABSOLUTE_VALUE]:
             # Calculate the Y position at which to center the label based on the steering angle
             y_position_center = self.get_line_graph_y_position(steering_angle)
 
@@ -401,10 +402,10 @@ class Visualizer(QWidget):
 
         # Calculate the Y points on the graph for steering angles of -0.1, 0.0, and 0.1 respectively
         y_negative = self.get_line_graph_y_position(
-            -LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE)
+            -LINE_GRAPH_GUIDE_LINE_ABSOLUTE_VALUE)
         y_zero = self.get_line_graph_y_position(0)
         y_positive = self.get_line_graph_y_position(
-            LINE_GRAPH_GUIDE_LINE_STEERING_ANGLE)
+            LINE_GRAPH_GUIDE_LINE_ABSOLUTE_VALUE)
 
         # Draw the three grid lines
         start_x_position = 0
