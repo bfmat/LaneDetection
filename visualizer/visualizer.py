@@ -161,8 +161,7 @@ class Visualizer(QWidget):
         image_height, image_width = self.image_list[0].shape[:2]
 
         # Calculate the height of one vertical half of the line graph ignoring the border
-        half_graph_height_minus_border = (
-                                             LINE_GRAPH_HEIGHT / 2) - LINE_GRAPH_BORDER_HEIGHT
+        half_graph_height_minus_border = (LINE_GRAPH_HEIGHT / 2) - LINE_GRAPH_BORDER_HEIGHT
 
         # Use that, divided by the predefined guide line steering angle, to calculate the line graph multiplier
         self.line_graph_multiplier = int(half_graph_height_minus_border /
