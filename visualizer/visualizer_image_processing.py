@@ -158,9 +158,13 @@ def _process_single_image(image, inference_engines, steering_engine,
         for value in position
     ]
 
-    # Draw the line of best fit
-    y_indices, x_indices = line(*formatted_arguments)[:2]
-    image[y_indices, x_indices] = 0
+    # Draw the line of best fit, catching IndexErrors on each iteration in case the line goes off the screen
+    all_indices = line(*formatted_arguments)[:2]
+    for indices in zip(*all_indices):
+        try:
+            image[indices] = 0
+        except IndexError:
+            pass
 
     # Remove the outliers from the center line positions
     center_line_positions_without_outliers = steering_engine.remove_outliers(center_line_positions)
