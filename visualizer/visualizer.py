@@ -8,9 +8,8 @@ import sys
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QImage, QPainter, QColor, QPen, QPalette, QFont
 from PyQt5.QtWidgets import QLabel, QWidget, QApplication
-from keras.models import load_model
 
-from ..infer import SteeringEngine, SlidingWindowInferenceEngine
+from ..infer import InferenceAndSteeringWrapper
 from ..visualizer.visualizer_image_processing import process_images
 
 # Program which demonstrates the effectiveness or ineffectiveness of a lane detection model
@@ -28,9 +27,6 @@ MARKER_RADIUS = 2
 
 # The opacity of the heat map displayed on the two bottom images
 HEAT_MAP_OPACITY = 0.7
-
-# The ideal position for the center of the image
-IDEAL_CENTER_X = 190
 
 # Height of the line graph section of the UI
 LINE_GRAPH_HEIGHT = 300
@@ -106,10 +102,7 @@ class Visualizer(QWidget):
 
         # Check that the number of command line arguments is correct
         if len(sys.argv) != 4:
-            print(
-                'Usage:', sys.argv[0],
-                '<image folder> <left line trained model> <right line trained model>'
-            )
+            print('Usage:', sys.argv[0], '<image folder> <left line trained model> <right line trained model>')
             sys.exit()
 
         # Generate the fonts for the line graph and heat map
@@ -121,41 +114,16 @@ class Visualizer(QWidget):
             ]
         ]
 
-        # Process the paths to the model and image provided as command line arguments
+        # Load the paths to the model and image provided as command line arguments
         image_folder = os.path.expanduser(sys.argv[1])
-        model_paths = [
-            os.path.expanduser(model_path) for model_path in sys.argv[2:]
-        ]
+        model_paths = sys.argv[2:]
 
-        # Array of inference engines
-        inference_engines = []
-
-        # Get the models from the folder
-        for model_path in model_paths:
-            # Load the model
-            model = load_model(model_path)
-
-            # Create a sliding window inference engine with the model
-            inference_engine = SlidingWindowInferenceEngine(
-                model=model, slice_size=16, stride=4)
-
-            # Add it to the list
-            inference_engines.append(inference_engine)
-
-        # Instantiate the steering angle generation engine
-        steering_engine = SteeringEngine(
-            proportional_multiplier=0.0025,
-            derivative_multiplier=0,
-            max_distance_from_line=5,
-            ideal_center_x=IDEAL_CENTER_X,
-            center_y=60,
-            steering_limit=0.2
-        )
+        # Create the engine wrapper
+        inference_and_steering_wrapper = InferenceAndSteeringWrapper(model_paths)
 
         # Load and perform inference on the images
-        self.image_list, self.image_data = process_images(
-            image_folder, inference_engines, steering_engine, MARKER_RADIUS,
-            HEAT_MAP_OPACITY)
+        self.image_list, self.image_data = process_images(image_folder, inference_and_steering_wrapper,
+                                                          MARKER_RADIUS, HEAT_MAP_OPACITY)
 
         # Set the global image height and width variables
         image_height, image_width = self.image_list[0].shape[:2]

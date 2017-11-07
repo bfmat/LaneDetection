@@ -8,7 +8,6 @@ from numpy.linalg.linalg import LinAlgError
 from scipy.misc import imread, imresize
 from skimage.draw import line
 
-from ..infer.lane_center_calculation import calculate_lane_center_positions
 from ..visualizer.errors import UnusableImageError
 
 # A collection of functions required for loading and processing the data for the visualizer
@@ -36,7 +35,7 @@ num_files = None
 
 
 # Load and process the image with the provided inference engines and steering engine
-def process_images(image_folder, inference_engines, steering_engine,
+def process_images(image_folder, inference_and_steering_wrapper,
                    marker_radius, heat_map_opacity):
     # Notify the user that we have started loading the images
     print('Loading images...')
@@ -65,7 +64,8 @@ def process_images(image_folder, inference_engines, steering_engine,
         try:
             processed_image, output_values = \
                 _process_single_image(
-                    image, inference_engines, steering_engine, marker_radius, heat_map_opacity)
+                    image, inference_and_steering_wrapper.inference_engines,
+                    inference_and_steering_wrapper.steering_engine, marker_radius, heat_map_opacity)
 
         # If a problem is encountered, skip this image and print an error message
         except (UnusableImageError, LinAlgError):
@@ -97,24 +97,10 @@ def process_images(image_folder, inference_engines, steering_engine,
 
 
 # Perform all necessary processing on a single image to prepare it for visualization
-def _process_single_image(image, inference_engines, steering_engine,
+def _process_single_image(image, inference_and_steering_wrapper,
                           marker_radius, heat_map_opacity):
-    # With each of the provided engines, perform inference
-    # on the current image, calculating a prediction tensor
-    prediction_tensors = [
-        inference_engine.infer(image) for inference_engine in inference_engines
-    ]
-
-    # Calculate the center line positions and add them to the list
-    center_line_positions, outer_road_lines = calculate_lane_center_positions(
-        left_line_prediction_tensor=prediction_tensors[0],
-        right_line_prediction_tensor=prediction_tensors[1],
-        minimum_prediction_confidence=0.9,
-        original_image_shape=image.shape,
-        window_size=inference_engines[0].window_size)
-
-    # Calculate a steering angle and errors from the points
-    output_values = steering_engine.compute_steering_angle(center_line_positions)
+    # Perform inference on the image using the wrapper
+    output_values, center_line_positions, outer_road_lines = inference_and_steering_wrapper.infer(image)
 
     # If None was returned, throw an error
     if output_values is None:
@@ -138,14 +124,13 @@ def _process_single_image(image, inference_engines, steering_engine,
     }
 
     # Apply the heat map in place to the copied images, using a different inference engine for each
-    for heat_map_image, inference_engine in zip(heat_map_images,
-                                                inference_engines):
+    for heat_map_image, inference_engine in zip(heat_map_images, inference_and_steering_wrapper.inference_engines):
         _apply_heat_map(heat_map_image,
                         inference_engine.last_prediction_tensor,
                         heat_map_colors, heat_map_opacity)
 
     # Calculate two points on the line of best fit
-    line_parameters = steering_engine.center_line_of_best_fit
+    line_parameters = inference_and_steering_wrapper.steering_engine.center_line_of_best_fit
     y_positions = (0, image.shape[0] - 1)
     x_positions = [
         int(round((y_position * line_parameters[1]) + line_parameters[0]))
@@ -167,7 +152,8 @@ def _process_single_image(image, inference_engines, steering_engine,
             pass
 
     # Remove the outliers from the center line positions
-    center_line_positions_without_outliers = steering_engine.remove_outliers(center_line_positions)
+    center_line_positions_without_outliers = inference_and_steering_wrapper.steering_engine.remove_outliers(
+        center_line_positions)
 
     # Display the center line in blue and the outer lines in red and green
     lines_and_colors = [(center_line_positions_without_outliers, [0, 0, 255]), (outer_road_lines[0], [255, 0, 0]),

@@ -1,17 +1,18 @@
-from keras.models import Sequential
 from keras.layers import Dense, Flatten
 from keras.layers.convolutional import Conv2D
+from keras.models import Sequential
 
 
 # A convolutional neural network model intended for use as in sliding window object detection system.
 # Created by brendon-ai, September 2017
 
 
+# Main function to create model
 def sliding_window_model(window_size):
     # Hyperbolic tangent activation function
     activation = 'tanh'
 
-    # Initialize the sequential model
+    # Initialize the Sequential model
     model = Sequential()
 
     # Two convolutional layers
