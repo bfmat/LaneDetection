@@ -1,3 +1,3 @@
 # Import model creation functions
-
+from lstm_steering_model import lstm_steering_model
 from sliding_window_model import sliding_window_model

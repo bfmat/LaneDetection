@@ -62,10 +62,10 @@ def process_images(image_folder, inference_and_steering_wrapper,
 
         # Try to process the image and add various markings to it, recording metadata returned for display purposes
         try:
-            processed_image, output_values = \
-                _process_single_image(
-                    image, inference_and_steering_wrapper.inference_engines,
-                    inference_and_steering_wrapper.steering_engine, marker_radius, heat_map_opacity)
+            processed_image, output_values = _process_single_image(image,
+                                                                   inference_and_steering_wrapper.inference_engines,
+                                                                   inference_and_steering_wrapper.steering_engine,
+                                                                   marker_radius, heat_map_opacity)
 
         # If a problem is encountered, skip this image and print an error message
         except (UnusableImageError, LinAlgError):
@@ -100,7 +100,7 @@ def process_images(image_folder, inference_and_steering_wrapper,
 def _process_single_image(image, inference_and_steering_wrapper,
                           marker_radius, heat_map_opacity):
     # Perform inference on the image using the wrapper
-    output_values, center_line_positions, outer_road_lines = inference_and_steering_wrapper.infer(image)
+    output_values, center_line_positions, outer_road_lines = inference_and_steering_wrapper.infer(image)[:3]
 
     # If None was returned, throw an error
     if output_values is None:

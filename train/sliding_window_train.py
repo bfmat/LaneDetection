@@ -1,11 +1,12 @@
 from __future__ import print_function
 
 import os
-import sys
-import numpy
 import random
+import sys
 
+import numpy
 from scipy import misc
+
 from ..model import sliding_window_model
 from ..train.common_train_features import train_and_save
 
@@ -142,8 +143,8 @@ trained_model_folder = os.path.expanduser(sys.argv[3])
 train_and_save(
     model=model,
     trained_model_folder=trained_model_folder,
-    images=images,
-    labels=labels,
+    x=images,
+    y=labels,
     epochs=EPOCHS,
     batch_size=BATCH_SIZE,
     validation_split=VALIDATION_SPLIT
