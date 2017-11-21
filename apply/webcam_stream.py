@@ -1,24 +1,18 @@
 #!/usr/bin/env python2
 
-# Basic OS libraries
-from sys import argv
-from os import system, popen, listdir, path
-from time import time, sleep
-
-# Secure shell
-from libssh2 import Session
+from os import system, listdir, path
 from socket import socket, AF_INET, SOCK_STREAM
-
-# Threading and input handling
+from sys import argv
 from threading import Thread
-from evdev import InputDevice, categorize, ecodes, KeyEvent
+from time import sleep
 
-# Steering and image processing
-import numpy as np
-from scipy.misc import imread
+from evdev import InputDevice, categorize, ecodes
 from keras.models import load_model
-from LaneDetection.infer import SteeringEngine, SlidingWindowInferenceEngine
-from LaneDetection.infer.lane_center_calculation import calculate_lane_center_positions
+from libssh2 import Session
+from scipy.misc import imread
+
+from ..infer import SteeringEngine, SlidingWindowInferenceEngine
+from ..infer.lane_center_calculation import calculate_lane_center_positions
 
 recording_encoder = False
 auto_drive = False
@@ -30,13 +24,13 @@ last_steering_angle = 0.0
 def handle_gamepad_input():
     global recording_encoder
     global auto_drive
-    
+
     # Get the input from the device file (specific to the joystick I am using)
     joystick = InputDevice('/dev/input/by-id/usb-Logitech_Logitech_Dual_Action_E89BB55E-event-joystick')
-    
+
     # A provided loop that will run forever, iterating on inputs as they come
     for event in joystick.read_loop():
-        
+
         # Is the input a button or key press?
         if event.type == ecodes.EV_KEY:
             # Get the identifier of the button that was pressed
@@ -105,12 +99,14 @@ def compute_steering_angle():
         return last_steering_angle
 
     # Move the newest file to the archive directory
-    system("mv %s %s/%s.error%s.slope%s.angle%s.jpg" % (newest_file, archive_folder, file_list[0], error, slope, steering_angle))
+    system("mv %s %s/%s.error%s.slope%s.angle%s.jpg" % (
+        newest_file, archive_folder, file_list[0], error, slope, steering_angle))
 
     # Set the last steering angle
     last_steering_angle = steering_angle
 
     return steering_angle
+
 
 # Save images in folder provided as a command line argument
 image_folder = "/tmp/"
@@ -121,7 +117,6 @@ inference_engines = []
 
 # For each of the two models passed as command line arguments
 for arg in argv[2:]:
-
     # Format the fully qualified path of the trained model
     model_path = path.expanduser(arg)
 
@@ -157,7 +152,8 @@ system('v4l2-ctl -d /dev/video1 --set-ctrl=exposure_auto_priority=1')
 system('v4l2-ctl -d /dev/video1 --set-ctrl=exposure_absolute=250')
 
 # Start the camera capture daemon process from the command line
-system('gst-launch-1.0 -v v4l2src device=/dev/video1 ! image/jpeg, width=320, height=180, framerate=30/1 ! jpegparse ! multifilesink location="%s/sim%%d.jpg" &' % image_folder)
+system(
+    'gst-launch-1.0 -v v4l2src device=/dev/video1 ! image/jpeg, width=320, height=180, framerate=30/1 ! jpegparse ! multifilesink location="%s/sim%%d.jpg" &' % image_folder)
 
 # Create the data transfer temp file
 system('touch /tmp/drive.path')
@@ -188,7 +184,7 @@ while True:
     if auto_drive:
         # Encoder cannot be recorded when auto drive is enabled
         recording_encoder = False
-        steering_angle = -compute_steering_angle() 
+        steering_angle = -compute_steering_angle()
 
         # Print out the steering angle
         print(steering_angle)
@@ -233,11 +229,11 @@ while True:
 
                 # If a new value has been obtained, record it in the file name of the latest image
                 if max_file > last_max_file:
-                    system('mv %s/sim%d.jpg %s/%f_sim%d.jpg' % (image_folder, max_file, archive_folder, encoder_value, max_file))
+                    system('mv %s/sim%d.jpg %s/%f_sim%d.jpg' % (
+                        image_folder, max_file, archive_folder, encoder_value, max_file))
 
                 # Set the previous image counter to the current image's timestamp
                 last_max_file = max_file
     elif not auto_drive:
         # If we are not recording, constantly clear the image folder
         system('rm -f %s/sim*.jpg' % image_folder)
-
