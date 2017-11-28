@@ -2,7 +2,8 @@ import os
 
 from keras.models import load_model
 
-from ..infer import SteeringEngine, SlidingWindowInferenceEngine
+from .proportional_derivative_steering_engine import SteeringEngine
+from .sliding_window_inference_engine import SlidingWindowInferenceEngine
 from ..infer.lane_center_calculation import calculate_lane_center_positions
 
 
