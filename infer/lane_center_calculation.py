@@ -11,33 +11,11 @@ STARTING_POSITION_OFFSET_INCREMENT = 5
 STARTING_POSITION_OFFSET_MAXIMUM = 50
 
 
-# Calculate the center line of a tensor of predictions of an arbitrary size, with a minimum confidence for the line
+# Calculate the center line of a two tensors of predictions of arbitrary size, with a minimum confidence for the line,
 # and scale it so that the output maps onto locations in the original source image
-def calculate_lane_center_positions(
+def calculate_lane_center_positions_two_lines(
         left_line_prediction_tensor, right_line_prediction_tensor,
         minimum_prediction_confidence, original_image_shape, window_size):
-    # A function to process a single point and scale it so that it corresponds to a position on the original image
-    def scale_position(position):
-
-        # Scale and offset the point so that it corresponds to the correct position within the original image
-        center_position_scaled = [
-            center_position_element *
-            (image_shape_element / prediction_tensor_shape_element)
-            for center_position_element,
-                image_shape_element, prediction_tensor_shape_element in zip(
-                position, original_image_shape,
-                left_line_prediction_tensor.shape)
-        ]
-        center_position_offset = [
-            element + (window_size // 2) for element in center_position_scaled
-        ]
-
-        # Round the processed position to an integer and return it
-        center_position_integer = [
-            int(value) for value in center_position_offset
-        ]
-        return center_position_integer
-
     # Add the center points of the rows to a list
     center_positions = []
 
@@ -87,7 +65,12 @@ def calculate_lane_center_positions(
         if None not in peak_indices:
             # Add the points on the two peaks to a list after combining them with Y positions
             corresponding_outer_positions = [
-                scale_position((y_position, peak_index))
+                scale_position(
+                    position=(y_position, peak_index),
+                    original_image_shape=original_image_shape,
+                    prediction_tensor_shape=left_line_prediction_tensor.shape,
+                    window_size=window_size
+                )
                 for peak_index in peak_indices
             ]
             all_corresponding_outer_positions.append(
@@ -101,7 +84,12 @@ def calculate_lane_center_positions(
             starting_position = int(center_position[1])
 
             # Scale the position and add it to the list
-            center_position_processed = scale_position(center_position)
+            center_position_processed = scale_position(
+                position=center_position,
+                original_image_shape=original_image_shape,
+                prediction_tensor_shape=left_line_prediction_tensor.shape,
+                window_size=window_size
+            )
             center_positions.append(center_position_processed)
 
     # Transpose the list of points in the outer lines
@@ -109,6 +97,31 @@ def calculate_lane_center_positions(
 
     # Return both the center line and the outer lines
     return center_positions, outer_road_lines
+
+
+# Find a single road line and compute the center line of the road by offsetting the points on the right line
+def calculate_lane_center_positions_single_line(prediction_tensor, original_image_shape, window_size,
+                                                minimum_prediction_confidence, offset_multiplier):
+    # A list to hold the points on the approximated center line
+    center_line_points = []
+    # For each of the rows of the prediction tensor
+    for row in prediction_tensor:
+        # Find the first peak in this row to the right of the center
+        right_peak = find_peak_in_direction(
+            collection=row,
+            starting_index=len(row) / 2,
+            reversed_iteration_direction=False,
+            minimum_value=minimum_prediction_confidence
+        )
+        # Scale the peak to a point on the image
+        scaled_peak = scale_position(right_peak, original_image_shape, prediction_tensor.shape, window_size)
+        # Subtract Y position times a constant from the X position to offset it because the center line gradually
+        # becomes closer to the the right line further up the image
+        center_x_position = scaled_peak[0] - (scaled_peak[1] * offset_multiplier)
+        # Add the position to the list
+        center_line_points.append(center_x_position)
+    # Return the list of points
+    return center_line_points
 
 
 # A function to traverse a collection from an arbitrary point to the end, finding the first value above a certain
@@ -131,3 +144,23 @@ def find_peak_in_direction(collection, starting_index,
 
     # Return the index, which will be None if a sufficient value could not be found
     return initial_sufficient_value_index
+
+
+# A function to process a single point and scale it so that it corresponds to a position on the original image
+def scale_position(position, original_image_shape, prediction_tensor_shape, window_size):
+    # Scale and offset the point so that it corresponds to the correct position within the original image
+    center_position_scaled = [
+        center_position_element *
+        (image_shape_element / prediction_tensor_shape_element)
+        for center_position_element,
+            image_shape_element, prediction_tensor_shape_element in zip(
+            position, original_image_shape,
+            prediction_tensor_shape
+        )
+    ]
+    center_position_offset = [
+        element + (window_size // 2) for element in center_position_scaled
+    ]
+
+    # Round the processed position to an integer and return it
+    return [int(value) for value in center_position_offset]

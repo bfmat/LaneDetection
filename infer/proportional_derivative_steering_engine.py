@@ -8,7 +8,7 @@ from ..infer.line_of_best_fit import line_of_best_fit
 
 
 # Main class, instantiated with PID parameters and road edge weights
-class SteeringEngine:
+class PDSteeringEngine:
     # Positive multipliers for the proportional and derivative error terms calculated for steering
     proportional_multiplier = None
     derivative_multiplier = None
@@ -108,8 +108,8 @@ class SteeringEngine:
 
                 # Calculate the X position that lies on the line corresponding to the Y position of the current point
                 predicted_x_position = (
-                                           self.center_line_of_best_fit[1] *
-                                           y_position) + self.center_line_of_best_fit[0]
+                                               self.center_line_of_best_fit[1] *
+                                               y_position) + self.center_line_of_best_fit[0]
 
                 # If the distance between the predicted and actual X positions is greater than the greatest so far,
                 # set the greatest distance variables to correspond to the current position

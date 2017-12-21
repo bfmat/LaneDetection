@@ -12,7 +12,7 @@ from libssh2 import Session
 from scipy.misc import imread
 
 from ..infer import SteeringEngine, SlidingWindowInferenceEngine
-from ..infer.lane_center_calculation import calculate_lane_center_positions
+from ..infer.lane_center_calculation import calculate_lane_center_positions_two_lines
 
 recording_encoder = False
 auto_drive = False
@@ -82,7 +82,7 @@ def compute_steering_angle():
     prediction_tensors = [inference_engine.infer(image_cropped) for inference_engine in inference_engines]
 
     # Calculate the center line positions and add them to the list
-    center_line_positions, outer_road_lines = calculate_lane_center_positions(
+    center_line_positions, outer_road_lines = calculate_lane_center_positions_two_lines(
         left_line_prediction_tensor=prediction_tensors[0],
         right_line_prediction_tensor=prediction_tensors[1],
         minimum_prediction_confidence=0.9,

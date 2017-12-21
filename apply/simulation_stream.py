@@ -6,21 +6,21 @@ import sys
 import numpy as np
 from scipy.misc import imread
 
-from ..infer.inference_and_steering_wrapper import InferenceAndSteeringWrapper
+from infer.inference_wrapper_single_line import InferenceWrapperSingleLine
 
 # Path to look for images in and record classifications in
 TEMP_PATH = "/tmp/"
 
 # Check that the number of command line arguments is correct
-if len(sys.argv) != 3:
-    print('Usage:', sys.argv[0], '<left line trained model> <right line trained model>')
+if len(sys.argv) != 2:
+    print('Usage:', sys.argv[0], '<right line trained model>')
     sys.exit()
 
-# Get the paths to the network models from the command line arguments
-model_paths = sys.argv[1:]
+# Get the path to the network model from the command line arguments
+model_path = sys.argv[1]
 
 # Create the engine wrapper
-inference_and_steering_wrapper = InferenceAndSteeringWrapper(model_paths)
+inference_and_steering_wrapper = InferenceWrapperSingleLine(model_path)
 
 # Clear old data from the temp folder and record an initial output
 os.system("rm %s*sim*" % TEMP_PATH)

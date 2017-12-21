@@ -2,16 +2,16 @@ import os
 
 from keras.models import load_model
 
-from .proportional_derivative_steering_engine import SteeringEngine
+from .proportional_derivative_steering_engine import PDSteeringEngine
 from .sliding_window_inference_engine import SlidingWindowInferenceEngine
-from ..infer.lane_center_calculation import calculate_lane_center_positions
+from ..infer.lane_center_calculation import calculate_lane_center_positions_two_lines
 
 
-# A wrapper that generates and uses inference engines and a steering engine
+# A wrapper that generates and uses two inference engines, one for each road line, and a steering engine,
 # for running inference on an image and calculating a steering angle
 
 # Main class, instantiated with paths to sliding window models
-class InferenceAndSteeringWrapper:
+class InferenceWrapperTwoLines:
     # Array of two inference engines, one for each road line
     inference_engines = []
 
@@ -36,7 +36,7 @@ class InferenceAndSteeringWrapper:
             self.inference_engines.append(inference_engine)
 
         # Instantiate the steering angle generation engine
-        self.steering_engine = SteeringEngine(
+        self.steering_engine = PDSteeringEngine(
             proportional_multiplier=0.0025,
             derivative_multiplier=0,
             max_distance_from_line=5,
@@ -52,7 +52,7 @@ class InferenceAndSteeringWrapper:
         prediction_tensors = [inference_engine.infer(image) for inference_engine in self.inference_engines]
 
         # Calculate the center line positions and add them to the list
-        center_line_positions, outer_road_lines = calculate_lane_center_positions(
+        center_line_positions, outer_road_lines = calculate_lane_center_positions_two_lines(
             left_line_prediction_tensor=prediction_tensors[0],
             right_line_prediction_tensor=prediction_tensors[1],
             minimum_prediction_confidence=0.9,
