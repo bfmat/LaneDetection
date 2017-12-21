@@ -72,8 +72,8 @@ def get_data(image_folders):
     image_list = []
     label_list = []
 
-    # For each of the two image folders
-    for folder_index in range(2):
+    # For each of the image folders
+    for folder_index in range(len(image_folders)):
 
         # For each image path in the provided folder
         for image_name in os.listdir(image_folders[folder_index]):
@@ -117,8 +117,8 @@ def get_data(image_folders):
 
 
 # Check that the number of command line arguments is correct
-if len(sys.argv) != 4:
-    print('Usage:', sys.argv[0], '<positive image folder> <negative image folder> <trained model folder>')
+if len(sys.argv) not in [3, 4]:
+    print('Usage:', sys.argv[0], '<trained model folder> <positive image folder> <negative image folder (optional)>')
     sys.exit()
 
 # Training parameters
@@ -133,11 +133,11 @@ WINDOW_SIZE = 16
 model = sliding_window_model(WINDOW_SIZE)
 
 # Load data from the folder given as a command line argument
-image_folders = [os.path.expanduser(folder) for folder in sys.argv[1:3]]
+image_folders = [os.path.expanduser(folder) for folder in sys.argv[2:]]
 images, labels = get_data(image_folders)
 
 # We will save snapshots to the folder path provided as the second parameter
-trained_model_folder = os.path.expanduser(sys.argv[3])
+trained_model_folder = os.path.expanduser(sys.argv[1])
 
 # Train the model
 train_and_save(
