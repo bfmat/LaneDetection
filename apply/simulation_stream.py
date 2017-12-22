@@ -6,7 +6,7 @@ import sys
 import numpy as np
 from scipy.misc import imread
 
-from infer.inference_wrapper_single_line import InferenceWrapperSingleLine
+from ..infer.inference_wrapper_single_line import InferenceWrapperSingleLine
 
 # Path to look for images in and record classifications in
 TEMP_PATH = "/tmp/"
@@ -31,6 +31,7 @@ i = 0
 while True:
     # Read from last image plus one (there should not be any gaps)
     path = "%ssim%d.png" % (TEMP_PATH, i)
+    # If the file exists
     if os.path.isfile(path):
         # Read the file as a 32-bit floating point tensor
         image_raw = imread(path).astype(np.float32)
@@ -39,12 +40,14 @@ while True:
         image = np.transpose(image_raw, (1, 0, 2))[:, 66:132, :]
 
         # Calculate a steering angle with the processed image
-        steering_angle = inference_and_steering_wrapper.infer(image)
-        print(steering_angle)
+        data = inference_and_steering_wrapper.infer(image)
 
-        # Write the classification to a temp file and rename it
-        os.system("echo %f > %stemp.txt" % (steering_angle, TEMP_PATH))
-        os.system("mv %stemp.txt %s%dsim.txt" % (TEMP_PATH, TEMP_PATH, i))
+        # If valid data has been returned
+        if data is not None:
+            # Write the classification to a temp file and rename it
+            # The steering angle is the first element of the returned collection
+            os.system("echo %f > %stemp.txt" % (data[0], TEMP_PATH))
+            os.system("mv %stemp.txt %s%dsim.txt" % (TEMP_PATH, TEMP_PATH, i))
 
         # Increment the image counter
         i += 1

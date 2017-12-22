@@ -2,9 +2,9 @@ import os
 
 from keras.models import load_model
 
-from infer.lane_center_calculation import calculate_lane_center_positions_single_line
-from infer.proportional_derivative_steering_engine import PDSteeringEngine
-from infer.sliding_window_inference_engine import SlidingWindowInferenceEngine
+from ..infer.lane_center_calculation import calculate_lane_center_positions_single_line
+from ..infer.proportional_derivative_steering_engine import PDSteeringEngine
+from ..infer.sliding_window_inference_engine import SlidingWindowInferenceEngine
 
 
 # A wrapper that uses a single steering engine and adds a predefined offset to points along the right line of the road

@@ -42,12 +42,12 @@ class PDSteeringEngine:
     # Compute a steering angle, given points down the center of the road
     def compute_steering_angle(self, center_points):
 
-        # Remove the outliers from the points
-        center_points_without_outliers = self.remove_outliers(center_points)
-
         # If there are not at least two points, return None because there is no reasonable line of best fit
-        if len(center_points_without_outliers) < 2:
+        if len(center_points) < 2:
             return None
+
+        # Remove the outliers from the points and calculate the line of best fit
+        self.remove_outliers(center_points)
 
         # Get the slope and intercept from the line of best fit
         line_intercept, line_slope = self.center_line_of_best_fit
@@ -107,9 +107,7 @@ class PDSteeringEngine:
                 x_position = position[1]
 
                 # Calculate the X position that lies on the line corresponding to the Y position of the current point
-                predicted_x_position = (
-                                               self.center_line_of_best_fit[1] *
-                                               y_position) + self.center_line_of_best_fit[0]
+                predicted_x_position = (self.center_line_of_best_fit[1] * y_position) + self.center_line_of_best_fit[0]
 
                 # If the distance between the predicted and actual X positions is greater than the greatest so far,
                 # set the greatest distance variables to correspond to the current position

@@ -105,21 +105,26 @@ def calculate_lane_center_positions_single_line(prediction_tensor, original_imag
     # A list to hold the points on the approximated center line
     center_line_points = []
     # For each of the rows of the prediction tensor
-    for row in prediction_tensor:
-        # Find the first peak in this row to the right of the center
+    for row_index in range(len(prediction_tensor)):
+        # Get the value of the row itself
+        row = prediction_tensor[row_index]
+        # Try to find the first peak in this row to the right of the center
         right_peak = find_peak_in_direction(
             collection=row,
-            starting_index=len(row) / 2,
+            starting_index=len(row) // 2,
             reversed_iteration_direction=False,
             minimum_value=minimum_prediction_confidence
         )
-        # Scale the peak to a point on the image
-        scaled_peak = scale_position(right_peak, original_image_shape, prediction_tensor.shape, window_size)
-        # Subtract Y position times a constant from the X position to offset it because the center line gradually
-        # becomes closer to the the right line further up the image
-        center_x_position = scaled_peak[0] - (scaled_peak[1] * offset_multiplier)
-        # Add the position to the list
-        center_line_points.append(center_x_position)
+        # If a peak has been found
+        if right_peak is not None:
+            # Scale the peak to a point on the image
+            scaled_peak = scale_position((row_index, right_peak), original_image_shape, prediction_tensor.shape,
+                                         window_size)
+            # Subtract Y position times a constant from the X position to offset it because the center line gradually
+            # becomes closer to the the right line further up the image
+            center_x_position = scaled_peak[1] - (scaled_peak[0] * offset_multiplier)
+            # Add the position to the list
+            center_line_points.append((row_index, center_x_position))
     # Return the list of points
     return center_line_points
 
@@ -150,13 +155,9 @@ def find_peak_in_direction(collection, starting_index,
 def scale_position(position, original_image_shape, prediction_tensor_shape, window_size):
     # Scale and offset the point so that it corresponds to the correct position within the original image
     center_position_scaled = [
-        center_position_element *
-        (image_shape_element / prediction_tensor_shape_element)
-        for center_position_element,
-            image_shape_element, prediction_tensor_shape_element in zip(
-            position, original_image_shape,
-            prediction_tensor_shape
-        )
+        center_position_element * (image_shape_element / prediction_tensor_shape_element)
+        for center_position_element, image_shape_element, prediction_tensor_shape_element
+        in zip(position, original_image_shape, prediction_tensor_shape)
     ]
     center_position_offset = [
         element + (window_size // 2) for element in center_position_scaled
