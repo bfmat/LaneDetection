@@ -40,7 +40,7 @@ while True:
         image = np.transpose(image_raw, (1, 0, 2))[:, 66:132, :]
 
         # Calculate a steering angle with the processed image
-        data = inference_and_steering_wrapper.infer(image)
+        data = inference_and_steering_wrapper.infer(image)[0]
 
         # If valid data has been returned
         if data is not None:
