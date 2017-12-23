@@ -14,7 +14,7 @@ from ..infer.sliding_window_inference_engine import SlidingWindowInferenceEngine
 # Main class, instantiated with paths to sliding window models
 class InferenceWrapperSingleLine:
     # Inference engine for sliding window processing of images
-    inference_engine = None
+    inference_engines = []
 
     # Steering engine for calculating steering angle and other output values
     steering_engine = None
@@ -28,7 +28,13 @@ class InferenceWrapperSingleLine:
         model = load_model(absolute_path)
 
         # Create a sliding window inference engine with the model
-        self.inference_engine = SlidingWindowInferenceEngine(model=model, slice_size=16, stride=4)
+        self.inference_engines.append(
+            SlidingWindowInferenceEngine(
+                model=model,
+                slice_size=16,
+                stride=4
+            )
+        )
 
         # Instantiate the steering angle generation engine
         self.steering_engine = PDSteeringEngine(
@@ -43,14 +49,17 @@ class InferenceWrapperSingleLine:
     # Run inference using the predefined model and steering engine
     def infer(self, image):
         # Run inference on the image and collect a prediction tensor
-        prediction_tensor = self.inference_engine.infer(image)
+        prediction_tensor = self.inference_engines[0].infer(image)
         # Calculate positions on the center line using the prediction tensor
-        center_line_positions = calculate_lane_center_positions_single_line(
+        center_line_positions, outer_road_lines = calculate_lane_center_positions_single_line(
             prediction_tensor=prediction_tensor,
             original_image_shape=image.shape,
-            window_size=self.inference_engine.window_size,
+            window_size=self.inference_engines[0].window_size,
             minimum_prediction_confidence=0.7,
             offset_multiplier=1
         )
-        # Use the steering engine to calculate a steering angle based on the center line and return it
-        return self.steering_engine.compute_steering_angle(center_line_positions)
+        # Use the steering engine to calculate a steering angle based on the center line
+        output_values = self.steering_engine.compute_steering_angle(center_line_positions)
+
+        # Return the output values, along with the center and side lines as well as the line of best fit
+        return output_values, center_line_positions, outer_road_lines, self.steering_engine.center_line_of_best_fit

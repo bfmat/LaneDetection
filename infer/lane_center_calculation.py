@@ -104,6 +104,8 @@ def calculate_lane_center_positions_single_line(prediction_tensor, original_imag
                                                 minimum_prediction_confidence, offset_multiplier):
     # A list to hold the points on the approximated center line
     center_line_points = []
+    # A list to hold the points on the outer line
+    outer_road_line = []
     # For each of the rows of the prediction tensor
     for row_index in range(len(prediction_tensor)):
         # Get the value of the row itself
@@ -120,13 +122,15 @@ def calculate_lane_center_positions_single_line(prediction_tensor, original_imag
             # Scale the peak to a point on the image
             scaled_peak = scale_position((row_index, right_peak), original_image_shape, prediction_tensor.shape,
                                          window_size)
+            # Add the peak to the list of outer line points
+            outer_road_line.append(scaled_peak)
             # Subtract Y position times a constant from the X position to offset it because the center line gradually
             # becomes closer to the the right line further up the image
             center_x_position = scaled_peak[1] - (scaled_peak[0] * offset_multiplier)
             # Add the position to the list
             center_line_points.append((row_index, center_x_position))
-    # Return the list of points
-    return center_line_points
+    # Return the list of points and the outer line
+    return center_line_points, [outer_road_line]
 
 
 # A function to traverse a collection from an arbitrary point to the end, finding the first value above a certain

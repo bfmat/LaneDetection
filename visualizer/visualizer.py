@@ -9,7 +9,8 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QImage, QPainter, QColor, QPen, QPalette, QFont
 from PyQt5.QtWidgets import QLabel, QWidget, QApplication
 
-from ..infer import InferenceAndSteeringWrapper
+from ..infer.inference_wrapper_single_line import InferenceWrapperSingleLine
+from ..infer.inference_wrapper_two_lines import InferenceWrapperTwoLines
 from ..visualizer.visualizer_image_processing import process_images
 
 # Program which demonstrates the effectiveness or ineffectiveness of a lane detection model
@@ -61,6 +62,9 @@ LINE_DATA = [('Steering angle', 10, 'yellow', 'tenths of motor rotations'),
              ('Proportional error', 0.01, 'cyan', 'hundreds of pixels'),
              ('Derivative error', 1, 'magenta', 'slope of line')]
 
+# The value of the light gray filler color, from 0 to 255
+LIGHT_GRAY_COLOR = 192
+
 
 # Main PyQt5 QWidget class
 class Visualizer(QWidget):
@@ -101,8 +105,10 @@ class Visualizer(QWidget):
         super(Visualizer, self).__init__()
 
         # Check that the number of command line arguments is correct
-        if len(sys.argv) != 4:
-            print('Usage:', sys.argv[0], '<image folder> <left line trained model> <right line trained model>')
+        num_arguments = len(sys.argv)
+        if num_arguments != 3 and num_arguments != 4:
+            print('Usage:', sys.argv[0],
+                  '<image folder> <right line trained model> <left line trained model (optional)>')
             sys.exit()
 
         # Generate the fonts for the line graph and heat map
@@ -114,16 +120,24 @@ class Visualizer(QWidget):
             ]
         ]
 
-        # Load the paths to the model and image provided as command line arguments
+        # Load the paths to the models and image provided as command line arguments
         image_folder = os.path.expanduser(sys.argv[1])
-        model_paths = sys.argv[2:]
 
-        # Create the engine wrapper
-        inference_and_steering_wrapper = InferenceAndSteeringWrapper(model_paths)
+        # Create an inference wrapper based on the number of models provided
+        num_models = num_arguments - 2
+        if num_models == 1:
+            inference_and_steering_wrapper = InferenceWrapperSingleLine(sys.argv[2])
+        else:
+            inference_and_steering_wrapper = InferenceWrapperTwoLines([sys.argv[3], sys.argv[2]])
 
         # Load and perform inference on the images
-        self.image_list, self.image_data = process_images(image_folder, inference_and_steering_wrapper,
-                                                          MARKER_RADIUS, HEAT_MAP_OPACITY)
+        self.image_list, self.image_data = process_images(
+            image_folder=image_folder,
+            inference_and_steering_wrapper=inference_and_steering_wrapper,
+            marker_radius=MARKER_RADIUS,
+            heat_map_opacity=HEAT_MAP_OPACITY,
+            light_gray_color=LIGHT_GRAY_COLOR
+        )
 
         # Set the global image height and width variables
         image_height, image_width = self.image_list[0].shape[:2]
@@ -147,14 +161,12 @@ class Visualizer(QWidget):
 
         # Calculate the center of the line graph using the height of the image
         # plus the height of the line graph label as an upper limit of the graph
-        self.line_graph_center = image_box_height + \
-                                 HEAT_MAP_LABELS_HEIGHT + (LINE_GRAPH_HEIGHT // 2)
+        self.line_graph_center = image_box_height + HEAT_MAP_LABELS_HEIGHT + (LINE_GRAPH_HEIGHT // 2)
 
         # To calculate the window size, use the image box size plus the predefined height that will
         # be occupied by the line graph, corresponding legend, and the label below the heat maps
         window_width = image_box_width
-        window_height = image_box_height + HEAT_MAP_LABELS_HEIGHT + \
-                        LINE_GRAPH_HEIGHT + LINE_GRAPH_LEGEND_HEIGHT
+        window_height = image_box_height + HEAT_MAP_LABELS_HEIGHT + LINE_GRAPH_HEIGHT + LINE_GRAPH_LEGEND_HEIGHT
 
         # Set the size, position, title, and color scheme of the window
         self.setFixedSize(window_width, window_height)

@@ -62,6 +62,5 @@ class InferenceWrapperTwoLines:
         # Calculate a steering angle and errors from the points
         output_values = self.steering_engine.compute_steering_angle(center_line_positions)
 
-        # Return the output values, along with the center and side lines
-        # as well as the line of best fit in case they are needed
+        # Return the output values, along with the center and side lines as well as the line of best fit
         return output_values, center_line_positions, outer_road_lines, self.steering_engine.center_line_of_best_fit
