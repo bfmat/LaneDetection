@@ -128,7 +128,7 @@ def calculate_lane_center_positions_single_line(prediction_tensor, original_imag
             # becomes closer to the the right line further up the image
             center_x_position = scaled_peak[1] - (scaled_peak[0] * offset_multiplier)
             # Add the position to the list
-            center_line_points.append((row_index, center_x_position))
+            center_line_points.append((scaled_peak[0], center_x_position))
     # Return the list of points and the outer line
     return center_line_points, [outer_road_line]
 
