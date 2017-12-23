@@ -49,7 +49,7 @@ class InferenceWrapperSingleLine:
             prediction_tensor=prediction_tensor,
             original_image_shape=image.shape,
             window_size=self.inference_engine.window_size,
-            minimum_prediction_confidence=0.9,
+            minimum_prediction_confidence=0.7,
             offset_multiplier=1
         )
         # Use the steering engine to calculate a steering angle based on the center line and return it
