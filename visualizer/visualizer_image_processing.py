@@ -156,11 +156,11 @@ def _process_single_image(image, inference_and_steering_wrapper, marker_radius, 
     # Display the center line in blue
     lines_and_colors = [(center_line_positions_without_outliers, [0, 0, 255])]
     # Display the outer lines in red and green (red if there is only one)
-    red_and_blue = (
+    red_and_green = (
         [255, 0, 0],
         [0, 255, 0]
     )
-    for road_line_with_color in zip(outer_road_lines, red_and_blue):
+    for road_line_with_color in zip(outer_road_lines, red_and_green):
         lines_and_colors.append(road_line_with_color)
 
     # Add the relevant lines and points to the main image and scale it to double its original size
