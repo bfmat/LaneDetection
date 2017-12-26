@@ -3,7 +3,6 @@ from __future__ import print_function
 import os
 import sys
 
-import numpy as np
 from scipy.misc import imread
 
 from ..infer.inference_wrapper_single_line import InferenceWrapperSingleLine
@@ -41,17 +40,15 @@ while True:
 
     # If the file exists
     if os.path.isfile(max_numbered_path):
-        # Read the file as a 32-bit floating point tensor
-        image_raw = imread(max_numbered_path).astype(np.float32)
-
-        # Rearrange and crop it into a format that the neural network should accept
-        image = np.transpose(image_raw, (1, 0, 2))[:, 90:]
+        # Read the file and crop it into a format that the neural network should accept
+        image = imread(max_numbered_path)[90:]
 
         # Calculate a steering angle with the processed image
         data = inference_and_steering_wrapper.infer(image)[0]
 
         # If valid data has been returned
         if data is not None:
+            print(data[0])
             # Write the classification to a temp file and rename it
             # The steering angle is the first element of the returned collection
             os.system('echo %f > %stemp.txt' % (data[0], TEMP_PATH))
