@@ -38,11 +38,11 @@ class InferenceWrapperSingleLine:
 
         # Instantiate the steering angle generation engine
         self.steering_engine = PDSteeringEngine(
-            proportional_multiplier=0.0025,
+            proportional_multiplier=-0.00025,
             derivative_multiplier=0,
             max_distance_from_line=5,
             ideal_center_x=160,
-            center_y=0,
+            center_y=90,
             steering_limit=0.2
         )
 
