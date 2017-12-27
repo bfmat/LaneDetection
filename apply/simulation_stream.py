@@ -48,7 +48,6 @@ while True:
 
         # If valid data has been returned
         if data is not None:
-            print(data[0])
             # Write the classification to a temp file and rename it
             # The steering angle is the first element of the returned collection
             os.system('echo %f > %stemp.txt' % (data[0], TEMP_PATH))
