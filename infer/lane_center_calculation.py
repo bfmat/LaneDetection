@@ -101,7 +101,7 @@ def calculate_lane_center_positions_two_lines(
 
 # Find a single road line and compute the center line of the road by offsetting the points on the right line
 def calculate_lane_center_positions_single_line(prediction_tensor, original_image_shape, window_size,
-                                                minimum_prediction_confidence, offset_multiplier):
+                                                minimum_prediction_confidence, offset_multiplier, offset_absolute):
     # A list to hold the points on the approximated center line
     center_line_points = []
     # A list to hold the points on the outer line
@@ -126,7 +126,8 @@ def calculate_lane_center_positions_single_line(prediction_tensor, original_imag
             outer_road_line.append(scaled_peak)
             # Subtract Y position times a constant from the X position to offset it because the center line gradually
             # becomes closer to the the right line further up the image
-            center_x_position = scaled_peak[1] - (scaled_peak[0] * offset_multiplier)
+            # Also subtract an unmodified constant to shift the line further into the center of the road
+            center_x_position = scaled_peak[1] - (scaled_peak[0] * offset_multiplier) - offset_absolute
             # Add the position to the list
             center_line_points.append((scaled_peak[0], center_x_position))
     # Return the list of points and the outer line
