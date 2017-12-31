@@ -1,9 +1,11 @@
+from __future__ import print_function
+
 import os
 import sys
 
 from scipy.misc import imread
 
-from ..infer import InferenceAndSteeringWrapper
+from ..infer.inference_wrapper_single_line import InferenceWrapperSingleLine
 from ..model import lstm_steering_model
 from ..train.common_train_features import train_and_save
 
@@ -14,19 +16,17 @@ from ..train.common_train_features import train_and_save
 EPOCHS = 100
 
 # Check that the number of command line arguments is correct
-if len(sys.argv) != 5:
-    print(
-        'Usage:', sys.argv[0],
-        '<image folder> <left line trained model> <right line trained model> <trained LSTM folder>')
+if len(sys.argv) != 4:
+    print('Usage:', sys.argv[0], '<image folder> <right line trained model> <trained LSTM folder>')
     sys.exit()
 
 # Load the paths to the image folder, sliding window models, and trained model folder provided as command line arguments
 image_folder = os.path.expanduser(sys.argv[1])
-model_paths = sys.argv[2:]
-trained_model_folder = os.path.expanduser(sys.argv[2])
+sliding_window_model_path = os.path.expanduser(sys.argv[2])
+trained_model_folder = os.path.expanduser(sys.argv[3])
 
 # Create an inference and steering wrapper using the supplied model paths
-inference_and_steering_wrapper = InferenceAndSteeringWrapper(model_paths)
+inference_and_steering_wrapper = InferenceWrapperSingleLine(sliding_window_model_path)
 
 # Create a list of steering angles and a list of lines of best fit
 steering_angle_list = []
