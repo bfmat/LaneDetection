@@ -3,6 +3,8 @@ from __future__ import print_function
 import os
 import sys
 
+import numpy as np
+
 from scipy.misc import imread
 
 from ..infer.inference_wrapper_single_line import InferenceWrapperSingleLine
@@ -34,24 +36,33 @@ line_of_best_fit_list = []
 
 # Load all of the images from the provided folder
 for image_name in os.listdir(image_folder):
+    # Notify the user the image is being processed
+    print('Loading image', image_name)
+
     # Load the image from disk, using its fully qualified path
     image_path = image_folder + '/' + image_name
     image = imread(image_path)
 
     # Run inference on the image and collect the line of best fit and steering angle
     output_values, _, _, line_of_best_fit = inference_and_steering_wrapper.infer(image)
-    steering_angle = output_values[0]
 
-    # Add the steering angle to the list
-    steering_angle_list.append(steering_angle)
+    # If valid values were returned at all
+    if output_values is not None:
+        # Get the steering angle and add it to the list alongside the line of best fit
+        steering_angle = output_values[0]
+        steering_angle_list.append(steering_angle)
+        line_of_best_fit_list.append(line_of_best_fit)
+
+# Get the length of the input vectors
+training_timesteps = len(steering_angle_list)
 
 # Create a model and train it
-model = lstm_steering_model()
+model = lstm_steering_model(training_timesteps)
 train_and_save(
     model=model,
     trained_model_folder=trained_model_folder,
-    x=line_of_best_fit_list,
-    y=steering_angle_list,
+    x=lines_of_best_fit,
+    y=steering_angles,
     epochs=EPOCHS,
     batch_size=1,
     validation_split=0

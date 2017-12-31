@@ -7,8 +7,8 @@ from keras.models import Sequential
 # Created by brendon-ai, November 2017
 
 
-# Main function to create model
-def lstm_steering_model():
+# Main function to create model using the number of training timesteps
+def lstm_steering_model(training_timesteps):
     # Hyperbolic tangent activation function
     activation = 'tanh'
 
@@ -16,7 +16,7 @@ def lstm_steering_model():
     model = Sequential()
 
     # Add a single LSTM layer with 10 output neurons
-    model.add(LSTM(10))
+    model.add(LSTM(10, input_shape=(2,)))
 
     # Add two fully connected layers, bringing the output space down to a single neuron representing steering angle
     model.add(Dense(4, activation=activation))
