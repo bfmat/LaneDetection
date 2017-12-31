@@ -35,8 +35,7 @@ num_files = None
 
 
 # Load and process the image with the provided inference engines and steering engine
-def process_images(image_folder, inference_and_steering_wrapper,
-                   marker_radius, heat_map_opacity):
+def process_images(image_folder, inference_and_steering_wrapper, marker_radius, heat_map_opacity, light_gray_color):
     # Notify the user that we have started loading the images
     print('Loading images...')
 
@@ -62,11 +61,13 @@ def process_images(image_folder, inference_and_steering_wrapper,
 
         # Try to process the image and add various markings to it, recording metadata returned for display purposes
         try:
-            processed_image, output_values = _process_single_image(image,
-                                                                   inference_and_steering_wrapper.inference_engines,
-                                                                   inference_and_steering_wrapper.steering_engine,
-                                                                   marker_radius, heat_map_opacity)
-
+            processed_image, output_values = _process_single_image(
+                image=image,
+                inference_and_steering_wrapper=inference_and_steering_wrapper,
+                marker_radius=marker_radius,
+                heat_map_opacity=heat_map_opacity,
+                light_gray_color=light_gray_color
+            )
         # If a problem is encountered, skip this image and print an error message
         except (UnusableImageError, LinAlgError):
             print('Failed to load', image_name)
@@ -97,8 +98,7 @@ def process_images(image_folder, inference_and_steering_wrapper,
 
 
 # Perform all necessary processing on a single image to prepare it for visualization
-def _process_single_image(image, inference_and_steering_wrapper,
-                          marker_radius, heat_map_opacity):
+def _process_single_image(image, inference_and_steering_wrapper, marker_radius, heat_map_opacity, light_gray_color):
     # Perform inference on the image using the wrapper
     output_values, center_line_positions, outer_road_lines = inference_and_steering_wrapper.infer(image)[:3]
 
@@ -111,8 +111,8 @@ def _process_single_image(image, inference_and_steering_wrapper,
     for j in range(num_errors):
         accumulators[j] += errors[j] ** 2
 
-    # Copy the image twice for use in the heat map section of the user interface
-    heat_map_images = [numpy.copy(image) for _ in range(2)]
+    # Copy the image for use in the heat map section of the user interface
+    heat_map_images = [numpy.copy(image) for _ in range(len(outer_road_lines))]
 
     # Create the dictionary of colors along with corresponding heat values
     heat_map_colors = {
@@ -125,9 +125,7 @@ def _process_single_image(image, inference_and_steering_wrapper,
 
     # Apply the heat map in place to the copied images, using a different inference engine for each
     for heat_map_image, inference_engine in zip(heat_map_images, inference_and_steering_wrapper.inference_engines):
-        _apply_heat_map(heat_map_image,
-                        inference_engine.last_prediction_tensor,
-                        heat_map_colors, heat_map_opacity)
+        _apply_heat_map(heat_map_image, inference_engine.last_prediction_tensor, heat_map_colors, heat_map_opacity)
 
     # Calculate two points on the line of best fit
     line_parameters = inference_and_steering_wrapper.steering_engine.center_line_of_best_fit
@@ -155,27 +153,38 @@ def _process_single_image(image, inference_and_steering_wrapper,
     center_line_positions_without_outliers = inference_and_steering_wrapper.steering_engine.remove_outliers(
         center_line_positions)
 
-    # Display the center line in blue and the outer lines in red and green
-    lines_and_colors = [(center_line_positions_without_outliers, [0, 0, 255]), (outer_road_lines[0], [255, 0, 0]),
-                        (outer_road_lines[1], [0, 255, 0])]
+    # Display the center line in blue
+    lines_and_colors = [(center_line_positions_without_outliers, [0, 0, 255])]
+    # Display the outer lines in red and green (red if there is only one)
+    red_and_green = (
+        [255, 0, 0],
+        [0, 255, 0]
+    )
+    for road_line_with_color in zip(outer_road_lines, red_and_green):
+        lines_and_colors.append(road_line_with_color)
 
     # Add the relevant lines and points to the main image and scale it to double its original size
     _add_markers(image, marker_radius, lines_and_colors)
     image = imresize(image, 200, interp='nearest')
 
-    # Add a black border around the edge of all three images before tiling them
-    for image in heat_map_images + [image]:
+    # If there is only one heat map image, add a light gray rectangle of the same shape to the list
+    if len(heat_map_images) == 1:
+        empty_rectangle = numpy.copy(heat_map_images[0])
+        empty_rectangle.fill(light_gray_color)
+        heat_map_images.append(empty_rectangle)
+
+    # Add a light gray border around the edge of all three images before tiling them
+    for sub_image in heat_map_images + [image]:
 
         # Set the beginning and ending rows of both dimensions
-        for x in [0, image.shape[1] - 1]:
-            image[:, x] = 192
-        for y in [0, image.shape[0] - 1]:
-            image[y] = 192
+        for x in [0, sub_image.shape[1] - 1]:
+            sub_image[:, x] = light_gray_color
+        for y in [0, sub_image.shape[0] - 1]:
+            sub_image[y] = light_gray_color
 
     # Concatenate the two small images together and then concatenate them to the main image
-    concatenated_heat_map_image = numpy.concatenate(heat_map_images, axis=1)
-    tiled_image = numpy.concatenate(
-        (image, concatenated_heat_map_image), axis=0)
+    concatenated_heat_map_image = numpy.hstack(heat_map_images)
+    tiled_image = numpy.vstack((image, concatenated_heat_map_image))
 
     # Return the steering angle and the image
     return tiled_image, output_values
@@ -247,7 +256,7 @@ def _apply_heat_map(image, prediction_tensor, colors, heat_map_opacity):
                 for previous, current in zip(previous_color, color):
                     weighted_average = (previous *
                                         (1 - interpolation_value)) + (
-                                           current * interpolation_value)
+                                               current * interpolation_value)
                     interpolated_color.append(weighted_average)
 
                 # Exit the loop because we have already completed the interpolation

@@ -122,7 +122,7 @@ if len(sys.argv) not in [3, 4]:
     sys.exit()
 
 # Training parameters
-EPOCHS = 30
+EPOCHS = 100
 BATCH_SIZE = 5
 VALIDATION_SPLIT = 0.1
 
