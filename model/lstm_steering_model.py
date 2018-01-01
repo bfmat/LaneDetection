@@ -8,7 +8,7 @@ from keras.models import Sequential
 
 
 # Main function to create model using the number of training timesteps
-def lstm_steering_model(training_timesteps):
+def lstm_steering_model():
     # Hyperbolic tangent activation function
     activation = 'tanh'
 

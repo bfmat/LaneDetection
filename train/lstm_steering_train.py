@@ -4,7 +4,6 @@ import os
 import sys
 
 import numpy as np
-
 from scipy.misc import imread
 
 from ..infer.inference_wrapper_single_line import InferenceWrapperSingleLine
@@ -53,17 +52,14 @@ for image_name in os.listdir(image_folder):
         steering_angles.append(steering_angle)
         lines_of_best_fit.append(line_of_best_fit)
 
-# Get the length of the input vectors
-training_timesteps = len(steering_angles)
-
 # Create a model and train it
-model = lstm_steering_model(training_timesteps)
+model = lstm_steering_model()
 train_and_save(
     model=model,
     trained_model_folder=trained_model_folder,
     x=np.array([lines_of_best_fit]),
     y=np.array([steering_angles]),
     epochs=EPOCHS,
-    batch_size=1,
+    batch_size=None,
     validation_split=0
 )
