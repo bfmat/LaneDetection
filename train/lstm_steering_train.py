@@ -58,7 +58,7 @@ train_and_save(
     model=model,
     trained_model_folder=trained_model_folder,
     x=np.array([lines_of_best_fit]),
-    y=np.array([steering_angles]),
+    y=np.expand_dims(np.array([steering_angles]), 2),
     epochs=EPOCHS,
     batch_size=None,
     validation_split=0
