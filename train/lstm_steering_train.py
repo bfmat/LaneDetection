@@ -31,8 +31,8 @@ trained_model_folder = os.path.expanduser(sys.argv[3])
 inference_and_steering_wrapper = InferenceWrapperSingleLine(sliding_window_model_path)
 
 # Create a list of steering angles and a list of lines of best fit
-steering_angle_list = []
-line_of_best_fit_list = []
+steering_angles = []
+lines_of_best_fit = []
 
 # Load all of the images from the provided folder
 for image_name in os.listdir(image_folder):
@@ -50,19 +50,19 @@ for image_name in os.listdir(image_folder):
     if output_values is not None:
         # Get the steering angle and add it to the list alongside the line of best fit
         steering_angle = output_values[0]
-        steering_angle_list.append(steering_angle)
-        line_of_best_fit_list.append(line_of_best_fit)
+        steering_angles.append(steering_angle)
+        lines_of_best_fit.append(line_of_best_fit)
 
 # Get the length of the input vectors
-training_timesteps = len(steering_angle_list)
+training_timesteps = len(steering_angles)
 
 # Create a model and train it
 model = lstm_steering_model(training_timesteps)
 train_and_save(
     model=model,
     trained_model_folder=trained_model_folder,
-    x=lines_of_best_fit,
-    y=steering_angles,
+    x=np.array([lines_of_best_fit]),
+    y=np.array([steering_angles]),
     epochs=EPOCHS,
     batch_size=1,
     validation_split=0

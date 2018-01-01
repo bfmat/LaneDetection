@@ -16,7 +16,7 @@ def lstm_steering_model(training_timesteps):
     model = Sequential()
 
     # Add a single LSTM layer with 10 output neurons
-    model.add(LSTM(10, input_shape=(2,)))
+    model.add(LSTM(10, input_shape=(None, 2)))
 
     # Add two fully connected layers, bringing the output space down to a single neuron representing steering angle
     model.add(Dense(4, activation=activation))
