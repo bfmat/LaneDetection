@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import os
 import sys
+import time
 
 import numpy as np
 import torch
@@ -74,16 +75,24 @@ model = lstm_steering_model()
 loss_function = nn.MSELoss()
 optimizer = optim.Adadelta(model.parameters())
 
+# Get the Unix time at the beginning of training
+start_time = int(round(time.time()))
+
 # Train the network one epoch at a time
 for epoch in range(EPOCHS):
     # Compute the predictions by passing the entire training sequence to the network
     predictions = model(x)
     # Compute and print the loss using the predictions and the actual steering angles
     loss = loss_function(predictions, y)
-    print('Loss of', loss.data[0], 'for epoch', epoch)
+    loss_number = loss.data[0]
+    print('Loss of', loss_number, 'for epoch', epoch)
     # Zero the gradients for the variables that will be updated
     optimizer.zero_grad()
     # Run backpropagation, calculating gradients for each of the trainable parameters
     loss.backward()
     # Update the parameters using the optimizer
     optimizer.step()
+    # Save the current model's architecture and weights in the provided path
+    trained_model_path = '{}/lstm_time={}_epoch={}_loss={}.dat' \
+        .format(trained_model_folder, start_time, epoch, loss_number)
+    torch.save(model, trained_model_path)
