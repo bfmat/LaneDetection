@@ -5,7 +5,9 @@ import sys
 import time
 
 import numpy as np
+import tensorflow as tf
 import torch
+from keras.backend.tensorflow_backend import set_session
 from scipy.misc import imread
 from torch import autograd
 from torch import nn, optim
@@ -17,8 +19,13 @@ from ..model import lstm_steering_model
 # Created by brendon-ai, January 2018
 
 # Training hyperparameters
-EPOCHS = 100
+EPOCHS = 500
 LEARNING_RATE = 1e-4
+
+# Limit the TensorFlow backend's memory usage
+config = tf.ConfigProto()
+config.gpu_options.per_process_gpu_memory_fraction = 0.7
+set_session(tf.Session(config=config))
 
 # Check that the number of command line arguments is correct
 if len(sys.argv) != 4:
