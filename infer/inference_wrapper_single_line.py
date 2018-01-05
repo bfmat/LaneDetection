@@ -3,6 +3,7 @@ import os
 from keras.models import load_model
 
 from ..infer.lane_center_calculation import calculate_lane_center_positions_single_line
+from ..infer.lstm_steering_engine import LSTMSteeringEngine
 from ..infer.proportional_derivative_steering_engine import PDSteeringEngine
 from ..infer.sliding_window_inference_engine import SlidingWindowInferenceEngine
 
@@ -20,7 +21,7 @@ class InferenceWrapperSingleLine:
     steering_engine = None
 
     # Load model and create inference and steering engines
-    def __init__(self, model_path):
+    def __init__(self, model_path, lstm_model_path=None):
         # Convert the home folder path to an absolute path
         absolute_path = os.path.expanduser(model_path)
 
@@ -36,15 +37,21 @@ class InferenceWrapperSingleLine:
             )
         )
 
-        # Instantiate the steering angle generation engine
-        self.steering_engine = PDSteeringEngine(
-            proportional_multiplier=-0.0025,
-            derivative_multiplier=0,
-            max_distance_from_line=10,
-            ideal_center_x=160,
-            center_y=20,
-            steering_limit=0.2
-        )
+        # If an LSTM model has been passed
+        if lstm_model_path is not None:
+            # Create an LSTM steering engine using the supplied path
+            self.steering_engine = LSTMSteeringEngine(trained_model_path=lstm_model_path)
+
+        # Otherwise, use a proportional/derivative steering engine
+        else:
+            self.steering_engine = PDSteeringEngine(
+                proportional_multiplier=-0.0025,
+                derivative_multiplier=0,
+                max_distance_from_line=10,
+                ideal_center_x=160,
+                center_y=20,
+                steering_limit=0.2
+            )
 
     # Run inference using the predefined model and steering engine
     def infer(self, image):
