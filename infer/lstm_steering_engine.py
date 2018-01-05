@@ -1,3 +1,7 @@
+import os
+
+import torch
+
 from ..infer.line_of_best_fit import line_of_best_fit
 
 
@@ -12,8 +16,11 @@ class LSTMSteeringEngine:
     trained_model = None
 
     # Set global trained model provided as an argument
-    def __init__(self, trained_model):
-        self.trained_model = trained_model
+    def __init__(self, trained_model_path):
+        # Get the global path of the model, not relative to the home folder
+        global_path = os.path.expanduser(trained_model_path)
+        # Load the model from disk and save it in the global variable
+        self.trained_model = torch.load(global_path)
 
     # Compute a steering angle, given points down the center of the road
     def compute_steering_angle(self, center_points):
