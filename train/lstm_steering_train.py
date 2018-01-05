@@ -76,9 +76,9 @@ lines_of_best_fit_array, steering_angles_array = [
 # Add dimensions to the arrays so they are 3D arrays of the format (sequences, batches, data)
 lines_of_best_fit_array = lines_of_best_fit_array[:, np.newaxis, :]
 steering_angles_array = steering_angles_array[:, np.newaxis, np.newaxis]
-# Convert the arrays into PyTorch tensors and then into Autograd Variables that run on the GPU
+# Convert the arrays into PyTorch tensors and then into Autograd Variables
 x, y = [
-    autograd.Variable(torch.from_numpy(data_array).float()).cuda()
+    autograd.Variable(torch.from_numpy(data_array).float())
     for data_array in (lines_of_best_fit_array, steering_angles_array)
 ]
 
@@ -86,9 +86,6 @@ x, y = [
 model = lstm_steering_model()
 loss_function = nn.MSELoss()
 optimizer = optim.Adadelta(model.parameters())
-
-# Make the model train on the GPU
-model.cuda()
 
 # Get the Unix time at the beginning of training
 start_time = int(round(time.time()))
