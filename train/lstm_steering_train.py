@@ -45,10 +45,11 @@ steering_angles = []
 lines_of_best_fit = []
 
 # Load all of the images from the provided folder
-for image_name in os.listdir(image_folder):
-    # Notify the user the image is being processed
-    print('Loading image', image_name)
-
+image_names = os.listdir(image_folder)
+num_images = len(image_names)
+for image_index in range(num_images):
+    # Get the name of the current image
+    image_name = image_names[image_index]
     # Load the image from disk, using its fully qualified path
     image_path = image_folder + '/' + image_name
     image = imread(image_path)
@@ -62,6 +63,10 @@ for image_name in os.listdir(image_folder):
         steering_angle = output_values[0]
         steering_angles.append(steering_angle)
         lines_of_best_fit.append(line_of_best_fit)
+
+    # If the current image index is a multiple of 1000, notify the user
+    if image_index % 1000 == 0:
+        print('Loaded image', image_index, 'of', num_images)
 
 # Convert the lines of best fit and steering angles to NumPy arrays
 lines_of_best_fit_array, steering_angles_array = [
