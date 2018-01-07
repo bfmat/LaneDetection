@@ -4,6 +4,7 @@ import random
 import numpy as np
 from keras.layers import Dense
 from keras.models import Sequential
+from keras.optimizers import Adam
 
 # A system for steering based on the center line of the road using reinforcement learning, meaning the network
 # gradually learns while attempting to drive the car
@@ -12,8 +13,8 @@ from keras.models import Sequential
 
 # The discount rate used for the reinforcement learning algorithm
 GAMMA = 0.95
-# The exploration rate used for the reinforcement learning algorithm
-EPSILON = 1.0
+# The initial value exploration rate used for the reinforcement learning algorithm
+EPSILON_INITIAL = 1.0
 # The decay value by which the epsilon is multiplied every iteration
 EPSILON_DECAY = 0.995
 # The minimum value that epsilon can decay to
@@ -29,6 +30,9 @@ class ReinforcementSteeringAgent:
 
     # Initialize the agent including the model and other attributes
     def __init__(self, state_size, action_size):
+        # Initialize the value of epsilon which will be changed over the life of the agent
+        self.epsilon = EPSILON_INITIAL
+
         # Initialize the agent's memory as a double-ended queue with a predefined maximum capacity
         # It will store past time steps for training
         self.memory = collections.deque(maxlen=MEMORY_CAPACITY)
@@ -39,17 +43,21 @@ class ReinforcementSteeringAgent:
 
         # Initialize the neural network model that trains as the agent learns
         # Use a hyperbolic tangent activation function
-        activation = 'tanh'
+        activation = 'relu'
         # Create the neural network model simply using a series of dense layers
         self.model = Sequential([
-            Dense(10, input_shape=2, activation=activation),
-            Dense(4, activation=activation),
-            Dense(1)
+            Dense(24, input_shape=(self.state_size,), activation=activation),
+            Dense(24, activation=activation),
+            Dense(self.action_size)
         ])
-        # Compile the model with a mean squared error loss and an Adadelta optimizer
+
+        # Use an Adam optimizer with the predefined learning rate
+        optimizer = Adam(lr=LEARNING_RATE)
+
+        # Compile the model with a mean squared error loss
         self.model.compile(
             loss='mse',
-            optimizer='adadelta'
+            optimizer=optimizer
         )
 
     # Add a set of values packaged as a single time step to the memory
@@ -59,7 +67,7 @@ class ReinforcementSteeringAgent:
     # Act based on a provided state, choosing either to explore or to act based on past learning
     def act(self, state):
         # Choose randomly whether or not to act randomly, depending on the exploration rate
-        if np.random.rand() <= EPSILON:
+        if np.random.rand() <= self.epsilon:
             # Choose a random value less than the number of valid actions
             return random.randrange(self.action_size)
         # Otherwise, an action must be chosen based on the current state
@@ -82,7 +90,7 @@ class ReinforcementSteeringAgent:
             # Otherwise, the future reward that would result from this action must be accounted for
             else:
                 # Predict the reward resulting from the next state
-                reward_predictions = self.model.predict(state)[0]
+                reward_predictions = self.model.predict(next_state)[0]
                 # Get the maximum reward possible during the next state and multiply it by the discount hyperparameter
                 discounted_maximum_future_reward = np.amax(reward_predictions) * GAMMA
                 # Add the discounted future reward to the current reward to calculate the target used for training
@@ -90,14 +98,14 @@ class ReinforcementSteeringAgent:
 
             # Make a prediction based on this state, but replace the reward for the action on this time step
             target_prediction = self.model.predict(state)
-            target_prediction[0][action] = target
+            target_prediction[0, action] = target
             # Train the model based on this modified prediction
             self.model.fit(x=state, y=target_prediction, epochs=1, verbose=0)
 
         # If the epsilon has not already gone as low as it is allowed to
-        if EPSILON > EPSILON_MIN:
+        if self.epsilon > EPSILON_MIN:
             # Multiply it by the decay factor
-            EPSILON *= EPSILON_DECAY
+            self.epsilon *= EPSILON_DECAY
 
     # Load weights into the neural network from a provided path
     def load_weights(self, path):
