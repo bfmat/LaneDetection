@@ -3,12 +3,8 @@ from __future__ import print_function
 import os
 import sys
 
-from scipy.misc import imread
-
+from ..apply.get_simulation_screenshot import get_simulation_screenshot, TEMP_PATH
 from ..infer.inference_wrapper_single_line import InferenceWrapperSingleLine
-
-# Path to look for images in and record classifications in
-TEMP_PATH = '/tmp/'
 
 # Check that the number of command line arguments is correct
 num_arguments = len(sys.argv)
@@ -30,27 +26,19 @@ os.system('echo 0.0 > %s-1sim.txt' % TEMP_PATH)
 # Loop forever, classifying images and recording outputs to files
 i = 0
 while True:
-    # Parse the names of each of the images in the temp folder and convert them to numbers
-    image_names = os.listdir(TEMP_PATH)
-    image_numbers = [int(name[3:-4]) for name in image_names if 'sim' in name and '.png' in name]
-    # If there are no numbered images, skip the rest of the loop
-    if not image_numbers:
+    # Get the greatest-numbered image in the temp folder
+    image = get_simulation_screenshot()
+    # If a valid image was not found, skip the rest of this iteration
+    if image is None:
         continue
-    # Get the maximum number and format it into a file name
-    max_number = max(image_numbers)
-    max_numbered_path = '{}sim{}.png'.format(TEMP_PATH, max_number)
 
-    # If the file exists
-    if os.path.isfile(max_numbered_path):
-        # Read the file and crop it into a format that the neural network should accept
-        image = imread(max_numbered_path)[90:]
+    # Calculate a steering angle with the processed image
+    data = inference_and_steering_wrapper.infer(image)[0]
+    # If valid data was not returned, skip the rest of this iteration
+    if data is None:
+        continue
 
-        # Calculate a steering angle with the processed image
-        data = inference_and_steering_wrapper.infer(image)[0]
-
-        # If valid data has been returned
-        if data is not None:
-            # Write the classification to a temp file and rename it
-            # The steering angle is the first element of the returned collection
-            os.system('echo %f > %stemp.txt' % (data[0], TEMP_PATH))
-            os.system('mv %stemp.txt %s%dsim.txt' % (TEMP_PATH, TEMP_PATH, i))
+    # Write the classification to a temp file and rename it
+    # The steering angle is the first element of the returned collection
+    os.system('echo %f > %stemp.txt' % (data[0], TEMP_PATH))
+    os.system('mv %stemp.txt %s%dsim.txt' % (TEMP_PATH, TEMP_PATH, i))
