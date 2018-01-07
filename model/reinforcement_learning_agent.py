@@ -64,6 +64,13 @@ class ReinforcementSteeringAgent:
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
 
+    # Run a prediction on a state and return an array of predicted rewards for each possible action
+    def predict(self, state):
+        # Use the neural network to process the state directly
+        network_output = self.model.predict(state)
+        # Return the first element of the output on the first axis, effectively removing the single-element batch axis
+        return network_output[0]
+
     # Act based on a provided state, choosing either to explore or to act based on past learning
     def act(self, state):
         # Choose randomly whether or not to act randomly, depending on the exploration rate
@@ -73,7 +80,7 @@ class ReinforcementSteeringAgent:
         # Otherwise, an action must be chosen based on the current state
         else:
             # Use the neural network to predict the reward for each of the valid actions
-            reward_predictions = self.model.predict(state)[0]
+            reward_predictions = self.predict(state)
             # The actions is the index of the maximum predicted reward
             return np.argmax(reward_predictions)
 
@@ -90,7 +97,7 @@ class ReinforcementSteeringAgent:
             # Otherwise, the future reward that would result from this action must be accounted for
             else:
                 # Predict the reward resulting from the next state
-                reward_predictions = self.model.predict(next_state)[0]
+                reward_predictions = self.predict(next_state)
                 # Get the maximum reward possible during the next state and multiply it by the discount hyperparameter
                 discounted_maximum_future_reward = np.amax(reward_predictions) * GAMMA
                 # Add the discounted future reward to the current reward to calculate the target used for training
