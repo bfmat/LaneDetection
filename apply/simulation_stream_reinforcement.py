@@ -17,7 +17,7 @@ from ..model.reinforcement_learning_agent import ReinforcementSteeringAgent
 # The number of games the agent should play to train
 EPISODES = 1000
 # The number of past time steps that should be trained on every episode
-BATCH_SIZE = 32
+BATCH_SIZE = 200
 
 # The number of values in the state array passed to the neural network
 # The two values that compose the road center line, followed by the current steering angle
