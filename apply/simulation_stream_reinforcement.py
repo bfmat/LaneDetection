@@ -4,7 +4,7 @@ import json
 import os
 import sys
 
-from keras.models import load_model
+import numpy as np
 
 from ..apply.get_simulation_screenshot import get_simulation_screenshot
 from ..infer.inference_wrapper_single_line import InferenceWrapperSingleLine
@@ -23,26 +23,36 @@ BATCH_SIZE = 32
 # The two values that compose the road center line, followed by the current steering angle
 STATE_SIZE = 3
 # The number of values in the action array passed from the neural network to the simulation
-# Steering in the negative direction (left), followed by steering in the positive direction (right)
-ACTION_SIZE = 2
+# Remaining still, followed by steering in the negative direction (left),
+# followed by steering in the positive direction (right)
+ACTION_SIZE = 3
 
 # The path to the file that will contain the state of the car and other data
 INFORMATION_PATH = '/tmp/information.json'
 # The path to the file that will contain the action chosen by the agent
-ACTION_PATH = '/tmp/action.json'
+ACTION_PATH = '/tmp/action.txt'
 
 # Only run if this script is being executed directly and not imported
 if __name__ == "__main__":
 
+    # Clear old data from the temp folder and record an initial output
+    os.system('rm /tmp/*sim*')
+    os.system('echo 0.0 > /tmp/-1sim.txt')
+
+    # Delete the information and action files if they currently exist
+    for file_path in [INFORMATION_PATH, ACTION_PATH]:
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+
     # Verify that the number of command line arguments is correct
     if len(sys.argv) != 2:
         print('Usage:', sys.argv[0], '<right line trained model>')
+        sys.exit()
 
     # Load the sliding window model using the path provided as a command line argument
     sliding_window_model_path = os.path.expanduser(sys.argv[1])
-    sliding_window_model = load_model(sliding_window_model_path)
-    # Create an inference wrapper using the model
-    inference_wrapper = InferenceWrapperSingleLine(sliding_window_model)
+    # Create an inference wrapper using the model path
+    inference_wrapper = InferenceWrapperSingleLine(sliding_window_model_path)
 
     # Create the reinforcement learning agent
     agent = ReinforcementSteeringAgent(STATE_SIZE, ACTION_SIZE)
@@ -50,7 +60,7 @@ if __name__ == "__main__":
     # For each of the training episodes
     for episode in range(EPISODES):
         # Initialize the state variable using zeroes
-        state = [0] * STATE_SIZE
+        state = np.array([[0] * STATE_SIZE])
         # The number of time iterations that pass during each episode must be tracked
         time_passed = 0
 
@@ -59,40 +69,68 @@ if __name__ == "__main__":
             # Increment the time variable
             time_passed += 1
 
-            # Delete the information file if this is not the first iteration
-            if time_passed > 1:
-                os.remove(INFORMATION_PATH)
             # Calculate an action based on the previous state
             action = agent.act(state)
             # Serialize the action value to the action file
             with open(ACTION_PATH, 'w') as action_file:
-                json.dump(action, action_file)
+                action_file.write(str(action))
 
-            # Do nothing until the information file is written to again
-            while not os.path.isfile(INFORMATION_PATH):
-                pass
-            # Load information about the car from the information path
-            with open(INFORMATION_PATH) as information_file:
-                steering_angle, reward, done = json.load(information_file)
+            # Initialize the values that will be calculated in the following loop
+            steering_angle = None
+            reward = None
+            done = None
+
+            # Do nothing until the information file can be read from
+            information_loaded = False
+            while not information_loaded:
+                # Try to open the information file
+                try:
+                    with open(INFORMATION_PATH) as information_file:
+                        # Try to load the file as JSON
+                        try:
+                            steering_angle, reward, done = json.load(information_file)
+                        # If the file is not valid JSON (it has been incompletely or improperly written)
+                        except ValueError:
+                            # Continue with the next iteration of the waiting loop
+                            continue
+                # If an error occurs because the file does not exist
+                except IOError:
+                    # Continue with the next iteration of the waiting loop
+                    continue
+                # If we get down to this point, the data has been successfully read
+                information_loaded = True
+
             # If the episode has ended
             if done:
                 # Set the reward to a negative value
-                reward = 10
+                reward = -10
 
-            # Get the greatest-numbered image in the temp folder
-            image = get_simulation_screenshot()
-            # Run a prediction on this image using the inference wrapper and get the center line of best fit
-            center_line_of_best_fit = inference_wrapper.infer(image)
+            # Loop until a valid image is found
+            image = None
+            while image is None:
+                # Get the greatest-numbered image in the temp folder
+                image = get_simulation_screenshot()
+
+            # Run a prediction on this image using the inference wrapper and get the center line of best fit as a list
+            center_line_of_best_fit = inference_wrapper.infer(image)[3]
             # Get the next state by appending the present steering angle to the line of best fit array
-            next_state = center_line_of_best_fit.append(steering_angle)
+            next_state = np.append(center_line_of_best_fit, steering_angle)
+            # Add a batch dimension to the beginning of the state
+            next_state = np.expand_dims(next_state, 0)
 
             # Now that the next state has been calculated, the agent should remember the current experience
             agent.remember(state, action, reward, next_state, done)
 
+            # Shift the next state to the current state
+            state = next_state
+
+            # Delete the information file
+            os.remove(INFORMATION_PATH)
+
             # If the current training episode has ended
             if done:
                 # Print an message describing the results of the episode
-                print("episode: {}/{}, score: {}, epsilon: {}".format(episode, EPISODES, time, agent.epsilon))
+                print("episode: {}/{}, score: {}, epsilon: {}".format(episode, EPISODES, time_passed, agent.epsilon))
                 # Move on to the next episode
                 break
 
