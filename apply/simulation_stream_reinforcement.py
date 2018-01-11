@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import glob
 import json
 import os
 import sys
@@ -35,19 +36,22 @@ ACTION_PATH = '/tmp/action.txt'
 # Only run if this script is being executed directly and not imported
 if __name__ == "__main__":
 
-    # Clear old data from the temp folder and record an initial output
-    os.system('rm /tmp/*sim*')
-    os.system('echo 0.0 > /tmp/-1sim.txt')
+    # Verify that the number of command line arguments is correct
+    if len(sys.argv) != 2:
+        print('Usage:', sys.argv[0], '<right line trained model>')
+        sys.exit()
+
+    # Delete all old images and data files from the temp folder
+    for file_path in glob.iglob('/tmp/*sim*'):
+        os.remove(file_path)
 
     # Delete the information and action files if they currently exist
     for file_path in [INFORMATION_PATH, ACTION_PATH]:
         if os.path.isfile(file_path):
             os.remove(file_path)
 
-    # Verify that the number of command line arguments is correct
-    if len(sys.argv) != 2:
-        print('Usage:', sys.argv[0], '<right line trained model>')
-        sys.exit()
+    # Record an initial output containing a steering angle of 0, so the simulation can start iterating
+    os.system('echo 0.0 > /tmp/-1sim.txt')
 
     # Load the sliding window model using the path provided as a command line argument
     sliding_window_model_path = os.path.expanduser(sys.argv[1])
