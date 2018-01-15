@@ -28,10 +28,12 @@ STATE_SIZE = 3
 # followed by steering in the positive direction (right)
 ACTION_SIZE = 3
 
+# The path to the temp folder, ending with a slash
+TMP_PATH = '/Volumes/RAMDisk/'
 # The path to the file that will contain the state of the car and other data
-INFORMATION_PATH = '/tmp/information.json'
+INFORMATION_PATH = TMP_PATH + 'information.json'
 # The path to the file that will contain the action chosen by the agent
-ACTION_PATH = '/tmp/action.txt'
+ACTION_PATH = TMP_PATH + 'action.txt'
 
 # Only run if this script is being executed directly and not imported
 if __name__ == "__main__":
@@ -42,7 +44,7 @@ if __name__ == "__main__":
         sys.exit()
 
     # Delete all old images and data files from the temp folder
-    for file_path in glob.iglob('/tmp/*sim*'):
+    for file_path in glob.iglob(TMP_PATH + '*sim*'):
         os.remove(file_path)
 
     # Delete the information and action files if they currently exist
@@ -51,7 +53,7 @@ if __name__ == "__main__":
             os.remove(file_path)
 
     # Record an initial output containing a steering angle of 0, so the simulation can start iterating
-    os.system('echo 0.0 > /tmp/-1sim.txt')
+    os.system('echo 0.0 > ' + TMP_PATH + '-1sim.txt')
 
     # Load the sliding window model using the path provided as a command line argument
     sliding_window_model_path = os.path.expanduser(sys.argv[1])
