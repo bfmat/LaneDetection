@@ -22,13 +22,25 @@ def get_simulation_screenshot():
 
     # Get the maximum number and format it into a file name
     max_number = max(image_numbers)
-    max_numbered_path = '{}sim{}.png'.format(TEMP_PATH, max_number)
+    max_numbered_path = get_image_with_number(max_number)
+
+    # Create a placeholder for the image
+    image = None
 
     # If the file exists
     if os.path.isfile(max_numbered_path):
         # Read the file and crop it into a format that the neural network should accept
         image = imread(max_numbered_path)[90:]
-        # Delete the file to save disk space
-        os.remove(max_numbered_path)
-        # Return the image as a NumPy array
-        return image
+
+    # Delete all of the images found
+    for image_number in image_numbers:
+        os.remove(get_image_with_number(image_number))
+
+    # Return the placeholder, which may contain an image or None
+    return image
+
+
+# Get the image in the temp folder corresponding to the provided number
+def get_image_with_number(number):
+    # Simply format the string with the provided number
+    return '{}sim{}.png'.format(TEMP_PATH, number)

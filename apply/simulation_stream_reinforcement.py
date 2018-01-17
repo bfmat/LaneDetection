@@ -50,9 +50,6 @@ if __name__ == "__main__":
         if os.path.isfile(file_path):
             os.remove(file_path)
 
-    # Record an initial output containing a steering angle of 0, so the simulation can start iterating
-    os.system('echo 0.0 > ' + TEMP_PATH + '-1sim.txt')
-
     # Load the sliding window model using the path provided as a command line argument
     sliding_window_model_path = os.path.expanduser(sys.argv[1])
     # Create an inference wrapper using the model path
