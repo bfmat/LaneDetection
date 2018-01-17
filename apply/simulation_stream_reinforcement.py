@@ -21,10 +21,10 @@ EPISODES = 1000
 BATCH_SIZE = 200
 
 # The number of values in the state array passed to the neural network
-# The two values that compose the road center line, followed by the current steering angle
-STATE_SIZE = 3
+# These are the two values that compose the road center line
+STATE_SIZE = 2
 # The number of values in the action array passed from the neural network to the simulation
-# Remaining still, followed by steering in the negative direction (left),
+# The actions are: remaining still, followed by steering in the negative direction (left),
 # followed by steering in the positive direction (right)
 ACTION_SIZE = 3
 
@@ -77,7 +77,6 @@ if __name__ == "__main__":
                 action_file.write(str(action))
 
             # Initialize the values that will be calculated in the following loop
-            steering_angle = None
             reward = None
             done = None
 
@@ -89,7 +88,7 @@ if __name__ == "__main__":
                     with open(INFORMATION_PATH) as information_file:
                         # Try to load the file as JSON
                         try:
-                            steering_angle, reward, done = json.load(information_file)
+                            _, reward, done = json.load(information_file)
                         # If the file is not valid JSON (it has been incompletely or improperly written)
                         except ValueError:
                             # Continue with the next iteration of the waiting loop
@@ -113,9 +112,8 @@ if __name__ == "__main__":
                 image = get_simulation_screenshot()
 
             # Run a prediction on this image using the inference wrapper and get the center line of best fit as a list
-            center_line_of_best_fit = inference_wrapper.infer(image)[3]
-            # Get the next state by appending the present steering angle to the line of best fit array
-            next_state = np.append(center_line_of_best_fit, steering_angle)
+            # This will serve as the next state
+            next_state = inference_wrapper.infer(image)[3]
             # Add a batch dimension to the beginning of the state
             next_state = np.expand_dims(next_state, 0)
 
