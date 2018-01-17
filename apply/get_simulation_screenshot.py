@@ -7,8 +7,8 @@ from scipy.misc import imread
 # Created by brendon-ai, January 2018
 
 
-# Path to look for images in and record classifications in
-TEMP_PATH = '/tmp/'
+# Path to look for images in and record classifications in, ending with a slash
+TEMP_PATH = '/Volumes/RAMDisk/'
 
 
 # The main function that will return an image as a NumPy array
@@ -27,4 +27,9 @@ def get_simulation_screenshot():
     # If the file exists
     if os.path.isfile(max_numbered_path):
         # Read the file and crop it into a format that the neural network should accept
-        return imread(max_numbered_path)[90:]
+        image = imread(max_numbered_path)[90:]
+        print(max_numbered_path)
+        # Delete the file to save disk space
+        # os.remove(max_numbered_path)
+        # Return the image as a NumPy array
+        return image
