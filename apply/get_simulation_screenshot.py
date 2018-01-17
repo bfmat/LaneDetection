@@ -28,8 +28,7 @@ def get_simulation_screenshot():
     if os.path.isfile(max_numbered_path):
         # Read the file and crop it into a format that the neural network should accept
         image = imread(max_numbered_path)[90:]
-        print(max_numbered_path)
         # Delete the file to save disk space
-        # os.remove(max_numbered_path)
+        os.remove(max_numbered_path)
         # Return the image as a NumPy array
         return image
