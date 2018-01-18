@@ -4,7 +4,7 @@ import random
 import numpy as np
 from keras.layers import Dense
 from keras.models import Sequential
-from keras.optimizers import Adam
+from keras.optimizers import Adadelta
 
 # A system for steering based on the center line of the road using reinforcement learning, meaning the network
 # gradually learns while attempting to drive the car
@@ -19,8 +19,6 @@ EPSILON_INITIAL = 1.0
 EPSILON_DECAY = 0.995
 # The minimum value that epsilon can decay to
 EPSILON_MIN = 0.01
-# The learning rate for training the network
-LEARNING_RATE = 0.001
 # The maximum number of time steps that can be held in the agent's memory
 MEMORY_CAPACITY = 2000
 
@@ -42,17 +40,16 @@ class ReinforcementSteeringAgent:
         self.action_size = action_size
 
         # Initialize the neural network model that trains as the agent learns
-        # Use a hyperbolic tangent activation function
+        # Use a rectified linear activation function
         activation = 'relu'
         # Create the neural network model simply using a series of dense layers
         self.model = Sequential([
             Dense(24, input_shape=(self.state_size,), activation=activation),
-            Dense(24, activation=activation),
             Dense(self.action_size)
         ])
 
         # Use an Adam optimizer with the predefined learning rate
-        optimizer = Adam(lr=LEARNING_RATE)
+        optimizer = Adadelta()
 
         # Compile the model with a mean squared error loss
         self.model.compile(
