@@ -44,7 +44,7 @@ class ReinforcementSteeringAgent:
         activation = 'relu'
         # Create the neural network model simply using a series of dense layers
         self.model = Sequential([
-            Dense(24, input_shape=(self.state_size,), activation=activation),
+            Dense(3, input_shape=(self.state_size,), activation=activation),
             Dense(self.action_size)
         ])
 
