@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import glob
 import os
 import sys
 
@@ -19,8 +20,11 @@ lstm_model_path = sys.argv[2] if num_arguments == 3 else None
 # Create the engine wrapper
 inference_and_steering_wrapper = InferenceWrapperSingleLine(model_path, lstm_model_path)
 
-# Clear old data from the temp folder and record an initial output
-os.system('rm %s*sim*' % TEMP_PATH)
+# Delete all old images and data files from the temp folder
+for file_path in glob.iglob(TEMP_PATH + '*sim*'):
+    os.remove(file_path)
+
+# Record initial output to the first steering angle file
 os.system('echo 0.0 > %s-1sim.txt' % TEMP_PATH)
 
 # Loop forever, classifying images and recording outputs to files
