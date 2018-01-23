@@ -31,7 +31,7 @@ os.system('echo 0.0 > %s-1sim.txt' % TEMP_PATH)
 i = 0
 while True:
     # Get the greatest-numbered image in the temp folder
-    image = get_simulation_screenshot()
+    image = get_simulation_screenshot(False)
     # If a valid image was not found, skip the rest of this iteration
     if image is None:
         continue

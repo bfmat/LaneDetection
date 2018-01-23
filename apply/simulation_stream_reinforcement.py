@@ -109,7 +109,7 @@ if __name__ == "__main__":
             image = None
             while image is None:
                 # Get the greatest-numbered image in the temp folder
-                image = get_simulation_screenshot()
+                image = get_simulation_screenshot(True)
 
             # Run a prediction on this image using the inference wrapper and get the center line of best fit as a list
             # This will serve as the next state

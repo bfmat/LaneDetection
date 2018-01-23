@@ -8,11 +8,11 @@ from scipy.misc import imread
 
 
 # Path to look for images in and record classifications in, ending with a slash
-TEMP_PATH = '/Volumes/RAMDisk/'
+TEMP_PATH = '/tmp/'
 
 
 # The main function that will return an image as a NumPy array
-def get_simulation_screenshot():
+def get_simulation_screenshot(remove_images):
     # Parse the names of each of the images in the temp folder and convert them to numbers
     image_names = os.listdir(TEMP_PATH)
     image_numbers = [int(name[3:-4]) for name in image_names if 'sim' in name and '.png' in name]
@@ -32,9 +32,10 @@ def get_simulation_screenshot():
         # Read the file and crop it into a format that the neural network should accept
         image = imread(max_numbered_path)[90:]
 
-    # Delete all of the images found
-    for image_number in image_numbers:
-        os.remove(get_image_with_number(image_number))
+    # Delete all of the images found if the argument is true
+    if remove_images:
+        for image_number in image_numbers:
+            os.remove(get_image_with_number(image_number))
 
     # Return the placeholder, which may contain an image or None
     return image
