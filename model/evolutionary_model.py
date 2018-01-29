@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 from torch import nn
+from torch.autograd import Variable
 
 
 # A wrapper for a PyTorch model that allows for training of a neural network with evolutionary algorithms
@@ -35,10 +36,10 @@ class EvolutionaryModel:
             return EvolutionaryModel(weights_list)
 
     # Run inference on the computer center line of the road, returning the calculated steering angle
-    # The __call__ name means that the model can be called as a function
+    # The __call__ name means that the model instance can itself be called as a function
     def __call__(self, center_line):
         # Convert the array to a Variable so it can be passed to the model
-        center_line_variable = torch.autograd.Variable(torch.FloatTensor(center_line))
+        center_line_variable = Variable(torch.FloatTensor(center_line))
         # Pass the data to the neural network and get a steering angle wrapped in a FloatTensor
         steering_angle_tensor = self.model(center_line_variable)
         # Return the steering angle as a floating-point number
