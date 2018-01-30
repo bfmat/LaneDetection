@@ -19,7 +19,7 @@ class EvolutionaryModel:
         # Use predefined working PID parameters if None is passed
         # An empty first dimension is required
         if weights is None:
-            weights = [[0.0025, 0]]
+            weights = [[-0.0025, 0]]
         self.model[0].weight = nn.Parameter(torch.FloatTensor(weights))
 
     # Add Gaussian noise to the weights of each of the layers in the network and return a new model

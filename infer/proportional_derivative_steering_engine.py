@@ -28,6 +28,9 @@ class PDSteeringEngine:
     # Line of best fit through the points on the center of the road, accessible to external scripts
     center_line_of_best_fit = None
 
+    # A list containing the proportional and derivative errors, set after computation of the steering angle
+    errors = None
+
     # Set global variables provided as arguments
     def __init__(self, proportional_multiplier, derivative_multiplier,
                  max_distance_from_line, ideal_center_x, center_y,
@@ -57,6 +60,9 @@ class PDSteeringEngine:
 
         # Calculate the proportional error from the ideal center
         proportional_error = self.ideal_center_x - center_x
+
+        # Set the public error list
+        self.errors = [proportional_error, line_slope]
 
         # Multiply the error by the steering multiplier, and the slope of the line by the derivative multiplier
         steering_angle = (proportional_error * self.proportional_multiplier) + (line_slope * self.derivative_multiplier)
