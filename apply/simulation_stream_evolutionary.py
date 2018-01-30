@@ -49,8 +49,6 @@ while True:
     data = inference_wrapper.infer(image)
     # Compute a steering angle with the evolutionary model using the errors computed by the steering engine
     steering_angle = evolutionary_model(inference_wrapper.steering_engine.errors)
-    print(steering_angle)
-    print(data[0][0])
 
     # Write the output to a temp file and rename it
     with open(TEMP_STEERING_FILE_PATH, 'w') as temp_file:
