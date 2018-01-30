@@ -25,7 +25,7 @@ RESET_FILE_PATH = TEMP_PATH + 'reset_sim'
 NUM_NOISE_MODELS = 7
 
 # The number of seconds to test each noise model for
-TEST_SECONDS = 30
+TEST_SECONDS = 60
 
 # Check that the number of command line arguments is correct
 num_arguments = len(sys.argv)
@@ -87,12 +87,21 @@ for i in itertools.count():
                 print(steering_angle, file=temp_file)
             os.rename(TEMP_STEERING_FILE_PATH, STEERING_FILE_PATH)
 
-        # Compute the mean squared proportional error and add it to the list
-        squared_errors = [error ** 2 for error in proportional_errors]
-        variance = sum(squared_errors) / len(squared_errors)
-        proportional_variances.append(variance)
-        # Log the variance for this model
-        print('Proportional variance for model {}: {}'.format(model_index, variance))
+        # If the error list is not empty
+        if proportional_errors:
+            # Compute the mean squared proportional error
+            squared_errors = [error ** 2 for error in proportional_errors]
+            variance = sum(squared_errors) / len(squared_errors)
+            proportional_variances.append(variance)
+            # Log the variance for this model
+            print('Proportional variance for model {}: {}'.format(model_index, variance))
+        # Otherwise, add a large number to the list and log an error message
+        else:
+            proportional_variances.append(sys.maxint)
+            print('List of errors was empty for model {}'.format(model_index))
+
+        # Create the reset file so that the car will restart at the beginning
+        open(RESET_FILE_PATH, 'a').close()
 
     # The best tested model is the one that has the lowest average proportional error
     # Get the index of this model and make it the new base model
