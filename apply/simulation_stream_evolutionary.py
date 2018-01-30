@@ -53,10 +53,16 @@ for i in itertools.count():
     # Print a summary of the model that is being used as a base line
     print('Summary of base model for iteration {}:'.format(i))
     base_model.print_summary()
+
     # Create a predefined number of copies of the base model with noise added
     noise_models = [base_model.with_noise() for _ in range(NUM_NOISE_MODELS)]
-    # For each of the modified models
-    for model in noise_models:
+    # Create a corresponding list of proportional variances (mean squared error)
+    proportional_variances = []
+
+    # For each of the modified models, and a corresponding increasing index number
+    for model, model_index in zip(noise_models, itertools.count()):
+        # Create an empty list to which the proportional errors for this test will be appended
+        proportional_errors = []
         # Set the ending time for the repeating inner loop to a predefined number of seconds from now
         end_time = time.time() + TEST_SECONDS
         # Loop as quickly as possible until the end time
@@ -68,11 +74,27 @@ for i in itertools.count():
                 continue
 
             # Run inference using the inference wrapper, discarding the output (only the error variable is required)
-            data = inference_wrapper.infer(image)
-            # Compute a steering angle with the evolutionary model using the errors computed by the steering engine
-            steering_angle = model(inference_wrapper.steering_engine.errors)
+            inference_wrapper.infer(image)
+            # Get the errors computed by the steering engine
+            errors = inference_wrapper.steering_engine.errors
+            # Append the first element (the proportional error) to the list
+            proportional_errors.append(errors[0])
+            # Compute a steering angle with the evolutionary model using the proportional and derivative errors
+            steering_angle = model(errors)
 
             # Write the output to a temp file and rename it
             with open(TEMP_STEERING_FILE_PATH, 'w') as temp_file:
                 print(steering_angle, file=temp_file)
             os.rename(TEMP_STEERING_FILE_PATH, STEERING_FILE_PATH)
+
+        # Compute the mean squared proportional error and add it to the list
+        squared_errors = [error ** 2 for error in proportional_errors]
+        variance = sum(squared_errors) / len(squared_errors)
+        proportional_variances.append(variance)
+        # Log the variance for this model
+        print('Proportional variance for model {}: {}'.format(model_index, variance))
+
+    # The best tested model is the one that has the lowest average proportional error
+    # Get the index of this model and make it the new base model
+    best_model_index = proportional_variances.index(min(proportional_variances))
+    base_model = noise_models[best_model_index]
