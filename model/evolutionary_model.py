@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import numpy as np
 import torch
 from torch import nn
@@ -44,3 +46,12 @@ class EvolutionaryModel:
         steering_angle_tensor = self.model(center_line_variable)
         # Return the steering angle as a floating-point number
         return steering_angle_tensor.data.numpy().tolist()[0]
+
+    # Print a summary of the model
+    def print_summary(self):
+        # Print the architecture of the neural network
+        print('Architecture: {}'.format(self.model))
+        # Print the weights of each of the layers
+        for i in range(len(self.model)):
+            weights_list = self.model[i].weight.data.numpy().tolist()
+            print('Weights of layer {}: {}'.format(i, weights_list))
