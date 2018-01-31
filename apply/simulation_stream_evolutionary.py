@@ -27,6 +27,9 @@ NUM_NOISE_MODELS = 7
 # The number of seconds to test each noise model for
 TEST_SECONDS = 60
 
+# An arbitrary large number that is higher than any variance values that will be encountered during real use
+LARGE_VARIANCE = 1000
+
 # Check that the number of command line arguments is correct
 num_arguments = len(sys.argv)
 if num_arguments != 2:
@@ -47,6 +50,8 @@ inference_wrapper = InferenceWrapperSingleLine(sliding_window_model_path)
 
 # Create an initial evolutionary model with the default weights
 base_model = EvolutionaryModel()
+# Initialize the variable that holds the proportional variance of the base model, starting at an arbitrary large number
+base_model_proportional_variance = LARGE_VARIANCE
 
 # Loop forever, counting up from 0
 for i in itertools.count():
@@ -97,13 +102,26 @@ for i in itertools.count():
             print('Proportional variance for model {}: {}'.format(model_index, variance))
         # Otherwise, add a large number to the list and log an error message
         else:
-            proportional_variances.append(sys.maxint)
+            proportional_variances.append(LARGE_VARIANCE)
             print('List of errors was empty for model {}'.format(model_index))
 
         # Create the reset file so that the car will restart at the beginning
         open(RESET_FILE_PATH, 'a').close()
 
     # The best tested model is the one that has the lowest average proportional error
-    # Get the index of this model and make it the new base model
-    best_model_index = proportional_variances.index(min(proportional_variances))
-    base_model = noise_models[best_model_index]
+    # Check if this lowest error is less than the original error of the base model
+    min_variance = min(proportional_variances)
+    if min_variance < base_model_proportional_variance:
+        # Get the index of this model and make it the new base model
+        best_model_index = proportional_variances.index(min(proportional_variances))
+        base_model = noise_models[best_model_index]
+        # Print a log that says the base model has been updated
+        print('Base model updated; proportional variance decreased from {} last iteration to {} this iteration'
+              .format(base_model_proportional_variance, min_variance))
+        # Set the proportional variance for this model
+        base_model_proportional_variance = min_variance
+    # Otherwise, the best performance this iteration was worse than last iteration
+    else:
+        # Print a log stating that the model has not been updated
+        print('Base model not updated; proportional variance last iteration was {}, minimum for this iteration is {}'
+              .format(base_model_proportional_variance, min_variance))
