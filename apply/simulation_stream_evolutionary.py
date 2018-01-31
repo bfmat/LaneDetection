@@ -115,6 +115,8 @@ for i in itertools.count():
         # Get the index of this model and make it the new base model
         best_model_index = proportional_variances.index(min(proportional_variances))
         base_model = noise_models[best_model_index]
+        # Set the proportional variance for this model
+        base_model_proportional_variance = min_variance
         # Print a log that says the base model has been updated
         print('Base model updated; proportional variance decreased from {} last iteration to {} this iteration'
               .format(base_model_proportional_variance, min_variance))
