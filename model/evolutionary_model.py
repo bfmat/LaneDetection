@@ -14,28 +14,38 @@ from torch.autograd import Variable
 class EvolutionaryModel:
     # The initializer that creates the model and sets the weights
     def __init__(self, weights=None):
-        # Create the neural network using a single fully connected layer without bias
-        self.model = nn.Sequential(
+        # Create two fully connected layers without bias and save them in a list of layers with weights
+        self.weighted_layers = [
+            nn.Linear(2, 2, bias=False),
             nn.Linear(2, 1, bias=False)
+        ]
+        # Create the neural network using the fully connected layers, with a tanh activation in the middle
+        self.model = nn.Sequential(
+            self.weighted_layers[0],
+            nn.Tanh(),
+            self.weighted_layers[1]
         )
         # Use predefined working PID parameters if None is passed
-        # An empty first dimension is required
         if weights is None:
-            weights = [[-0.0025, 0]]
-        self.model[0].weight = nn.Parameter(torch.FloatTensor(weights))
+            weights = [[[-0.0025, 0], [0, 0]], [[1, 1]]]
+        # Iterate over the trainable layers and zip the layer with the first dimension in the list of weights
+        for layer, layer_weights in zip(self.weighted_layers, weights):
+            layer.weight = nn.Parameter(torch.FloatTensor(layer_weights))
 
     # Add Gaussian noise to the weights of each of the layers in the network and return a new model
     def with_noise(self):
-        # For each of the layers in the network model
-        for layer in self.model:
+        # Create a list to add the weights for each layer to
+        weights_list_all_layers = []
+        # For each of the layers that have trainable weights
+        for layer in self.weighted_layers:
             # Convert the layer's weights to a NumPy array
             weights_numpy = layer.weight.data.numpy()
             # Add Gaussian noise to the weights
-            weights_numpy += np.random.normal(loc=0, scale=0.00025, size=weights_numpy.size)
-            # Convert the NumPy array to a list
-            weights_list = weights_numpy.tolist()
-            # Return a new model with the modified array of weights
-            return EvolutionaryModel(weights_list)
+            weights_numpy += np.random.normal(loc=0, scale=0.00025, size=weights_numpy.shape)
+            # Convert the NumPy array to a list and add it to the list for all of the layers
+            weights_list_all_layers.append(weights_numpy.tolist())
+        # Return a new model with the modified array of weights
+        return EvolutionaryModel(weights_list_all_layers)
 
     # Run inference on the computer center line of the road, returning the calculated steering angle
     # The __call__ name means that the model instance can itself be called as a function
@@ -51,7 +61,8 @@ class EvolutionaryModel:
     def print_summary(self):
         # Print the architecture of the neural network
         print('Architecture: {}'.format(self.model))
-        # Print the weights of each of the layers
+        # Print the weights of each of the weighted layers
         for i in range(len(self.model)):
-            weights_list = self.model[i].weight.data.numpy().tolist()
-            print('Weights of layer {}: {}'.format(i, weights_list))
+            if self.model[i] in self.weighted_layers:
+                weights_list = self.model[i].weight.data.numpy().tolist()
+                print('Weights of layer {}: {}'.format(i, weights_list))
