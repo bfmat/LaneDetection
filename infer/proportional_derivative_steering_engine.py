@@ -1,5 +1,6 @@
 from __future__ import division
 
+from ..infer.backlash_compensator import BacklashCompensator
 from ..infer.line_of_best_fit import line_of_best_fit
 
 
@@ -9,38 +10,35 @@ from ..infer.line_of_best_fit import line_of_best_fit
 
 # Main class, instantiated with PID parameters and road edge weights
 class PDSteeringEngine:
-    # Positive multipliers for the proportional and derivative error terms calculated for steering
-    proportional_multiplier = None
-    derivative_multiplier = None
-
-    # Distance off of the line of best fit a point must be to be considered an outlier
-    max_distance_from_line = None
-
-    # Ideal horizontal position for the center of the road
-    ideal_center_x = None
-
-    # Vertical position at which the center of the road is calculated
-    center_y = None
-
-    # Maximum permitted absolute value for the steering angle
-    steering_limit = None
-
     # Line of best fit through the points on the center of the road, accessible to external scripts
     center_line_of_best_fit = None
 
     # A list containing the proportional and derivative errors, set after computation of the steering angle
     errors = None
 
-    # Set global variables provided as arguments
+    # Set global variables provided as arguments and initialize a backlash compensator
     def __init__(self, proportional_multiplier, derivative_multiplier,
                  max_distance_from_line, ideal_center_x, center_y,
                  steering_limit):
+
+        # Positive multipliers for the proportional and derivative error terms calculated for steering
         self.proportional_multiplier = proportional_multiplier
         self.derivative_multiplier = derivative_multiplier
+
+        # Distance off of the line of best fit a point must be to be considered an outlier
         self.max_distance_from_line = max_distance_from_line
+
+        # Ideal horizontal position for the center of the road
         self.ideal_center_x = ideal_center_x
+
+        # Vertical position at which the center of the road is calculated
         self.center_y = center_y
+
+        # Maximum permitted absolute value for the steering angle
         self.steering_limit = steering_limit
+
+        # Create a persistent backlash compensator
+        self.backlash_compensator = BacklashCompensator()
 
     # Compute a steering angle, given points down the center of the road
     def compute_steering_angle(self, center_points):
@@ -66,6 +64,9 @@ class PDSteeringEngine:
 
         # Multiply the error by the steering multiplier, and the slope of the line by the derivative multiplier
         steering_angle = (proportional_error * self.proportional_multiplier) + (line_slope * self.derivative_multiplier)
+
+        # Compensate for backlash in the mechanism or simulator
+        steering_angle = self.backlash_compensator.process(steering_angle)
 
         # If the steering angle is greater than the maximum, set it to the maximum
         if steering_angle > self.steering_limit:
