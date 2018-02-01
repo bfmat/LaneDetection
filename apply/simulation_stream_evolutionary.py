@@ -22,7 +22,8 @@ TEMP_STEERING_FILE_PATH = TEMP_PATH + 'temp.txt'
 RESET_FILE_PATH = TEMP_PATH + 'reset_sim'
 
 # The number of models with added noise that should be tested on each iteration of the outer loop
-NUM_NOISE_MODELS = 7
+# Use only one for a stochastic algorithm that will be less predictable but hopefully quicker to converge
+NUM_NOISE_MODELS = 1
 
 # The number of seconds to test each noise model for
 TEST_SECONDS = 60
