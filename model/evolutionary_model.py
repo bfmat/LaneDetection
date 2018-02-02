@@ -1,5 +1,7 @@
 from __future__ import print_function
 
+import random
+
 import numpy as np
 import torch
 from torch import nn
@@ -13,7 +15,7 @@ from torch.autograd import Variable
 # The main class, which contains a model and provides utilities for initialization, randomization, and inference
 class EvolutionaryModel:
     # The initializer that creates the model and sets the weights
-    def __init__(self, weights=None):
+    def __init__(self, weights=None, weight_positions=None):
         # Create two fully connected layers without bias and save them in a list of layers with weights
         self.weighted_layers = [
             nn.Linear(2, 2, bias=False),
@@ -32,20 +34,41 @@ class EvolutionaryModel:
         for layer, layer_weights in zip(self.weighted_layers, weights):
             layer.weight = nn.Parameter(torch.FloatTensor(layer_weights))
 
-    # Add Gaussian noise to the weights of each of the layers in the network and return a new model
+        # If a list of weight positions has not been provided
+        if weight_positions is None:
+            # Compose a list containing the positions of all weights in the jagged array of all weights in the network
+            self.weight_positions = []
+            # For each of the layers that have trainable weights
+            for layer_index in range(len(self.weighted_layers)):
+                # Iterate over both dimensions of the layer's weights
+                layer_weights = self.weighted_layers[layer_index].weight.data.numpy().tolist()
+                for row_index in range(len(layer_weights)):
+                    for column_index in range(len(layer_weights[row_index])):
+                        # Save the current position in the tensor of weights to the list
+                        self.weight_positions.append((layer_index, row_index, column_index))
+        # Otherwise, set the global list of weight positions to the provided list
+        else:
+            self.weight_positions = weight_positions
+
+    # Add Gaussian noise to one randomly chosen weight in the network and return a new model
     def with_noise(self):
         # Create a list to add the weights for each layer to
         weights_list_all_layers = []
         # For each of the layers that have trainable weights
         for layer in self.weighted_layers:
-            # Convert the layer's weights to a NumPy array
-            weights_numpy = layer.weight.data.numpy()
-            # Add Gaussian noise to the weights
-            weights_numpy += np.random.normal(loc=0, scale=0.00025, size=weights_numpy.shape)
-            # Convert the NumPy array to a list and add it to the list for all of the layers
-            weights_list_all_layers.append(weights_numpy.tolist())
-        # Return a new model with the modified array of weights
-        return EvolutionaryModel(weights_list_all_layers)
+            # Convert the layer's weights to a list
+            weights_list = layer.weight.data.numpy().tolist()
+            # Add it to the list for all layers
+            weights_list_all_layers.append(weights_list)
+
+        # Choose a random point from the list of positions of weights in the network
+        layer_index, row_index, column_index = random.choice(self.weight_positions)
+        # Add Gaussian noise to the weight in the list of all weights at the chosen position
+        noise = np.random.normal(loc=0, scale=0.0025)
+        weights_list_all_layers[layer_index][row_index][column_index] += noise
+
+        # Return a new model with the modified array of weights and the global array of weight positions
+        return EvolutionaryModel(weights=weights_list_all_layers, weight_positions=self.weight_positions)
 
     # Run inference on the computer center line of the road, returning the calculated steering angle
     # The __call__ name means that the model instance can itself be called as a function
