@@ -7,15 +7,23 @@ import torch
 from torch import nn
 from torch.autograd import Variable
 
-
 # A wrapper for a PyTorch model that allows for training of a neural network with evolutionary algorithms
 # Created by brendon-ai, January 2018
 
 
+# The initial value of the learning rate (the standard deviation of the Gaussian distribution on which noise
+# to be added to a randomly chosen weight of the network is generated)
+INITIAL_LEARNING_RATE = 0.00025
+
+# The number that the learning rate is multiplied by every iteration, to gradually reduce it so the network can converge
+LEARNING_RATE_DECAY = 0.98
+
+
 # The main class, which contains a model and provides utilities for initialization, randomization, and inference
 class EvolutionaryModel:
+
     # The initializer that creates the model and sets the weights
-    def __init__(self, weights=None, weight_positions=None):
+    def __init__(self, weights=None, weight_positions=None, learning_rate=INITIAL_LEARNING_RATE):
         # Create two fully connected layers without bias and save them in a list of layers with weights
         self.weighted_layers = [
             nn.Linear(2, 2, bias=False),
@@ -27,6 +35,7 @@ class EvolutionaryModel:
             nn.Tanh(),
             self.weighted_layers[1]
         )
+
         # Use predefined working PID parameters if None is passed
         if weights is None:
             weights = [[[-0.0025, 0], [0, 0]], [[1, 1]]]
@@ -50,6 +59,9 @@ class EvolutionaryModel:
         else:
             self.weight_positions = weight_positions
 
+        # Set the global learning rate value
+        self.learning_rate = learning_rate
+
     # Add Gaussian noise to one randomly chosen weight in the network and return a new model
     def with_noise(self):
         # Create a list to add the weights for each layer to
@@ -67,8 +79,13 @@ class EvolutionaryModel:
         noise = np.random.normal(loc=0, scale=0.00025)
         weights_list_all_layers[layer_index][row_index][column_index] += noise
 
-        # Return a new model with the modified array of weights and the global array of weight positions
-        return EvolutionaryModel(weights=weights_list_all_layers, weight_positions=self.weight_positions)
+        # Return a new model with the modified array of weights, the global array of weight positions,
+        # and a copy of the learning rate multiplied by the decay constant
+        return EvolutionaryModel(
+            weights=weights_list_all_layers,
+            weight_positions=self.weight_positions,
+            learning_rate=self.learning_rate * LEARNING_RATE_DECAY
+        )
 
     # Run inference on the computer center line of the road, returning the calculated steering angle
     # The __call__ name means that the model instance can itself be called as a function
@@ -83,7 +100,9 @@ class EvolutionaryModel:
     # Print a summary of the model
     def print_summary(self):
         # Print the architecture of the neural network
-        print('Architecture: {}'.format(self.model))
+        print('Architecture:', self.model)
+        # Print the current learning rate
+        print('Current learning rate:', self.learning_rate)
         # Print the weights of each of the weighted layers
         for i in range(len(self.model)):
             if self.model[i] in self.weighted_layers:
