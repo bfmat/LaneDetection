@@ -64,7 +64,7 @@ class EvolutionaryModel:
         # Choose a random point from the list of positions of weights in the network
         layer_index, row_index, column_index = random.choice(self.weight_positions)
         # Add Gaussian noise to the weight in the list of all weights at the chosen position
-        noise = np.random.normal(loc=0, scale=0.0025)
+        noise = np.random.normal(loc=0, scale=0.00025)
         weights_list_all_layers[layer_index][row_index][column_index] += noise
 
         # Return a new model with the modified array of weights and the global array of weight positions
