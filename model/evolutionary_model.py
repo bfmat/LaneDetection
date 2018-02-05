@@ -13,10 +13,10 @@ from torch.autograd import Variable
 
 # The initial value of the learning rate (the standard deviation of the Gaussian distribution on which noise
 # to be added to a randomly chosen weight of the network is generated)
-INITIAL_LEARNING_RATE = 0.00025
+INITIAL_LEARNING_RATE = 0.002
 
 # The number that the learning rate is multiplied by every iteration, to gradually reduce it so the network can converge
-LEARNING_RATE_DECAY = 0.98
+LEARNING_RATE_DECAY = 0.998
 
 
 # The main class, which contains a model and provides utilities for initialization, randomization, and inference
