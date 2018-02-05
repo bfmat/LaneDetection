@@ -16,7 +16,7 @@ from torch.autograd import Variable
 INITIAL_LEARNING_RATE = 0.002
 
 # The number that the learning rate is multiplied by every iteration, to gradually reduce it so the network can converge
-LEARNING_RATE_DECAY = 0.998
+LEARNING_RATE_DECAY = 0.99
 
 
 # The main class, which contains a model and provides utilities for initialization, randomization, and inference
