@@ -7,23 +7,16 @@ import torch
 from torch import nn
 from torch.autograd import Variable
 
+
 # A wrapper for a PyTorch model that allows for training of a neural network with evolutionary algorithms
 # Created by brendon-ai, January 2018
-
-
-# The initial value of the learning rate (the standard deviation of the Gaussian distribution on which noise
-# to be added to a randomly chosen weight of the network is generated)
-INITIAL_LEARNING_RATE = 0.002
-
-# The number that the learning rate is multiplied by every iteration, to gradually reduce it so the network can converge
-LEARNING_RATE_DECAY = 0.99
 
 
 # The main class, which contains a model and provides utilities for initialization, randomization, and inference
 class EvolutionaryModel:
 
     # The initializer that creates the model and sets the weights
-    def __init__(self, weights=None, weight_positions=None, learning_rate=INITIAL_LEARNING_RATE):
+    def __init__(self, learning_rate, weights=None, weight_positions=None):
         # Create two fully connected layers without bias and save them in a list of layers with weights
         self.weighted_layers = [
             nn.Linear(2, 2, bias=False),
@@ -80,11 +73,11 @@ class EvolutionaryModel:
         weights_list_all_layers[layer_index][row_index][column_index] += noise
 
         # Return a new model with the modified array of weights, the global array of weight positions,
-        # and a copy of the learning rate multiplied by the decay constant
+        # and the same learning rate as the present model
         return EvolutionaryModel(
+            learning_rate=self.learning_rate,
             weights=weights_list_all_layers,
-            weight_positions=self.weight_positions,
-            learning_rate=self.learning_rate * LEARNING_RATE_DECAY
+            weight_positions=self.weight_positions
         )
 
     # Run inference on the computer center line of the road, returning the calculated steering angle
