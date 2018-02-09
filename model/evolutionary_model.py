@@ -146,3 +146,4 @@ class EvolutionaryModel:
             print('Weighted layer:', i)
             print('Weights:', weights_list)
             print('Learning rates:', self.learning_rates[i])
+            print('Position of selected neuron for training:', self.weight_positions[self.train_weight_index])

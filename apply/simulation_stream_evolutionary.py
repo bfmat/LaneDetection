@@ -56,6 +56,9 @@ base_model_proportional_variance = LARGE_VARIANCE
 
 # Loop forever, counting up from 0
 for i in itertools.count():
+    # Update the learning rate of the model
+    base_model.update_learning_rate()
+
     # Print a summary of the model that is being used as a base line
     print('Summary of base model for iteration {}:'.format(i))
     base_model.print_summary()
