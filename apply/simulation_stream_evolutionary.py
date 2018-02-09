@@ -31,13 +31,6 @@ TEST_SECONDS = 60
 # An arbitrary large number that is higher than any variance values that will be encountered during real use
 LARGE_VARIANCE = 1000
 
-# The initial value of the learning rate (the standard deviation of the Gaussian distribution on which noise
-# to be added to a randomly chosen weight of the network is generated)
-INITIAL_LEARNING_RATE = 0.002
-
-# The number that the learning rate is multiplied by every iteration, to gradually reduce it so the network can converge
-LEARNING_RATE_DECAY = 0.99
-
 # Check that the number of command line arguments is correct
 num_arguments = len(sys.argv)
 if num_arguments != 2:
@@ -57,15 +50,12 @@ sliding_window_model_path = os.path.expanduser(sys.argv[1])
 inference_wrapper = InferenceWrapperSingleLine(sliding_window_model_path)
 
 # Create an initial evolutionary model with the default learning rate
-base_model = EvolutionaryModel(INITIAL_LEARNING_RATE)
+base_model = EvolutionaryModel()
 # Initialize the variable that holds the proportional variance of the base model, starting at an arbitrary large number
 base_model_proportional_variance = LARGE_VARIANCE
 
 # Loop forever, counting up from 0
 for i in itertools.count():
-    # Multiply the model's learning rate by the decay constant
-    base_model.learning_rate *= LEARNING_RATE_DECAY
-
     # Print a summary of the model that is being used as a base line
     print('Summary of base model for iteration {}:'.format(i))
     base_model.print_summary()

@@ -1,22 +1,32 @@
 from __future__ import print_function
 
-import random
+import copy
 
 import numpy as np
 import torch
 from torch import nn
 from torch.autograd import Variable
 
-
 # A wrapper for a PyTorch model that allows for training of a neural network with evolutionary algorithms
 # Created by brendon-ai, January 2018
+
+
+# The initial value of the learning rate for each neuron (the standard deviation of the Gaussian distribution on which
+# noise to be added to the corresponding weight of the network is generated)
+INITIAL_LEARNING_RATE = 0.002
+
+# The number that the learning rate is multiplied by every iteration, to gradually reduce it so the network can converge
+LEARNING_RATE_DECAY = 0.99
+
+# The number of iterations that must go by without improvement before the weight to optimize is changed
+ITERATIONS_BEFORE_TRAIN_WEIGHT_CHANGE = 5
 
 
 # The main class, which contains a model and provides utilities for initialization, randomization, and inference
 class EvolutionaryModel:
 
     # The initializer that creates the model and sets the weights
-    def __init__(self, learning_rate, weights=None, weight_positions=None):
+    def __init__(self, weights=None, weight_positions=None, train_weight_index=0, learning_rates=None):
         # Create two fully connected layers without bias and save them in a list of layers with weights
         self.weighted_layers = [
             nn.Linear(2, 2, bias=False),
@@ -52,8 +62,41 @@ class EvolutionaryModel:
         else:
             self.weight_positions = weight_positions
 
-        # Set the global learning rate value
-        self.learning_rate = learning_rate
+        # Initialize the global index in the weight positions list which represents the weight that will be trained
+        # 0 is the default if no index is provided (it is not being initialized in the noise function)
+        self.train_weight_index = train_weight_index
+
+        # If no set of learning rates is provided
+        if learning_rates is None:
+            # Copy the list of weights to create a list of learning rates, one for each weight,
+            # and set each element to the initial learning rate
+            self.learning_rates = copy.deepcopy(weights)
+            for layer_index, row_index, column_index in self.weight_positions:
+                self.learning_rates[layer_index][row_index][column_index] = INITIAL_LEARNING_RATE
+        # Otherwise, a list of learning rates has been provided
+        else:
+            # Just use the supplied list
+            self.learning_rates = learning_rates
+
+        # Set the global number of iterations that have gone by since the model last improved
+        # It defaults to 0 and is not passed on to new models since they will only be used if the model improves
+        self.iterations_since_improvement = 0
+
+    # Called every iteration to update the learning rate and check if the weight to optimize should be changed
+    def update_learning_rate(self):
+        # If the number of iterations without improvement have exceeded the threshold
+        if self.iterations_since_improvement > ITERATIONS_BEFORE_TRAIN_WEIGHT_CHANGE:
+            # Increment the weight index, wrapping around to zero
+            self.train_weight_index = (self.train_weight_index + 1) % len(self.weight_positions)
+            # Reset the counter to zero
+            self.iterations_since_improvement = 0
+        # Otherwise, continue to attempt to optimize this weight
+        else:
+            # Decay the learning rate for this neuron
+            layer_index, row_index, column_index = self.weight_positions[self.train_weight_index]
+            self.learning_rates[layer_index][row_index][column_index] *= LEARNING_RATE_DECAY
+            # Increment the counter, since one more iteration has gone by with this model
+            self.iterations_since_improvement += 1
 
     # Add Gaussian noise to one randomly chosen weight in the network and return a new model
     def with_noise(self):
@@ -66,18 +109,21 @@ class EvolutionaryModel:
             # Add it to the list for all layers
             weights_list_all_layers.append(weights_list)
 
-        # Choose a random point from the list of positions of weights in the network
-        layer_index, row_index, column_index = random.choice(self.weight_positions)
-        # Add Gaussian noise to the weight in the list of all weights at the chosen position
-        noise = np.random.normal(loc=0, scale=0.00025)
+        # Get the weight position corresponding to the index of the weight to train
+        layer_index, row_index, column_index = self.weight_positions[self.train_weight_index]
+        # Get the learning rate corresponding to the weight to train
+        learning_rate = self.learning_rates[layer_index][row_index][column_index]
+        # Add Gaussian noise to the weight in the list of all weights at that position
+        noise = np.random.normal(loc=0, scale=learning_rate)
         weights_list_all_layers[layer_index][row_index][column_index] += noise
 
-        # Return a new model with the modified array of weights, the global array of weight positions,
-        # and the same learning rate as the present model
+        # Return a new model with the modified array of weights, the global array of weight positions, the index of the
+        # weight to train, and the same list of learning rates as the present model
         return EvolutionaryModel(
-            learning_rate=self.learning_rate,
             weights=weights_list_all_layers,
-            weight_positions=self.weight_positions
+            weight_positions=self.weight_positions,
+            train_weight_index=self.train_weight_index,
+            learning_rates=self.learning_rates
         )
 
     # Run inference on the computer center line of the road, returning the calculated steering angle
@@ -94,10 +140,9 @@ class EvolutionaryModel:
     def print_summary(self):
         # Print the architecture of the neural network
         print('Architecture:', self.model)
-        # Print the current learning rate
-        print('Current learning rate:', self.learning_rate)
-        # Print the weights of each of the weighted layers
-        for i in range(len(self.model)):
-            if self.model[i] in self.weighted_layers:
-                weights_list = self.model[i].weight.data.numpy().tolist()
-                print('Weights of layer {}: {}'.format(i, weights_list))
+        # Print the weights and learning rates for each of the weighted layers
+        for i in range(len(self.weighted_layers)):
+            weights_list = self.weighted_layers[i].weight.data.numpy().tolist()
+            print('Weighted layer:', i)
+            print('Weights:', weights_list)
+            print('Learning rates:', self.learning_rates[i])
