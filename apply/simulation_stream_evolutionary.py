@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import glob
 import itertools
+import math
 import os
 import sys
 import time
@@ -28,8 +29,8 @@ NUM_NOISE_MODELS = 7
 # The number of seconds to test each noise model for
 TEST_SECONDS = 60
 
-# An arbitrary large number that is higher than any variance values that will be encountered during real use
-LARGE_VARIANCE = 1000
+# An arbitrary large number that is higher than any standard deviation values that will be encountered during real use
+LARGE_STANDARD_DEVIATION = 1000
 
 # Check that the number of command line arguments is correct
 num_arguments = len(sys.argv)
@@ -51,8 +52,8 @@ inference_wrapper = InferenceWrapperSingleLine(sliding_window_model_path)
 
 # Create an initial evolutionary model with the default learning rate
 base_model = EvolutionaryModel()
-# Initialize the variable that holds the proportional variance of the base model, starting at an arbitrary large number
-base_model_proportional_variance = LARGE_VARIANCE
+# Initialize the variable that holds the proportional standard deviation of the base model, starting at a large number
+base_model_proportional_standard_deviation = LARGE_STANDARD_DEVIATION
 
 # Loop forever, counting up from 0
 for i in itertools.count():
@@ -65,8 +66,8 @@ for i in itertools.count():
 
     # Create a predefined number of copies of the base model with noise added
     noise_models = [base_model.with_noise() for _ in range(NUM_NOISE_MODELS)]
-    # Create a corresponding list of proportional variances (mean squared error)
-    proportional_variances = []
+    # Create a corresponding list of proportional standard deviations
+    proportional_standard_deviations = []
 
     # For each of the modified models, and a corresponding increasing index number
     for model, model_index in zip(noise_models, itertools.count()):
@@ -98,34 +99,41 @@ for i in itertools.count():
 
         # If the error list is not empty
         if proportional_errors:
-            # Compute the mean squared proportional error
+            # Compute the standard deviation (the square root of the mean squared proportional error)
             squared_errors = [error ** 2 for error in proportional_errors]
             variance = sum(squared_errors) / len(squared_errors)
-            proportional_variances.append(variance)
-            # Log the variance for this model
-            print('Proportional variance for model {}: {}'.format(model_index, variance))
+            standard_deviation = math.sqrt(variance)
+            proportional_standard_deviations.append(standard_deviation)
+            # Log the standard deviation for this model
+            print('Proportional standard deviation for model {}: {}'.format(model_index, standard_deviation))
         # Otherwise, add a large number to the list and log an error message
         else:
-            proportional_variances.append(LARGE_VARIANCE)
+            proportional_standard_deviations.append(LARGE_STANDARD_DEVIATION)
             print('List of errors was empty for model {}'.format(model_index))
 
         # Create the reset file so that the car will restart at the beginning
         open(RESET_FILE_PATH, 'a').close()
 
-    # The best tested model is the one that has the lowest average proportional error
+    # The best tested model is the one that has the lowest proportional standard deviation
     # Check if this lowest error is less than the original error of the base model
-    min_variance = min(proportional_variances)
-    if min_variance < base_model_proportional_variance:
+    min_standard_deviation = min(proportional_standard_deviations)
+    if min_standard_deviation < base_model_proportional_standard_deviation:
         # Get the index of this model and make it the new base model
-        best_model_index = proportional_variances.index(min(proportional_variances))
+        best_model_index = proportional_standard_deviations.index(min_standard_deviation)
         base_model = noise_models[best_model_index]
         # Print a log that says the base model has been updated
-        print('Base model updated; proportional variance decreased from {} last iteration to {} this iteration'
-              .format(base_model_proportional_variance, min_variance))
-        # Set the proportional variance for this model
-        base_model_proportional_variance = min_variance
+        print(
+            'Base model updated; proportional standard deviation decreased from {} last iteration to {} this iteration'
+                .format(base_model_proportional_standard_deviation, min_standard_deviation)
+        )
+        # Set the proportional standard deviation for this model
+        base_model_proportional_standard_deviation = min_standard_deviation
     # Otherwise, the best performance this iteration was worse than last iteration
     else:
         # Print a log stating that the model has not been updated
-        print('Base model not updated; proportional variance last iteration was {}, minimum for this iteration is {}'
-              .format(base_model_proportional_variance, min_variance))
+        print(
+            'Base model not updated; proportional standard deviation last iteration was {},'
+                .format(min_standard_deviation),
+            'minimum for this iteration is {}'
+                .format(base_model_proportional_standard_deviation)
+        )
