@@ -112,8 +112,10 @@ def get_data(image_folders):
 
     # Stack all of the images into a single NumPy array (defaults to stacking on axis 0)
     image_numpy_array = numpy.stack(image_list)
+    # Convert the label list to a NumPy array as well
+    label_numpy_array = numpy.array(label_list)
 
-    return image_numpy_array, label_list
+    return image_numpy_array, label_numpy_array
 
 
 # Check that the number of command line arguments is correct
