@@ -29,16 +29,19 @@ class EvolutionaryModel:
     def __init__(self, weights=None, weight_positions=None, train_weight_index=0, learning_rates=None):
         # Create two fully connected layers without bias and save them in a list of layers with weights
         self.weighted_layers = [
+            nn.Linear(2, 2, bias=False),
             nn.Linear(2, 1, bias=False)
         ]
         # Create the neural network using the fully connected layers, with a tanh activation in the middle
         self.model = nn.Sequential(
             self.weighted_layers[0],
+            nn.Tanh(),
+            self.weighted_layers[1]
         )
 
         # Use predefined working PID parameters if None is passed
         if weights is None:
-            weights = [[[-0.0025, 0]]]
+            weights = [[[-0.0025, 0], [0, 0]], [[1, 1]]]
         # Iterate over the trainable layers and zip the layer with the first dimension in the list of weights
         for layer, layer_weights in zip(self.weighted_layers, weights):
             layer.weight = nn.Parameter(torch.FloatTensor(layer_weights))
