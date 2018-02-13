@@ -91,6 +91,8 @@ for i in itertools.count():
             proportional_errors.append(errors[0])
             # Compute a steering angle with the evolutionary model using the proportional and derivative errors
             steering_angle = model(errors)
+            # Process the steering angle with the steering engine's backlash compensator
+            steering_angle = inference_wrapper.steering_engine.backlash_compensator.process(steering_angle)
 
             # Write the output to a temp file and rename it
             with open(TEMP_STEERING_FILE_PATH, 'w') as temp_file:
