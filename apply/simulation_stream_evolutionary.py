@@ -132,8 +132,8 @@ for i in itertools.count():
     else:
         # Print a log stating that the model has not been updated
         print(
-            'Base model not updated; proportional standard deviation last iteration was {},'
-                .format(min_standard_deviation),
+            'Base model not updated; lowest standard deviation so far was {},'
+                .format(base_model_proportional_standard_deviation),
             'minimum for this iteration is {}'
-                .format(base_model_proportional_standard_deviation)
+                .format(min_standard_deviation)
         )
