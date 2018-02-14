@@ -50,6 +50,10 @@ sliding_window_model_path = os.path.expanduser(sys.argv[1])
 # Create an inference wrapper using the model path
 inference_wrapper = InferenceWrapperSingleLine(sliding_window_model_path)
 
+# Create a copy of the steering engine for error analysis purposes that will calculate errors at the bottom of the image
+analysis_steering_engine = inference_wrapper.steering_engine
+analysis_steering_engine.center_y = 90
+
 # Create an initial evolutionary model with the default learning rate
 base_model = EvolutionaryModel()
 # Initialize the variable that holds the proportional standard deviation of the base model, starting at a large number
@@ -83,21 +87,23 @@ for i in itertools.count():
             if image is None:
                 continue
 
-            # Run inference using the inference wrapper, discarding the output (only the error variable is required)
-            inference_wrapper.infer(image)
+            # Run inference using the inference wrapper and collect the center line positions
+            center_line_positions = inference_wrapper.infer(image)[1]
             # Get the errors computed by the steering engine
             errors = inference_wrapper.steering_engine.errors
-            # Append the first element (the proportional error) to the list
-            proportional_errors.append(errors[0])
             # Compute a steering angle with the evolutionary model using the proportional and derivative errors
             steering_angle = model(errors)
-            # Process the steering angle with the steering engine's backlash compensator
-            steering_angle = inference_wrapper.steering_engine.backlash_compensator.process(steering_angle)
 
             # Write the output to a temp file and rename it
             with open(TEMP_STEERING_FILE_PATH, 'w') as temp_file:
                 print(steering_angle, file=temp_file)
             os.rename(TEMP_STEERING_FILE_PATH, STEERING_FILE_PATH)
+
+            # Run inference with the analysis steering engine on the center line positions
+            analysis_steering_engine.compute_steering_angle(center_line_positions)
+            # Append the proportional error computed by the analysis engine to the list
+            analysis_proportional_error = analysis_steering_engine.errors[0]
+            proportional_errors.append(analysis_proportional_error)
 
         # If the error list is not empty
         if proportional_errors:

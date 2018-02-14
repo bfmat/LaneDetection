@@ -14,12 +14,6 @@ from ..infer.sliding_window_inference_engine import SlidingWindowInferenceEngine
 
 # Main class, instantiated with paths to sliding window models
 class InferenceWrapperSingleLine:
-    # Inference engine for sliding window processing of images
-    inference_engines = []
-
-    # Steering engine for calculating steering angle and other output values
-    steering_engine = None
-
     # Load model and create inference and steering engines
     def __init__(self, model_path, lstm_model_path=None):
         # Convert the home folder path to an absolute path
@@ -29,13 +23,13 @@ class InferenceWrapperSingleLine:
         model = load_model(absolute_path)
 
         # Create a sliding window inference engine with the model
-        self.inference_engines.append(
+        self.inference_engines = [
             SlidingWindowInferenceEngine(
                 model=model,
                 slice_size=16,
                 stride=4
             )
-        )
+        ]
 
         # If an LSTM model has been passed
         if lstm_model_path is not None:
@@ -49,7 +43,7 @@ class InferenceWrapperSingleLine:
                 derivative_multiplier=0,
                 max_distance_from_line=10,
                 ideal_center_x=160,
-                center_y=0,
+                center_y=10,
                 steering_limit=0.2
             )
 
