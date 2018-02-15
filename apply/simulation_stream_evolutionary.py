@@ -7,6 +7,8 @@ import os
 import sys
 import time
 
+import numpy as np
+
 from ..apply.get_simulation_screenshot import get_simulation_screenshot, TEMP_PATH
 from ..infer.inference_wrapper_single_line import InferenceWrapperSingleLine
 from ..model.evolutionary_model import EvolutionaryModel
@@ -31,6 +33,9 @@ TEST_SECONDS = 60
 
 # An arbitrary large number that is higher than any standard deviation values that will be encountered during real use
 LARGE_STANDARD_DEVIATION = 1000
+
+# The standard deviation of the Gaussian noise added to proportional errors
+PROPORTIONAL_ERROR_NOISE = 10
 
 # Check that the number of command line arguments is correct
 num_arguments = len(sys.argv)
@@ -91,6 +96,9 @@ for i in itertools.count():
             center_line_positions = inference_wrapper.infer(image)[1]
             # Get the errors computed by the steering engine
             errors = inference_wrapper.steering_engine.errors
+            # Add Gaussian noise to the proportional error to cripple performance in the simulator so that its
+            # performance is closer to that observed in the real world
+            errors[0] += np.random.normal(0, PROPORTIONAL_ERROR_NOISE)
             # Compute a steering angle with the evolutionary model using the proportional and derivative errors
             steering_angle = model(errors)
 
@@ -101,7 +109,7 @@ for i in itertools.count():
 
             # Run inference with the analysis steering engine on the center line positions
             analysis_steering_engine.compute_steering_angle(center_line_positions)
-            # Append the proportional error computed by the analysis engine to the list
+            # Get the proportional error computed by the analysis engine and add it to the list
             analysis_proportional_error = analysis_steering_engine.errors[0]
             proportional_errors.append(analysis_proportional_error)
 
