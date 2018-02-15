@@ -43,7 +43,7 @@ class InferenceWrapperSingleLine:
                 derivative_multiplier=0,
                 max_distance_from_line=10,
                 ideal_center_x=160,
-                center_y=10,
+                center_y=0,
                 steering_limit=0.2
             )
 
@@ -57,7 +57,7 @@ class InferenceWrapperSingleLine:
             original_image_shape=image.shape,
             window_size=self.inference_engines[0].window_size,
             minimum_prediction_confidence=0.7,
-            offset_absolute=10,
+            offset_absolute=3,
             offset_multiplier=1.1
         )
         # Use the steering engine to calculate a steering angle based on the center line

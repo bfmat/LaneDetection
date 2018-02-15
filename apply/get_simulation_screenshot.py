@@ -30,7 +30,7 @@ def get_simulation_screenshot(remove_images):
     # If the file exists
     if os.path.isfile(max_numbered_path):
         # Read the file and crop it into a format that the neural network should accept
-        image = imread(max_numbered_path)[90:]
+        image = imread(max_numbered_path)[60:-60]
 
     # Delete all of the images found if the argument is true
     if remove_images:
