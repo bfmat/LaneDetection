@@ -35,7 +35,7 @@ TEST_SECONDS = 60
 LARGE_STANDARD_DEVIATION = 1000
 
 # The standard deviation of the Gaussian noise added to proportional errors
-PROPORTIONAL_ERROR_NOISE = 10
+PROPORTIONAL_ERROR_NOISE = 0
 
 # Check that the number of command line arguments is correct
 num_arguments = len(sys.argv)
