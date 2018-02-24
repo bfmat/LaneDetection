@@ -1,6 +1,7 @@
 import os
 
 from keras.models import load_model
+from skimage.io import imsave
 
 from .proportional_derivative_steering_engine import PDSteeringEngine
 from .sliding_window_inference_engine import SlidingWindowInferenceEngine
@@ -29,8 +30,7 @@ class InferenceWrapperTwoLines:
             model = load_model(absolute_path)
 
             # Create a sliding window inference engine with the model
-            inference_engine = SlidingWindowInferenceEngine(
-                model=model, slice_size=16, stride=4)
+            inference_engine = SlidingWindowInferenceEngine(model=model, slice_size=16, stride=4)
 
             # Add it to the list of steering engines
             self.inference_engines.append(inference_engine)
@@ -50,6 +50,10 @@ class InferenceWrapperTwoLines:
         # With each of the provided engines, perform inference
         # on the current image, calculating a prediction tensor
         prediction_tensors = [inference_engine.infer(image) for inference_engine in self.inference_engines]
+
+        # Save the two tensors so the heat maps can be retrieved
+        imsave('/tmp/left.png', prediction_tensors[0])
+        imsave('/tmp/right.png', prediction_tensors[1])
 
         # Calculate the center line positions and add them to the list
         center_line_positions, outer_road_lines = calculate_lane_center_positions_two_lines(
