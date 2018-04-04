@@ -58,7 +58,7 @@ IMAGE_DATA_LABELS = ['File name', 'Steering angle']
 
 # The descriptions, multipliers, and corresponding colors
 # of the lines that will be drawn on the line graph
-LINE_DATA = [('Steering angle', 10, 'yellow', 'tenths of motor rotations'),
+LINE_DATA = [('Steering angle', 5, 'yellow', 'tenths of motor rotations'),
              ('Proportional error', 0.01, 'cyan', 'hundreds of pixels'),
              ('Derivative error', 1, 'magenta', 'slope of line')]
 
@@ -378,7 +378,7 @@ class Visualizer(QWidget):
                 line_parameters = current_point + previous_point
                 painter.drawLine(*line_parameters)
 
-        # Calculate the Y points on the graph for steering angles of -0.1, 0.0, and 0.1 respectively
+        # Calculate the Y points on the graph for steering angles of -0.2, 0.0, and 0.2 respectively
         y_negative = self.get_line_graph_y_position(
             -LINE_GRAPH_GUIDE_LINE_ABSOLUTE_VALUE)
         y_zero = self.get_line_graph_y_position(0)
