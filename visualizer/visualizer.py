@@ -58,7 +58,7 @@ IMAGE_DATA_LABELS = ['File name', 'Steering angle']
 
 # The descriptions, multipliers, and corresponding colors
 # of the lines that will be drawn on the line graph
-LINE_DATA = [('Steering angle', 5, 'yellow', 'tenths of motor rotations'),
+LINE_DATA = [('Steering angle', 5, 'yellow', 'fifths of motor rotations'),
              ('Proportional error', 0.01, 'cyan', 'hundreds of pixels'),
              ('Derivative error', 1, 'magenta', 'slope of line')]
 
