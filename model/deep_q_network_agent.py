@@ -24,7 +24,7 @@ MEMORY_CAPACITY = 2000
 
 
 # The main reinforcement learning agent, including a neural network but handling training and other functionality
-class ReinforcementSteeringAgent:
+class DeepQNetworkAgent:
 
     # Initialize the agent including the model and other attributes
     def __init__(self, state_size, action_size):

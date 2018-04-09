@@ -9,9 +9,9 @@ import numpy as np
 
 from ..apply.get_simulation_screenshot import get_simulation_screenshot, TEMP_PATH
 from ..infer.inference_wrapper_single_line import InferenceWrapperSingleLine
-from ..model.reinforcement_learning_agent import ReinforcementSteeringAgent
+from ..model.deep_q_network_agent import DeepQNetworkAgent
 
-# A client for the reinforcement learning agent that communicates with the simulation, controlling it using the agent
+# A client for the deep Q-network agent that communicates with the simulation, controlling it using the agent
 # which trains and runs inference simultaneously
 # Created by brendon-ai, January 2018
 
@@ -55,8 +55,8 @@ if __name__ == "__main__":
     # Create an inference wrapper using the model path
     inference_wrapper = InferenceWrapperSingleLine(sliding_window_model_path)
 
-    # Create the reinforcement learning agent
-    agent = ReinforcementSteeringAgent(STATE_SIZE, ACTION_SIZE)
+    # Create the deep Q-network agent
+    agent = DeepQNetworkAgent(STATE_SIZE, ACTION_SIZE)
 
     # For each of the training episodes
     for episode in range(EPISODES):
