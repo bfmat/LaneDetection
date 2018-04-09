@@ -65,8 +65,8 @@ if __name__ == "__main__":
         # The number of time iterations that pass during each episode must be tracked
         time_passed = 0
 
-        # Iterate until the game ends and the loop is broken out of
-        while True:
+        # Iterate over the training loop, which should never exit
+        for _ in agent.train():
             # Increment the time variable
             time_passed += 1
 
@@ -132,8 +132,3 @@ if __name__ == "__main__":
                 print("episode: {}/{}, score: {}, epsilon: {}".format(episode, EPISODES, time_passed, agent.epsilon))
                 # Move on to the next episode
                 break
-
-        # If there is sufficient data in the memory to extract a full batch for training
-        if len(agent.memory) > BATCH_SIZE:
-            # Run a training iteration
-            agent.replay(BATCH_SIZE)

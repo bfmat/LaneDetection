@@ -1,4 +1,5 @@
 import collections
+import copy
 import random
 
 import numpy as np
@@ -6,10 +7,9 @@ from keras.layers import Dense
 from keras.models import Sequential
 from keras.optimizers import Adadelta
 
-# A system for steering based on the center line of the road using reinforcement learning, meaning the network
+# A system for steering based on the center line of the road using a deep Q-network, meaning the network
 # gradually learns while attempting to drive the car
 # Created by brendon-ai, January 2018
-
 
 # The discount rate used for the reinforcement learning algorithm
 GAMMA = 0.95
@@ -23,7 +23,7 @@ EPSILON_MIN = 0.01
 MEMORY_CAPACITY = 2000
 
 
-# The main reinforcement learning agent, including a neural network but handling training and other functionality
+# The deep Q-network agent, including a neural network but handling training and other functionality
 class DeepQNetworkAgent:
 
     # Initialize the agent including the model and other attributes
@@ -39,7 +39,6 @@ class DeepQNetworkAgent:
         self.state_size = state_size
         self.action_size = action_size
 
-        # Initialize the neural network model that trains as the agent learns
         # Use a rectified linear activation function
         activation = 'relu'
         # Create the neural network model simply using a series of dense layers
@@ -47,10 +46,8 @@ class DeepQNetworkAgent:
             Dense(3, input_shape=(self.state_size,), activation=activation),
             Dense(self.action_size)
         ])
-
         # Use an Adam optimizer with the predefined learning rate
         optimizer = Adadelta()
-
         # Compile the model with a mean squared error loss
         self.model.compile(
             loss='mse',
@@ -81,40 +78,39 @@ class DeepQNetworkAgent:
             # The actions is the index of the maximum predicted reward
             return np.argmax(reward_predictions)
 
-    # Train the neural network model using the actions in the memory
-    def replay(self, batch_size):
-        # Randomly sample a batch of experiences from the memory
-        batch = random.sample(self.memory, batch_size)
-        # Extract all of the information stored in the batch of experiences
-        for state, action, reward, next_state, done in batch:
-            # If the game ended after this action
-            if done:
-                # The target reward is the reward that was gained from this action
-                target = reward
-            # Otherwise, the future reward that would result from this action must be accounted for
-            else:
-                # Predict the reward resulting from the next state
-                reward_predictions = self.predict(next_state)
-                # Get the maximum reward possible during the next state and multiply it by the discount hyperparameter
-                discounted_maximum_future_reward = np.amax(reward_predictions) * GAMMA
-                # Add the discounted future reward to the current reward to calculate the target used for training
-                target = reward + discounted_maximum_future_reward
+    # Train the neural network model; this is to be iterated over, and yields None on each iteration
+    def train(self):
+        # Run an infinite loop in which the training is done
+        while True:
+            # Iterate over the entire memory in a random order
+            memory_random = copy.copy(self.memory)
+            random.shuffle(memory_random)
+            for state, action, reward, next_state, done in memory_random:
+                # If the game ended after this action
+                if done:
+                    # If the epsilon has not already gone as low as it is allowed to
+                    if self.epsilon > EPSILON_MIN:
+                        # Multiply it by the decay factor
+                        self.epsilon *= EPSILON_DECAY
+                    # The target reward is the reward that was gained from this action
+                    target = reward
+                # Otherwise, the future reward that would result from this action must be accounted for
+                else:
+                    # Predict the reward resulting from the next state
+                    reward_predictions = self.predict(next_state)
+                    # Get the maximum reward possible during the next state and multiply it by the discount
+                    discounted_maximum_future_reward = np.amax(reward_predictions) * GAMMA
+                    # Add the discounted future reward to the current reward
+                    # to calculate the target used for training
+                    target = reward + discounted_maximum_future_reward
 
-            # Make a prediction based on this state, but replace the reward for the action on this time step
-            target_prediction = self.model.predict(state)
-            target_prediction[0, action] = target
-            # Train the model based on this modified prediction
-            self.model.fit(x=state, y=target_prediction, epochs=1, verbose=0)
+                # Make a prediction based on this state, but replace the reward for the action on this time step
+                target_prediction = self.model.predict(state)
+                target_prediction[0, action] = target
+                # Train the model based on this modified prediction
+                self.model.fit(x=state, y=target_prediction, epochs=1, verbose=0)
 
-        # If the epsilon has not already gone as low as it is allowed to
-        if self.epsilon > EPSILON_MIN:
-            # Multiply it by the decay factor
-            self.epsilon *= EPSILON_DECAY
-
-    # Load weights into the neural network from a provided path
-    def load_weights(self, path):
-        self.model.load_weights(path)
-
-    # Save the neural network's weights into a provided path
-    def save_weights(self, path):
-        self.model.save_weights(path)
+                # Yield to the calling loop so that inference can be done between any pair of training runs
+                yield None
+            # Also yield outside the loop so that the main loop does not lock up when there is no memory
+            yield None
