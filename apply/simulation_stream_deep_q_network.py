@@ -50,6 +50,10 @@ if __name__ == "__main__":
         if os.path.isfile(file_path):
             os.remove(file_path)
 
+    # Get the simulation started with an arbitrary action
+    with open(ACTION_PATH, 'w') as action_file:
+        action_file.write('0')
+
     # Load the sliding window model using the path provided as a command line argument
     sliding_window_model_path = os.path.expanduser(sys.argv[1])
     # Create an inference wrapper using the model path
@@ -67,6 +71,25 @@ if __name__ == "__main__":
 
         # Iterate over the training loop, which should never exit
         for _ in agent.train():
+
+            # Initialize the values that will be calculated in the following loop
+            reward = None
+            done = None
+            # Try to open the information file
+            try:
+                with open(INFORMATION_PATH) as information_file:
+                    # Try to load the file as JSON
+                    try:
+                        _, reward, done = json.load(information_file)
+                    # If the file is not valid JSON (it has been incompletely or improperly written)
+                    except ValueError:
+                        # Continue with the next iteration of the waiting loop
+                        continue
+            # If an error occurs because the file does not exist
+            except IOError:
+                # Continue with the next iteration of the training loop
+                continue
+
             # Increment the time variable
             time_passed += 1
 
@@ -75,30 +98,6 @@ if __name__ == "__main__":
             # Serialize the action value to the action file
             with open(ACTION_PATH, 'w') as action_file:
                 action_file.write(str(action))
-
-            # Initialize the values that will be calculated in the following loop
-            reward = None
-            done = None
-
-            # Do nothing until the information file can be read from
-            information_loaded = False
-            while not information_loaded:
-                # Try to open the information file
-                try:
-                    with open(INFORMATION_PATH) as information_file:
-                        # Try to load the file as JSON
-                        try:
-                            _, reward, done = json.load(information_file)
-                        # If the file is not valid JSON (it has been incompletely or improperly written)
-                        except ValueError:
-                            # Continue with the next iteration of the waiting loop
-                            continue
-                # If an error occurs because the file does not exist
-                except IOError:
-                    # Continue with the next iteration of the waiting loop
-                    continue
-                # If we get down to this point, the data has been successfully read
-                information_loaded = True
 
             # If the episode has ended
             if done:
@@ -109,7 +108,7 @@ if __name__ == "__main__":
             image = None
             while image is None:
                 # Get the greatest-numbered image in the temp folder
-                image = get_simulation_screenshot(True)
+                image = get_simulation_screenshot(False)
 
             # Run a prediction on this image using the inference wrapper and get the center line of best fit as a list
             # This will serve as the next state

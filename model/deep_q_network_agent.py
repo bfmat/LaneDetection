@@ -86,6 +86,7 @@ class DeepQNetworkAgent:
             memory_random = copy.copy(self.memory)
             random.shuffle(memory_random)
             for state, action, reward, next_state, done in memory_random:
+                print('meme')
                 # If the game ended after this action
                 if done:
                     # If the epsilon has not already gone as low as it is allowed to
