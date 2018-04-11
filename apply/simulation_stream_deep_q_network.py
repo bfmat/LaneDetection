@@ -16,13 +16,13 @@ from ..model.deep_q_network_agent import DeepQNetworkAgent
 # Created by brendon-ai, January 2018
 
 # The number of games the agent should play to train
-EPISODES = 1000
+EPISODES = 10000
 # The number of past time steps that should be trained on every episode
 BATCH_SIZE = 200
 
 # The number of values in the state array passed to the neural network
-# These are the two values that compose the road center line
-STATE_SIZE = 2
+# These are the two values that compose the road center line, and one containing the current steering angle
+STATE_SIZE = 3
 # The number of values in the action array passed from the neural network to the simulation
 # The actions are: remaining still, followed by steering in the negative direction (left),
 # followed by steering in the positive direction (right)
@@ -80,7 +80,7 @@ if __name__ == "__main__":
                 with open(INFORMATION_PATH) as information_file:
                     # Try to load the file as JSON
                     try:
-                        _, reward, done = json.load(information_file)
+                        steering_angle, reward, done = json.load(information_file)
                     # If the file is not valid JSON (it has been incompletely or improperly written)
                     except ValueError:
                         # Continue with the next iteration of the waiting loop
@@ -111,8 +111,9 @@ if __name__ == "__main__":
                 image = get_simulation_screenshot(False)
 
             # Run a prediction on this image using the inference wrapper and get the center line of best fit as a list
-            # This will serve as the next state
-            next_state = inference_wrapper.infer(image)[3]
+            center_line_of_best_fit = inference_wrapper.infer(image)[3]
+            # Get the next state by appending the present steering angle to the line of best fit array
+            next_state = np.append(center_line_of_best_fit, steering_angle)
             # Add a batch dimension to the beginning of the state
             next_state = np.expand_dims(next_state, 0)
 
