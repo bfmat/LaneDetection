@@ -4,6 +4,7 @@ import glob
 import json
 import os
 import sys
+import time
 
 import numpy as np
 
@@ -27,6 +28,9 @@ STATE_SIZE = 3
 # The actions are: remaining still, followed by steering in the negative direction (left),
 # followed by steering in the positive direction (right)
 ACTION_SIZE = 3
+
+# Seconds in the past from which samples will be collected that are used to compute the rolling squared error
+SQUARED_ERROR_TIME = 300
 
 # The path to the file that will contain the state of the car and other data
 INFORMATION_PATH = TEMP_PATH + 'information.json'
@@ -61,7 +65,9 @@ if __name__ == "__main__":
 
     # Create the deep Q-network agent
     agent = DeepQNetworkAgent(STATE_SIZE, ACTION_SIZE)
-
+    # Create a list to add past squared errors from the center of the road to,
+    # alongside the Unix times at which they were recorded
+    squared_errors_and_times = []
     # For each of the training episodes
     for episode in range(EPISODES):
         # Initialize the state variable using zeroes
@@ -103,6 +109,20 @@ if __name__ == "__main__":
             if done:
                 # Set the reward to a negative value
                 reward = -10
+
+            # Calculate the squared error from the center of the road based on the reward, which is one more than the
+            # negative of the squared error; add it to the list alongside the current Unix time
+            squared_error = -(reward - 1)
+            current_time = time.time()
+            squared_errors_and_times.append((squared_error, current_time))
+            # Create a list of the squared errors within a specified span of time in the past
+            recent_squared_errors = [error for (error, time_of_error) in squared_errors_and_times
+                                     if time_of_error - current_time < SQUARED_ERROR_TIME]
+            # Output the error once every thousand iterations so the console is not flooded
+            if time_passed % 1000 == 0:
+                # Calculate the average of the last specified time span of squared errors and output it to the console
+                average_recent_squared_error = sum(recent_squared_errors) / len(recent_squared_errors)
+                print('Average squared error over last', SQUARED_ERROR_TIME, 'seconds:', average_recent_squared_error)
 
             # Loop until a valid image is found
             image = None
