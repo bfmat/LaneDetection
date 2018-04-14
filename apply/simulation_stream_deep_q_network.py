@@ -118,8 +118,8 @@ if __name__ == "__main__":
             # Create a list of the squared errors within a specified span of time in the past
             recent_squared_errors = [error for (error, time_of_error) in squared_errors_and_times
                                      if time_of_error - current_time < SQUARED_ERROR_TIME]
-            # Output the error once every thousand iterations so the console is not flooded
-            if time_passed % 1000 == 0:
+            # Output the error once every thousand iterations (or when the car crashes) so the console is not flooded
+            if time_passed % 1000 == 0 or done:
                 # Calculate the average of the last specified time span of squared errors and output it to the console
                 average_recent_squared_error = sum(recent_squared_errors) / len(recent_squared_errors)
                 print('Average squared error over last', SQUARED_ERROR_TIME, 'seconds:', average_recent_squared_error)
