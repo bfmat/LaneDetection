@@ -16,7 +16,7 @@ GAMMA = 0.95
 # The initial value exploration rate used for the reinforcement learning algorithm
 EPSILON_INITIAL = 1.0
 # The decay value by which the epsilon is multiplied every iteration
-EPSILON_DECAY = 0.999995
+EPSILON_DECAY = 0.99999
 # The minimum value that epsilon can decay to
 EPSILON_MIN = 0.01
 # The maximum number of time steps that can be held in the agent's memory
@@ -40,10 +40,11 @@ class DeepQNetworkAgent:
         self.action_size = action_size
 
         # Use a rectified linear activation function
-        activation = 'relu'
+        activation = 'tanh'
         # Create the neural network model simply using a series of dense layers
         self.model = Sequential([
             Dense(3, input_shape=(self.state_size,), activation=activation),
+            Dense(5, activation=activation),
             Dense(self.action_size)
         ])
         # Use an Adam optimizer with the predefined learning rate
