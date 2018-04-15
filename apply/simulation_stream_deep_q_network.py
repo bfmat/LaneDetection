@@ -65,9 +65,9 @@ if __name__ == "__main__":
 
     # Create the deep Q-network agent
     agent = DeepQNetworkAgent(STATE_SIZE, ACTION_SIZE)
-    # Create a list to add past squared errors from the center of the road to,
+    # Create a list to add past squared errors from the center of the road and loss function values to,
     # alongside the Unix times at which they were recorded
-    squared_errors_and_times = []
+    diagnostic_data = []
     # For each of the training episodes
     for episode in range(EPISODES):
         # Initialize the state variable using zeroes
@@ -75,8 +75,8 @@ if __name__ == "__main__":
         # The number of time iterations that pass during each episode must be tracked
         time_passed = 0
 
-        # Iterate over the training loop, which should never exit
-        for _ in agent.train():
+        # Iterate over the training loop for loss values; it should never exit
+        for loss in agent.train():
 
             # Initialize the values that will be calculated in the following loop
             reward = None
@@ -99,6 +99,8 @@ if __name__ == "__main__":
             # Increment the time variable
             time_passed += 1
 
+            # Reduce the epsilon before choosing an action
+            agent.decay()
             # Calculate an action based on the previous state
             action = agent.act(state)
             # Serialize the action value to the action file
@@ -111,18 +113,26 @@ if __name__ == "__main__":
                 reward = -10
 
             # Calculate the squared error from the center of the road based on the reward, which is one more than the
-            # negative of the squared error; add it to the list alongside the current Unix time
+            # negative of the squared error; add it to the list alongside the loss and current Unix time
             squared_error = -(reward - 1)
             current_time = time.time()
-            squared_errors_and_times.append((squared_error, current_time))
-            # Create a list of the squared errors within a specified span of time in the past
-            recent_squared_errors = [error for (error, time_of_error) in squared_errors_and_times
-                                     if time_of_error - current_time < SQUARED_ERROR_TIME]
-            # Output the error once every thousand iterations (or when the car crashes) so the console is not flooded
+            diagnostic_data.append((squared_error, loss, current_time))
+
+            # Output the error and loss once every thousand iterations (or when the car crashes)
             if time_passed % 1000 == 0 or done:
-                # Calculate the average of the last specified time span of squared errors and output it to the console
-                average_recent_squared_error = sum(recent_squared_errors) / len(recent_squared_errors)
-                print('Average squared error over last', SQUARED_ERROR_TIME, 'seconds:', average_recent_squared_error)
+                # Create lists of the squared errors and losses within a specified span of time in the past
+                squared_errors, losses = \
+                    zip(*[[squared_error, data_loss]
+                          for (squared_error, data_loss, time_of_data_point) in diagnostic_data
+                          if time_of_data_point - current_time < SQUARED_ERROR_TIME])
+                # Ignore the loss values that are None
+                losses = filter(lambda l: l is not None, losses)
+
+                # Calculate the average of the recent squared errors and loss values, and output them to the console
+                average_recent_squared_error = sum(squared_errors) / len(squared_errors)
+                average_recent_loss = sum(losses) / len(losses)
+                print('Over last {} seconds, average squared error is {} and average loss is {}'
+                      .format(SQUARED_ERROR_TIME, average_recent_squared_error, average_recent_loss))
 
             # Loop until a valid image is found
             image = None
@@ -136,10 +146,8 @@ if __name__ == "__main__":
             next_state = np.append(center_line_of_best_fit, steering_angle)
             # Add a batch dimension to the beginning of the state
             next_state = np.expand_dims(next_state, 0)
-
             # Now that the next state has been calculated, the agent should remember the current experience
             agent.remember(state, action, reward, next_state, done)
-
             # Shift the next state to the current state
             state = next_state
 

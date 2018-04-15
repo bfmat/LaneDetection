@@ -16,7 +16,7 @@ GAMMA = 0.95
 # The initial value exploration rate used for the reinforcement learning algorithm
 EPSILON_INITIAL = 1.0
 # The decay value by which the epsilon is multiplied every iteration
-EPSILON_DECAY = 0.999975
+EPSILON_DECAY = 0.999995
 # The minimum value that epsilon can decay to
 EPSILON_MIN = 0.01
 # The maximum number of time steps that can be held in the agent's memory
@@ -78,7 +78,14 @@ class DeepQNetworkAgent:
             # The actions is the index of the maximum predicted reward
             return np.argmax(reward_predictions)
 
-    # Train the neural network model; this is to be iterated over, and yields None on each iteration
+    # Decay the epsilon so that actions become more frequently determined by the network rather than randomly
+    def decay(self):
+        # If the epsilon has not already gone as low as it is allowed to
+        if self.epsilon > EPSILON_MIN:
+            # Multiply it by the decay factor
+            self.epsilon *= EPSILON_DECAY
+
+    # Train the neural network model; this is to be iterated over, and yields the loss or None on each iteration
     def train(self):
         # Run an infinite loop in which the training is done
         while True:
@@ -88,10 +95,6 @@ class DeepQNetworkAgent:
             for state, action, reward, next_state, done in memory_random:
                 # If the game ended after this action
                 if done:
-                    # If the epsilon has not already gone as low as it is allowed to
-                    if self.epsilon > EPSILON_MIN:
-                        # Multiply it by the decay factor
-                        self.epsilon *= EPSILON_DECAY
                     # The target reward is the reward that was gained from this action
                     target = reward
                 # Otherwise, the future reward that would result from this action must be accounted for
@@ -107,10 +110,9 @@ class DeepQNetworkAgent:
                 # Make a prediction based on this state, but replace the reward for the action on this time step
                 target_prediction = self.model.predict(state)
                 target_prediction[0, action] = target
-                # Train the model based on this modified prediction
-                self.model.fit(x=state, y=target_prediction, epochs=1, verbose=0)
-
-                # Yield to the calling loop so that inference can be done between any pair of training runs
-                yield None
+                # Train the model based on this modified prediction, getting the most recent loss value
+                loss = self.model.fit(x=state, y=target_prediction, epochs=1, verbose=0).history['loss'][0]
+                # Yield the loss to the calling loop so that inference can be done between any pair of training runs
+                yield loss
             # Also yield outside the loop so that the main loop does not lock up when there is no memory
             yield None
