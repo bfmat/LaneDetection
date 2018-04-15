@@ -1,4 +1,3 @@
-import collections
 import copy
 import random
 
@@ -19,8 +18,8 @@ EPSILON_INITIAL = 1.0
 EPSILON_DECAY = 0.99999
 # The minimum value that epsilon can decay to
 EPSILON_MIN = 0.01
-# The maximum number of time steps that can be held in the agent's memory
-MEMORY_CAPACITY = 2000
+# The minimum number of examples in the memory before training begins
+MIN_TRAINING_EXAMPLES = 100
 
 
 # The deep Q-network agent, including a neural network but handling training and other functionality
@@ -31,9 +30,8 @@ class DeepQNetworkAgent:
         # Initialize the value of epsilon which will be changed over the life of the agent
         self.epsilon = EPSILON_INITIAL
 
-        # Initialize the agent's memory as a double-ended queue with a predefined maximum capacity
-        # It will store past time steps for training
-        self.memory = collections.deque(maxlen=MEMORY_CAPACITY)
+        # Initialize the agent's memory, which will store past time steps for training
+        self.memory = []
 
         # Set the provided state size and action size as global variables
         self.state_size = state_size
@@ -90,6 +88,11 @@ class DeepQNetworkAgent:
     def train(self):
         # Run an infinite loop in which the training is done
         while True:
+            # Yield immediately if there is less than a specified number of training examples in the memory, so that the
+            # network does not quickly overfit on a very small number of examples
+            if len(self.memory) < MIN_TRAINING_EXAMPLES:
+                yield None
+
             # Iterate over the entire memory in a random order
             memory_random = copy.copy(self.memory)
             random.shuffle(memory_random)
@@ -115,5 +118,3 @@ class DeepQNetworkAgent:
                 loss = self.model.fit(x=state, y=target_prediction, epochs=1, verbose=0).history['loss'][0]
                 # Yield the loss to the calling loop so that inference can be done between any pair of training runs
                 yield loss
-            # Also yield outside the loop so that the main loop does not lock up when there is no memory
-            yield None
