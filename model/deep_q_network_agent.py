@@ -16,7 +16,7 @@ BASE_DISCOUNT = 0.8
 # The initial value exploration rate used for the reinforcement learning algorithm
 EPSILON_INITIAL = 1.0
 # The decay value by which the epsilon is multiplied every iteration
-EPSILON_DECAY = 0.9998
+EPSILON_DECAY = 0.9999
 # The minimum value that epsilon can decay to
 EPSILON_MIN = 0.01
 # The minimum number of examples in the memory before training begins
