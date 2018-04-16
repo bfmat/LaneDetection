@@ -10,8 +10,9 @@ from keras.optimizers import Adadelta
 # gradually learns while attempting to drive the car
 # Created by brendon-ai, January 2018
 
-# The discount rate used for the reinforcement learning algorithm
-GAMMA = 0.95
+# The base discount rate, which should be between 0 and 1
+BASE_DISCOUNT = 0.8
+
 # The initial value exploration rate used for the reinforcement learning algorithm
 EPSILON_INITIAL = 1.0
 # The decay value by which the epsilon is multiplied every iteration
@@ -53,9 +54,26 @@ class DeepQNetworkAgent:
             optimizer=optimizer
         )
 
-    # Add a set of values packaged as a single time step to the memory
-    def remember(self, state, action, reward, next_state, done):
-        self.memory.append((state, action, reward, next_state, done))
+    # Add a set of values packaged as a single time step to the memory, and update rewards for previous memories
+    def remember(self, state, action, reward, done):
+        # Add the new value to the memory as it is (it will be updated to accommodate future rewards later)
+        self.memory.append([state, action, reward, done])
+        # Get the index of the most recent element in the memory
+        max_memory_index = len(self.memory) - 1
+        # Iterate over all indices in the array, excluding the one that was just added, in reverse
+        for memory_index in reversed(range(max_memory_index)):
+            # If the game ended at this example, it had no bearing on future rewards, so iteration should stop
+            memory_example = self.memory[memory_index]
+            if memory_example[3]:
+                break
+
+            # Get the age of this memory example (the number of examples that have been added since this one)
+            age = max_memory_index - memory_index
+            # Take the discount to the power of the age of this example
+            # This will exponentially discount the value of the current reward for older examples in the memory
+            discount = BASE_DISCOUNT ** age
+            # Multiply the current reward by this discount and add it to the reward for this previous example
+            memory_example[2] += reward * discount
 
     # Run a prediction on a state and return an array of predicted rewards for each possible action
     def predict(self, state):
@@ -96,24 +114,10 @@ class DeepQNetworkAgent:
             # Iterate over the entire memory in a random order
             memory_random = copy.copy(self.memory)
             random.shuffle(memory_random)
-            for state, action, reward, next_state, done in memory_random:
-                # If the game ended after this action
-                if done:
-                    # The target reward is the reward that was gained from this action
-                    target = reward
-                # Otherwise, the future reward that would result from this action must be accounted for
-                else:
-                    # Predict the reward resulting from the next state
-                    reward_predictions = self.predict(next_state)
-                    # Get the maximum reward possible during the next state and multiply it by the discount
-                    discounted_maximum_future_reward = np.amax(reward_predictions) * GAMMA
-                    # Add the discounted future reward to the current reward
-                    # to calculate the target used for training
-                    target = reward + discounted_maximum_future_reward
-
+            for state, action, reward, _ in memory_random:
                 # Make a prediction based on this state, but replace the reward for the action on this time step
                 target_prediction = self.model.predict(state)
-                target_prediction[0, action] = target
+                target_prediction[0, action] = reward
                 # Train the model based on this modified prediction, getting the most recent loss value
                 loss = self.model.fit(x=state, y=target_prediction, epochs=1, verbose=0).history['loss'][0]
                 # Yield the loss to the calling loop so that inference can be done between any pair of training runs

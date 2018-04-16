@@ -40,141 +40,132 @@ INFORMATION_PATH = TEMP_PATH + 'information.json'
 # The path to the file that will contain the action chosen by the agent
 ACTION_PATH = TEMP_PATH + 'action.txt'
 
-# Only run if this script is being executed directly and not imported
-if __name__ == "__main__":
+# Verify that the number of command line arguments is correct
+if len(sys.argv) != 2:
+    print('Usage:', sys.argv[0], '<right line trained model>')
+    sys.exit()
 
-    # Verify that the number of command line arguments is correct
-    if len(sys.argv) != 2:
-        print('Usage:', sys.argv[0], '<right line trained model>')
-        sys.exit()
+# Delete all old images and data files from the temp folder
+for file_path in glob.iglob(TEMP_PATH + '*sim*'):
+    os.remove(file_path)
 
-    # Delete all old images and data files from the temp folder
-    for file_path in glob.iglob(TEMP_PATH + '*sim*'):
+# Delete the information and action files if they currently exist
+for file_path in [INFORMATION_PATH, ACTION_PATH]:
+    if os.path.isfile(file_path):
         os.remove(file_path)
 
-    # Delete the information and action files if they currently exist
-    for file_path in [INFORMATION_PATH, ACTION_PATH]:
-        if os.path.isfile(file_path):
-            os.remove(file_path)
+# Get the simulation started with an arbitrary action
+with open(ACTION_PATH, 'w') as action_file:
+    action_file.write('0')
 
-    # Get the simulation started with an arbitrary action
-    with open(ACTION_PATH, 'w') as action_file:
-        action_file.write('0')
+# Load the sliding window model using the path provided as a command line argument
+sliding_window_model_path = os.path.expanduser(sys.argv[1])
+# Create an inference wrapper using the model path
+inference_wrapper = InferenceWrapperSingleLine(sliding_window_model_path)
 
-    # Load the sliding window model using the path provided as a command line argument
-    sliding_window_model_path = os.path.expanduser(sys.argv[1])
-    # Create an inference wrapper using the model path
-    inference_wrapper = InferenceWrapperSingleLine(sliding_window_model_path)
+# Create the deep Q-network agent
+agent = DeepQNetworkAgent(STATE_SIZE, ACTION_SIZE)
+# Create a list to add past squared errors from the center of the road and lists of loss function values to,
+# alongside the Unix times at which they were recorded
+diagnostic_data = []
+# For each of the training episodes
+for episode in range(EPISODES):
+    # The number of time iterations that pass during each episode must be tracked
+    time_passed = 0
+    # Create a list to add loss values to while waiting for the time at which inference resumes
+    waiting_losses = []
+    # The time to wait until, for the next iteration to begin
+    waiting_end_time = 0
+    # Iterate over the training loop for loss values; it should never exit
+    for loss in agent.train():
 
-    # Create the deep Q-network agent
-    agent = DeepQNetworkAgent(STATE_SIZE, ACTION_SIZE)
-    # Create a list to add past squared errors from the center of the road and lists of loss function values to,
-    # alongside the Unix times at which they were recorded
-    diagnostic_data = []
-    # For each of the training episodes
-    for episode in range(EPISODES):
-        # Initialize the state variable using zeroes
-        state = np.array([[0] * STATE_SIZE])
-        # The number of time iterations that pass during each episode must be tracked
-        time_passed = 0
-
-        # Create a list to add loss values to while waiting for the time at which inference resumes
+        # Add the current loss to the list
+        waiting_losses.append(loss)
+        # If the wait is not over yet, continue training
+        current_time = time.time()
+        if current_time < waiting_end_time:
+            continue
+        # If the wait is over, set the waiting end time to a predefined length of time in the future
+        waiting_end_time = current_time + ACTION_DELAY
+        # Reset the list of waiting losses for the next waiting period
         waiting_losses = []
-        # The time to wait until, for the next iteration to begin
-        waiting_end_time = 0
-        # Iterate over the training loop for loss values; it should never exit
-        for loss in agent.train():
-            # Add the current loss to the list
-            waiting_losses.append(loss)
-            # If the wait is not over yet, continue training
-            current_time = time.time()
-            if current_time < waiting_end_time:
-                continue
-            # If the wait is over, set the waiting end time to a predefined length of time in the future
-            waiting_end_time = current_time + ACTION_DELAY
 
-            # Initialize the values that will be calculated in the following loop
-            reward = None
-            done = None
-            # Try to open the information file
-            try:
-                with open(INFORMATION_PATH) as information_file:
-                    # Try to load the file as JSON
-                    try:
-                        steering_angle, reward, done = json.load(information_file)
-                    # If the file is not valid JSON (it has been incompletely or improperly written)
-                    except ValueError:
-                        # Continue with the next iteration of the waiting loop
-                        continue
-            # If an error occurs because the file does not exist
-            except IOError:
-                # Continue with the next iteration of the training loop
-                continue
+        # Initialize the values that will be calculated in the following loop
+        reward = None
+        done = None
+        # Try to open the information file
+        try:
+            with open(INFORMATION_PATH) as information_file:
+                # Try to load the file as JSON
+                try:
+                    steering_angle, reward, done = json.load(information_file)
+                # If the file is not valid JSON (it has been incompletely or improperly written)
+                except ValueError:
+                    # Continue with the next iteration of the waiting loop
+                    continue
+        # If an error occurs because the file does not exist
+        except IOError:
+            # Continue with the next iteration of the training loop
+            continue
+        # Increment the time variable
+        time_passed += 1
+        # If the episode has ended
+        if done:
+            # Set the reward to a negative value
+            reward = -10
+        # Delete the information file
+        os.remove(INFORMATION_PATH)
 
-            # Increment the time variable
-            time_passed += 1
+        # Calculate the squared error from the center of the road based on the reward, which is one more than the
+        # negative of the squared error; add it to the list alongside the waiting losses and current Unix time
+        squared_error = -(reward - 1)
+        current_time = time.time()
+        diagnostic_data.append((squared_error, waiting_losses, current_time))
 
-            # Reduce the epsilon before choosing an action
-            agent.decay()
-            # Calculate an action based on the previous state
-            action = agent.act(state)
-            # Serialize the action value to the action file
-            with open(ACTION_PATH, 'w') as action_file:
-                action_file.write(str(action))
-
-            # If the episode has ended
-            if done:
-                # Set the reward to a negative value
-                reward = -10
-
-            # Calculate the squared error from the center of the road based on the reward, which is one more than the
-            # negative of the squared error; add it to the list alongside the waiting losses and current Unix time
-            squared_error = -(reward - 1)
-            current_time = time.time()
-            diagnostic_data.append((squared_error, waiting_losses, current_time))
-            # Reset the list of waiting losses for the next waiting period
-            waiting_losses = []
-
-            # Output the error and loss once every thousand iterations (or when the car crashes)
-            if time_passed % 1000 == 0 or done:
-                # Create lists of the squared errors and losses within a specified span of time in the past
-                squared_errors, losses_2d = \
-                    zip(*[[data_point_squared_error, data_point_losses]
-                          for (data_point_squared_error, data_point_losses, data_point_time) in diagnostic_data
-                          if data_point_time - current_time < SQUARED_ERROR_TIME])
-                # Flatten the 2D list of losses, ignoring values that are None
-                losses = [loss_value for data_point_losses in losses_2d if data_point_losses is not None
-                          for loss_value in data_point_losses if loss_value is not None]
-
-                # Calculate the average of the recent squared errors and loss values, and output them to the console
+        # Output the error and loss once every thousand iterations (or when the car crashes)
+        if time_passed % 1000 == 0 or done:
+            # Create lists of the squared errors and losses within a specified span of time in the past
+            squared_errors, losses_2d = \
+                zip(*[[data_point_squared_error, data_point_losses]
+                      for (data_point_squared_error, data_point_losses, data_point_time) in diagnostic_data
+                      if data_point_time - current_time < SQUARED_ERROR_TIME])
+            # Flatten the 2D list of losses, ignoring values that are None
+            losses = [loss_value for data_point_losses in losses_2d if data_point_losses is not None
+                      for loss_value in data_point_losses if loss_value is not None]
+            # Calculate the average of the recent squared errors and loss values, and output them to the console
+            # Only do so if the lists are not empty
+            if squared_errors and losses:
                 average_recent_squared_error = sum(squared_errors) / len(squared_errors)
                 average_recent_loss = sum(losses) / len(losses)
                 print('Over last {} seconds, average squared error is {} and average loss is {}'
                       .format(SQUARED_ERROR_TIME, average_recent_squared_error, average_recent_loss))
 
-            # Loop until a valid image is found
-            image = None
-            while image is None:
-                # Get the greatest-numbered image in the temp folder
-                image = get_simulation_screenshot(False)
+        # Loop until a valid image is found
+        image = None
+        while image is None:
+            # Get the greatest-numbered image in the temp folder
+            image = get_simulation_screenshot(False)
 
-            # Run a prediction on this image using the inference wrapper and get the center line of best fit as a list
-            center_line_of_best_fit = inference_wrapper.infer(image)[3]
-            # Get the next state by appending the present steering angle to the line of best fit array
-            next_state = np.append(center_line_of_best_fit, steering_angle)
-            # Add a batch dimension to the beginning of the state
-            next_state = np.expand_dims(next_state, 0)
-            # Now that the next state has been calculated, the agent should remember the current experience
-            agent.remember(state, action, reward, next_state, done)
-            # Shift the next state to the current state
-            state = next_state
+        # Run a prediction on this image using the inference wrapper and get the center line of best fit as a list
+        center_line_of_best_fit = inference_wrapper.infer(image)[3]
+        # Get the state by appending the present steering angle to the line of best fit array
+        state = np.append(center_line_of_best_fit, steering_angle)
+        # Add a batch dimension to the beginning of the state
+        state = np.expand_dims(state, 0)
 
-            # Delete the information file
-            os.remove(INFORMATION_PATH)
+        # Reduce the epsilon before choosing an action
+        agent.decay()
+        # Calculate an action based on the previous state
+        action = agent.act(state)
+        # Serialize the action value to the action file
+        with open(ACTION_PATH, 'w') as action_file:
+            action_file.write(str(action))
+        # Now that the action has been calculated, the agent should remember the current experience
+        agent.remember(state, action, reward, done)
 
-            # If the current training episode has ended
-            if done:
-                # Print an message describing the results of the episode
-                print("episode: {}/{}, score: {}, epsilon: {}".format(episode, EPISODES, time_passed, agent.epsilon))
-                # Move on to the next episode
-                break
+        # If the current training episode has ended
+        if done:
+            # Print an message describing the results of the episode
+            print("episode: {}/{}, score: {}, epsilon: {}".format(episode, EPISODES, time_passed, agent.epsilon))
+            # Move on to the next episode
+            break
