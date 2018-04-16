@@ -32,6 +32,9 @@ ACTION_SIZE = 3
 # Seconds in the past from which samples will be collected that are used to compute the rolling squared error
 SQUARED_ERROR_TIME = 300
 
+# The number of seconds to wait between actions
+ACTION_DELAY = 1
+
 # The path to the file that will contain the state of the car and other data
 INFORMATION_PATH = TEMP_PATH + 'information.json'
 # The path to the file that will contain the action chosen by the agent
@@ -65,7 +68,7 @@ if __name__ == "__main__":
 
     # Create the deep Q-network agent
     agent = DeepQNetworkAgent(STATE_SIZE, ACTION_SIZE)
-    # Create a list to add past squared errors from the center of the road and loss function values to,
+    # Create a list to add past squared errors from the center of the road and lists of loss function values to,
     # alongside the Unix times at which they were recorded
     diagnostic_data = []
     # For each of the training episodes
@@ -75,8 +78,20 @@ if __name__ == "__main__":
         # The number of time iterations that pass during each episode must be tracked
         time_passed = 0
 
+        # Create a list to add loss values to while waiting for the time at which inference resumes
+        waiting_losses = []
+        # The time to wait until, for the next iteration to begin
+        waiting_end_time = 0
         # Iterate over the training loop for loss values; it should never exit
         for loss in agent.train():
+            # Add the current loss to the list
+            waiting_losses.append(loss)
+            # If the wait is not over yet, continue training
+            current_time = time.time()
+            if current_time < waiting_end_time:
+                continue
+            # If the wait is over, set the waiting end time to a predefined length of time in the future
+            waiting_end_time = current_time + ACTION_DELAY
 
             # Initialize the values that will be calculated in the following loop
             reward = None
@@ -113,20 +128,23 @@ if __name__ == "__main__":
                 reward = -10
 
             # Calculate the squared error from the center of the road based on the reward, which is one more than the
-            # negative of the squared error; add it to the list alongside the loss and current Unix time
+            # negative of the squared error; add it to the list alongside the waiting losses and current Unix time
             squared_error = -(reward - 1)
             current_time = time.time()
-            diagnostic_data.append((squared_error, loss, current_time))
+            diagnostic_data.append((squared_error, waiting_losses, current_time))
+            # Reset the list of waiting losses for the next waiting period
+            waiting_losses = []
 
             # Output the error and loss once every thousand iterations (or when the car crashes)
             if time_passed % 1000 == 0 or done:
                 # Create lists of the squared errors and losses within a specified span of time in the past
-                squared_errors, losses = \
-                    zip(*[[squared_error, data_loss]
-                          for (squared_error, data_loss, time_of_data_point) in diagnostic_data
-                          if time_of_data_point - current_time < SQUARED_ERROR_TIME])
-                # Ignore the loss values that are None
-                losses = filter(lambda l: l is not None, losses)
+                squared_errors, losses_2d = \
+                    zip(*[[data_point_squared_error, data_point_losses]
+                          for (data_point_squared_error, data_point_losses, data_point_time) in diagnostic_data
+                          if data_point_time - current_time < SQUARED_ERROR_TIME])
+                # Flatten the 2D list of losses, ignoring values that are None
+                losses = [loss_value for data_point_losses in losses_2d if data_point_losses is not None
+                          for loss_value in data_point_losses if loss_value is not None]
 
                 # Calculate the average of the recent squared errors and loss values, and output them to the console
                 average_recent_squared_error = sum(squared_errors) / len(squared_errors)
