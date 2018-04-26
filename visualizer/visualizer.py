@@ -105,12 +105,48 @@ class Visualizer(QWidget):
         super(Visualizer, self).__init__()
 
         # Check that the number of command line arguments is correct
-        num_arguments = len(sys.argv)
-        if num_arguments != 3 and num_arguments != 4:
-            print('Usage:', sys.argv[0],
-                  '<image folder> <right line trained model> <left line trained model (optional)>')
+        if len(sys.argv) != 5:
+            print(
+                'Usage:',
+                sys.argv[0],
+                '<in simulation (y or n)>',
+                '<image folder>',
+                '<right line trained model>',
+                '<left line trained model (if not in simulation)>',
+                '<stop sign detection model (if in simulation)'
+            )
             sys.exit()
 
+        # Check if we are using images from the simulation or not
+        in_simulation = sys.argv[1].lower() == 'y'
+
+        # Create one inference wrapper if we are in the simulation, or two otherwise
+        inference_and_steering_wrapper = \
+            InferenceWrapperSingleLine(sys.argv[3]) if in_simulation \
+            else InferenceWrapperTwoLines([sys.argv[4], sys.argv[3]])
+
+        # Pass on the path of the stop sign detection model if we are in the simulation
+        stop_sign_model_path = sys.argv[4] if in_simulation else None
+
+        # Load and perform inference on the images
+        image_folder = os.path.expanduser(sys.argv[2])
+        self.image_list, self.image_data = process_images(
+            image_folder=image_folder,
+            inference_and_steering_wrapper=inference_and_steering_wrapper,
+            marker_radius=MARKER_RADIUS,
+            heat_map_opacity=HEAT_MAP_OPACITY,
+            light_gray_color=LIGHT_GRAY_COLOR,
+            stop_sign_model_path=stop_sign_model_path
+        )
+
+        # Set the global image height and width variables
+        image_height, image_width = self.image_list[0].shape[:2]
+        # Calculate the height of one vertical half of the line graph ignoring the border
+        half_graph_height_minus_border = (
+            LINE_GRAPH_HEIGHT / 2) - LINE_GRAPH_BORDER_HEIGHT
+        # Use that, divided by the predefined guide line steering angle, to calculate the line graph multiplier
+        self.line_graph_multiplier = int(half_graph_height_minus_border /
+                                         LINE_GRAPH_GUIDE_LINE_ABSOLUTE_VALUE)
         # Generate the fonts for the line graph and heat map
         self.heat_map_labels_font, self.line_graph_labels_font, self.line_graph_legend_font = [
             QFont(UI_FONT_NAME, font_size)
@@ -119,36 +155,6 @@ class Visualizer(QWidget):
                 LINE_GRAPH_LEGEND_FONT_SIZE
             ]
         ]
-
-        # Load the paths to the models and image provided as command line arguments
-        image_folder = os.path.expanduser(sys.argv[1])
-
-        # Create an inference wrapper based on the number of models provided
-        num_models = num_arguments - 2
-        if num_models == 1:
-            inference_and_steering_wrapper = InferenceWrapperSingleLine(sys.argv[2])
-        else:
-            inference_and_steering_wrapper = InferenceWrapperTwoLines([sys.argv[3], sys.argv[2]])
-
-        # Load and perform inference on the images
-        self.image_list, self.image_data = process_images(
-            image_folder=image_folder,
-            inference_and_steering_wrapper=inference_and_steering_wrapper,
-            marker_radius=MARKER_RADIUS,
-            heat_map_opacity=HEAT_MAP_OPACITY,
-            light_gray_color=LIGHT_GRAY_COLOR
-        )
-
-        # Set the global image height and width variables
-        image_height, image_width = self.image_list[0].shape[:2]
-
-        # Calculate the height of one vertical half of the line graph ignoring the border
-        half_graph_height_minus_border = (LINE_GRAPH_HEIGHT / 2) - LINE_GRAPH_BORDER_HEIGHT
-
-        # Use that, divided by the predefined guide line steering angle, to calculate the line graph multiplier
-        self.line_graph_multiplier = int(half_graph_height_minus_border /
-                                         LINE_GRAPH_GUIDE_LINE_ABSOLUTE_VALUE)
-
         # Set up the UI
         self.init_ui(image_height, image_width)
 
@@ -161,12 +167,14 @@ class Visualizer(QWidget):
 
         # Calculate the center of the line graph using the height of the image
         # plus the height of the line graph label as an upper limit of the graph
-        self.line_graph_center = image_box_height + HEAT_MAP_LABELS_HEIGHT + (LINE_GRAPH_HEIGHT // 2)
+        self.line_graph_center = image_box_height + \
+            HEAT_MAP_LABELS_HEIGHT + (LINE_GRAPH_HEIGHT // 2)
 
         # To calculate the window size, use the image box size plus the predefined height that will
         # be occupied by the line graph, corresponding legend, and the label below the heat maps
         window_width = image_box_width
-        window_height = image_box_height + HEAT_MAP_LABELS_HEIGHT + LINE_GRAPH_HEIGHT + LINE_GRAPH_LEGEND_HEIGHT
+        window_height = image_box_height + HEAT_MAP_LABELS_HEIGHT + \
+            LINE_GRAPH_HEIGHT + LINE_GRAPH_LEGEND_HEIGHT
 
         # Set the size, position, title, and color scheme of the window
         self.setFixedSize(window_width, window_height)
@@ -235,7 +243,8 @@ class Visualizer(QWidget):
             y_position_center = self.get_line_graph_y_position(steering_angle)
 
             # Offset it by half of the label size, because the coordinates correspond to the top left corner
-            y_position_offset = y_position_center - (LINE_GRAPH_LABEL_SIZE // 2)
+            y_position_offset = y_position_center - \
+                (LINE_GRAPH_LABEL_SIZE // 2)
 
             # Create and format the label
             line_graph_label = QLabel(self)
@@ -297,7 +306,8 @@ class Visualizer(QWidget):
         # Convert the NumPy array into a QImage for display
         height, width, channel = image.shape
         bytes_per_line = channel * width
-        current_image_qimage = QImage(image.data, width, height, bytes_per_line, QImage.Format_RGB888)
+        current_image_qimage = QImage(
+            image.data, width, height, bytes_per_line, QImage.Format_RGB888)
         current_image_qpixmap = QPixmap(current_image_qimage).scaled(
             self.image_box.width(), self.image_box.height())
 

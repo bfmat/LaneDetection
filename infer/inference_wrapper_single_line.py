@@ -34,7 +34,8 @@ class InferenceWrapperSingleLine:
         # If an LSTM model has been passed
         if lstm_model_path is not None:
             # Create an LSTM steering engine using the supplied path
-            self.steering_engine = LSTMSteeringEngine(trained_model_path=lstm_model_path)
+            self.steering_engine = LSTMSteeringEngine(
+                trained_model_path=lstm_model_path)
 
         # Otherwise, use a proportional/derivative steering engine
         else:
@@ -57,11 +58,12 @@ class InferenceWrapperSingleLine:
             original_image_shape=image.shape,
             window_size=self.inference_engines[0].window_size,
             minimum_prediction_confidence=0.7,
-            offset_absolute=0,
-            offset_multiplier=1.2
+            offset_absolute=-45,
+            offset_multiplier=1.15
         )
         # Use the steering engine to calculate a steering angle based on the center line
-        output_values = self.steering_engine.compute_steering_angle(center_line_positions)
+        output_values = self.steering_engine.compute_steering_angle(
+            center_line_positions)
 
         # Return the output values, along with the center and side lines as well as the line of best fit
         return output_values, center_line_positions, outer_road_lines, self.steering_engine.center_line_of_best_fit

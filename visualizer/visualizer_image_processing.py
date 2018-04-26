@@ -3,11 +3,13 @@ from __future__ import division, print_function
 import math
 import os
 
+from keras.models import load_model
 import numpy
 from numpy.linalg.linalg import LinAlgError
 from scipy.misc import imread, imresize
 from skimage.draw import line
 
+from ..infer.stop_sign_inference import box_stop_signs
 from ..visualizer.errors import UnusableImageError
 
 # A collection of functions required for loading and processing the data for the visualizer
@@ -35,7 +37,7 @@ num_files = None
 
 
 # Load and process the image with the provided inference engines and steering engine
-def process_images(image_folder, inference_and_steering_wrapper, marker_radius, heat_map_opacity, light_gray_color):
+def process_images(image_folder, inference_and_steering_wrapper, marker_radius, heat_map_opacity, light_gray_color, stop_sign_model_path):
     # Notify the user that we have started loading the images
     print('Loading images...')
 
@@ -52,6 +54,10 @@ def process_images(image_folder, inference_and_steering_wrapper, marker_radius, 
     # List of image data
     all_image_data = []
 
+    # Load the stop sign model if there is one
+    stop_sign_model = load_model(stop_sign_model_path) \
+        if stop_sign_model_path is not None else None
+
     # Loop over each of the images in the folder
     for image_name in image_names:
 
@@ -66,7 +72,8 @@ def process_images(image_folder, inference_and_steering_wrapper, marker_radius, 
                 inference_and_steering_wrapper=inference_and_steering_wrapper,
                 marker_radius=marker_radius,
                 heat_map_opacity=heat_map_opacity,
-                light_gray_color=light_gray_color
+                light_gray_color=light_gray_color,
+                stop_sign_model=stop_sign_model
             )
         # If a problem is encountered, skip this image and print an error message
         except (UnusableImageError, LinAlgError):
@@ -98,9 +105,10 @@ def process_images(image_folder, inference_and_steering_wrapper, marker_radius, 
 
 
 # Perform all necessary processing on a single image to prepare it for visualization
-def _process_single_image(image, inference_and_steering_wrapper, marker_radius, heat_map_opacity, light_gray_color):
+def _process_single_image(image, inference_and_steering_wrapper, marker_radius, heat_map_opacity, light_gray_color, stop_sign_model):
     # Perform inference on the image using the wrapper
-    output_values, center_line_positions, outer_road_lines = inference_and_steering_wrapper.infer(image)[:3]
+    output_values, center_line_positions, outer_road_lines = inference_and_steering_wrapper.infer(image)[
+        :3]
 
     # If None was returned, throw an error
     if output_values is None:
@@ -125,7 +133,8 @@ def _process_single_image(image, inference_and_steering_wrapper, marker_radius, 
 
     # Apply the heat map in place to the copied images, using a different inference engine for each
     for heat_map_image, inference_engine in zip(heat_map_images, inference_and_steering_wrapper.inference_engines):
-        _apply_heat_map(heat_map_image, inference_engine.last_prediction_tensor, heat_map_colors, heat_map_opacity)
+        _apply_heat_map(heat_map_image, inference_engine.last_prediction_tensor,
+                        heat_map_colors, heat_map_opacity)
 
     # Calculate two points on the line of best fit
     line_parameters = inference_and_steering_wrapper.steering_engine.center_line_of_best_fit
@@ -140,6 +149,9 @@ def _process_single_image(image, inference_and_steering_wrapper, marker_radius, 
         value for position in zip(y_positions, x_positions)
         for value in position
     ]
+
+    # Make a copy of the main image for later
+    original_image = numpy.copy(image)
 
     # Draw the line of best fit, catching IndexErrors on each iteration in case the line goes off the screen
     all_indices = line(*formatted_arguments)[:2]
@@ -163,8 +175,12 @@ def _process_single_image(image, inference_and_steering_wrapper, marker_radius, 
     for road_line_with_color in zip(outer_road_lines, red_and_green):
         lines_and_colors.append(road_line_with_color)
 
-    # Add the relevant lines and points to the main image and scale it to double its original size
+    # Draw the center line on the main image
     _add_markers(image, marker_radius, lines_and_colors)
+    # Run a stop sign detection pass if a model is provided
+    if stop_sign_model is not None:
+        box_stop_signs(stop_sign_model, original_image, image)
+    # Scale up the image to 200% for display
     image = imresize(image, 200, interp='nearest')
 
     # If there is only one heat map image, add a light gray rectangle of the same shape to the list
@@ -229,7 +245,8 @@ def _apply_heat_map(image, prediction_tensor, colors, heat_map_opacity):
                 y_position, x_position), heat_map_block_shape)
             for offset in (0, 1)
         ]
-        block = image[block_bounds[0]:block_bounds[1], block_bounds[2]:block_bounds[3]]
+        block = image[block_bounds[0]:block_bounds[1],
+                      block_bounds[2]:block_bounds[3]]
 
         # Color calculated in the following loop
         interpolated_color = []
@@ -256,7 +273,7 @@ def _apply_heat_map(image, prediction_tensor, colors, heat_map_opacity):
                 for previous, current in zip(previous_color, color):
                     weighted_average = (previous *
                                         (1 - interpolation_value)) + (
-                                               current * interpolation_value)
+                        current * interpolation_value)
                     interpolated_color.append(weighted_average)
 
                 # Exit the loop because we have already completed the interpolation

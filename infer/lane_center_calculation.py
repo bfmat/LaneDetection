@@ -106,8 +106,10 @@ def calculate_lane_center_positions_single_line(prediction_tensor, original_imag
     center_line_points = []
     # A list to hold the points on the outer line
     outer_road_line = []
-    # For each of the rows of the prediction tensor
-    for row_index in range(len(prediction_tensor)):
+    # For 75% of the rows of the prediction tensor (so that the sky is not included)
+    num_rows = len(prediction_tensor)
+    starting_row = int(num_rows * 0.25)
+    for row_index in range(starting_row, num_rows):
         # Get the value of the row itself
         row = prediction_tensor[row_index]
         # Try to find the first peak in this row to the right of the center
@@ -127,7 +129,8 @@ def calculate_lane_center_positions_single_line(prediction_tensor, original_imag
             # Subtract Y position times a constant from the X position to offset it because the center line gradually
             # becomes closer to the the right line further up the image
             # Also subtract an unmodified constant to shift the line further into the center of the road
-            center_x_position = scaled_peak[1] - (scaled_peak[0] * offset_multiplier) - offset_absolute
+            center_x_position = scaled_peak[1] - \
+                (scaled_peak[0] * offset_multiplier) - offset_absolute
             # Add the position to the list
             center_line_points.append((scaled_peak[0], center_x_position))
     # Return the list of points and the outer line
@@ -160,7 +163,8 @@ def find_peak_in_direction(collection, starting_index,
 def scale_position(position, original_image_shape, prediction_tensor_shape, window_size):
     # Scale and offset the point so that it corresponds to the correct position within the original image
     center_position_scaled = [
-        center_position_element * (image_shape_element / prediction_tensor_shape_element)
+        center_position_element *
+        (image_shape_element / prediction_tensor_shape_element)
         for center_position_element, image_shape_element, prediction_tensor_shape_element
         in zip(position, original_image_shape, prediction_tensor_shape)
     ]
