@@ -15,12 +15,17 @@ from ..infer.sliding_window_inference_engine import SlidingWindowInferenceEngine
 # Main class, instantiated with paths to sliding window models
 class InferenceWrapperSingleLine:
     # Load model and create inference and steering engines
-    def __init__(self, model_path, lstm_model_path=None):
+    def __init__(self, model_path, offset_absolute, offset_multiplier, search_only_in_bottom_portion, lstm_model_path=None):
         # Convert the home folder path to an absolute path
         absolute_path = os.path.expanduser(model_path)
 
         # Load the model from the absolute path
         model = load_model(absolute_path)
+
+        # Set global constants containing the offset values, and the search flag
+        self.offset_absolute = offset_absolute
+        self.offset_multiplier = offset_multiplier
+        self.search_only_in_bottom_portion = search_only_in_bottom_portion
 
         # Create a sliding window inference engine with the model
         self.inference_engines = [
@@ -40,15 +45,15 @@ class InferenceWrapperSingleLine:
         # Otherwise, use a proportional/derivative steering engine
         else:
             self.steering_engine = PDSteeringEngine(
-                proportional_multiplier=-0.0025,
+                proportional_multiplier=-0.0007,
                 derivative_multiplier=0,
                 max_distance_from_line=10,
-                ideal_center_x=160,
-                center_y=0,
+                ideal_center_x=180,
+                center_y=20,
                 steering_limit=0.2
             )
 
-    # Run inference using the predefined model and steering engine
+    # Run inference on an image, with provided offsets for the center line
     def infer(self, image):
         # Run inference on the image and collect a prediction tensor
         prediction_tensor = self.inference_engines[0].infer(image)
@@ -58,8 +63,9 @@ class InferenceWrapperSingleLine:
             original_image_shape=image.shape,
             window_size=self.inference_engines[0].window_size,
             minimum_prediction_confidence=0.7,
-            offset_absolute=-45,
-            offset_multiplier=1.15
+            offset_absolute=self.offset_absolute,
+            offset_multiplier=self.offset_multiplier,
+            search_only_in_bottom_portion=self.search_only_in_bottom_portion
         )
         # Use the steering engine to calculate a steering angle based on the center line
         output_values = self.steering_engine.compute_steering_angle(

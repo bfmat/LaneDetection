@@ -122,7 +122,7 @@ class Visualizer(QWidget):
 
         # Create one inference wrapper if we are in the simulation, or two otherwise
         inference_and_steering_wrapper = \
-            InferenceWrapperSingleLine(sys.argv[3]) if in_simulation \
+            InferenceWrapperSingleLine(sys.argv[3], -45, 1.15, True) if in_simulation \
             else InferenceWrapperTwoLines([sys.argv[4], sys.argv[3]])
 
         # Pass on the path of the stop sign detection model if we are in the simulation

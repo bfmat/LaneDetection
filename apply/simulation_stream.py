@@ -10,7 +10,8 @@ from ..infer.inference_wrapper_single_line import InferenceWrapperSingleLine
 # Check that the number of command line arguments is correct
 num_arguments = len(sys.argv)
 if num_arguments != 2 and num_arguments != 3:
-    print('Usage:', sys.argv[0], '<right line trained model> <LSTM trained model (optional)>')
+    print(
+        'Usage:', sys.argv[0], '<right line trained model> <LSTM trained model (optional)>')
     sys.exit()
 
 # Get the path to the network models from the command line arguments
@@ -18,7 +19,8 @@ model_path = sys.argv[1]
 lstm_model_path = sys.argv[2] if num_arguments == 3 else None
 
 # Create the engine wrapper
-inference_and_steering_wrapper = InferenceWrapperSingleLine(model_path, lstm_model_path)
+inference_and_steering_wrapper = InferenceWrapperSingleLine(
+    model_path, 25, 0.5, False, lstm_model_path)
 
 # Delete all old images and data files from the temp folder
 for file_path in glob.iglob(TEMP_PATH + '*sim*'):

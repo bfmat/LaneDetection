@@ -101,15 +101,21 @@ def calculate_lane_center_positions_two_lines(
 
 # Find a single road line and compute the center line of the road by offsetting the points on the right line
 def calculate_lane_center_positions_single_line(prediction_tensor, original_image_shape, window_size,
-                                                minimum_prediction_confidence, offset_multiplier, offset_absolute):
+                                                minimum_prediction_confidence, offset_multiplier, offset_absolute, search_only_in_bottom_portion):
     # A list to hold the points on the approximated center line
     center_line_points = []
     # A list to hold the points on the outer line
     outer_road_line = []
-    # For 75% of the rows of the prediction tensor (so that the sky is not included)
+    # If required, search only in 75% of the rows of the prediction tensor (so that the sky is not included)
     num_rows = len(prediction_tensor)
-    starting_row = int(num_rows * 0.25)
-    for row_index in range(starting_row, num_rows):
+    if search_only_in_bottom_portion:
+        starting_row = int(num_rows * 0.25)
+        search_range = range(starting_row, num_rows)
+    # Otherwise, search the entire image
+    else:
+        search_range = range(num_rows)
+    # Iterate over the range, dropping points
+    for row_index in search_range:
         # Get the value of the row itself
         row = prediction_tensor[row_index]
         # Try to find the first peak in this row to the right of the center
