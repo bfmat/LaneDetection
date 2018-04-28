@@ -11,7 +11,7 @@ from keras.models import Sequential
 # Main function to create model
 def get_model(window_size):
     # Hyperbolic tangent activation function
-    activation = 'relu'
+    activation = 'tanh'
 
     # Initialize the Sequential model
     model = Sequential()
@@ -20,7 +20,7 @@ def get_model(window_size):
     model.add(Conv2D(
         input_shape=(window_size, window_size, 3),
         kernel_size=4,
-        filters=16,
+        filters=8,
         activation=activation
     ))
     model.add(Conv2D(

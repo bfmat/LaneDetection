@@ -8,7 +8,7 @@ from skimage.util import view_as_windows
 # Side length of the square windows to cut the images into
 WINDOW_SIZE = 16
 # Minimum area for a blob to be recognized
-MIN_AREA = 16
+MIN_AREA = 10
 # Number of pixels between the center and the edge of a bounding box, per size unit of the corresponding blob
 BOX_SCALE = 0.7
 # RGB color of the bounding boxes and labels around stop signs
