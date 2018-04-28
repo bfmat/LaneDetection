@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import os
 import random
 import sys
@@ -69,16 +71,16 @@ for image_name in os.listdir(positive_image_folder):
 
     # Pick a negative example outside of the positive example
     # Pick a random position outside of the range road_line_position +/- window_size
-    full_image_range = set(range(320))
+    full_image_range = set(xrange(320))
     # Do not center the negative example within the range of the last window
-    true_example_range = set(range(*true_slice_bounds))
+    true_example_range = set(xrange(*true_slice_bounds))
     # Get the elements that are in full_image_range but not in positive_example_range
     true_exclusive_example_range = full_image_range.difference(
         true_example_range)
     # Remove the first and last window_size elements from the set
-    beginning = set(range(window_size))
+    beginning = set(xrange(window_size))
     image_width = image.shape[1]
-    end = set(range(image_width - window_size, image_width))
+    end = set(xrange(image_width - window_size, image_width))
     beginning_and_end = beginning.union(end)
     false_example_range = true_exclusive_example_range.difference(
         beginning_and_end)

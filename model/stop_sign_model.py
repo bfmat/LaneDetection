@@ -11,7 +11,7 @@ from keras.models import Sequential
 # Main function to create model
 def get_model(window_size):
     # Hyperbolic tangent activation function
-    activation = 'tanh'
+    activation = 'relu'
 
     # Initialize the Sequential model
     model = Sequential()
@@ -24,19 +24,14 @@ def get_model(window_size):
         activation=activation
     ))
     model.add(Conv2D(
-        kernel_size=3,
-        filters=64,
-        activation=activation
-    ))
-    model.add(Conv2D(
         kernel_size=2,
-        filters=64,
+        filters=16,
         activation=activation
     ))
 
     # Fully connected layers
     model.add(Flatten())
-    model.add(Dense(64, activation=activation))
+    model.add(Dense(32, activation=activation))
     model.add(Dense(8, activation=activation))
 
     # Sigmoid activation is used for the last layer because its outputs are in the range of 0 to 1
