@@ -11,6 +11,8 @@ WINDOW_SIZE = 16
 MIN_AREA = 16
 # Number of pixels between the center and the edge of a bounding box, per size unit of the corresponding blob
 BOX_SCALE = 0.7
+# RGB color of the bounding boxes and labels around stop signs
+BOX_COLOR = (255, 128, 0)
 
 
 def box_stop_signs(model, search_image, draw_image):
@@ -66,7 +68,7 @@ def box_stop_signs(model, search_image, draw_image):
         for position in blob_positions
     ]
 
-    # Draw each of the blobs on the output image
+    # Draw each of the blobs as a box with a corresponding label on the output image
     for position, size in zip(blob_positions_scaled, blob_sizes):
         # Multiply the size of the blob by the scale factor to get the distance between the center and the edge of the box
         half_edge_length = size * BOX_SCALE
@@ -80,5 +82,22 @@ def box_stop_signs(model, search_image, draw_image):
             img=draw_image,
             pt1=top_left,
             pt2=bottom_right,
-            color=(255, 128, 0)
+            color=BOX_COLOR
+        )
+
+        # Offset the label horizontally by a bit more than half of the edge length, and bring it down vertically so it is roughly centered on the side of the image
+        label_position = (
+            int(round(position[0] + half_edge_length + 2)),
+            int(round(position[1] + 4))
+        )
+        # Approximate the distance to the sign using a reciprocal function of the blob size
+        distance_meters = int(round((1/size) * 200))
+        # Draw a text label containing the distance
+        cv2.putText(
+            img=draw_image,
+            text='{} m'.format(distance_meters),
+            org=label_position,
+            fontFace=2,
+            fontScale=0.4,
+            color=BOX_COLOR
         )
