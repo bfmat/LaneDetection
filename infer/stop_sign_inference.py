@@ -1,5 +1,7 @@
 import cv2
+import time
 import numpy as np
+from skimage.io import imsave
 from skimage.util import view_as_windows
 
 # Inference functionality that processes images and adds bounding boxes around stop signs
@@ -101,3 +103,6 @@ def box_stop_signs(model, search_image, draw_image):
             fontScale=0.4,
             color=BOX_COLOR
         )
+
+    # Save the draw image in a hardcoded folder, named with the current Unix time (temporary)
+    imsave('/home/brendonm/VisualizerOutput/{}.png'.format(time.time()), draw_image)
