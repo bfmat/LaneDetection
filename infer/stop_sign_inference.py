@@ -46,6 +46,9 @@ def box_stop_signs(model, search_image, draw_image):
 
     # Find blobs in the heat map, which will be located around the location of the stop signs
     blob_key_points = blob_detector.detect(predictions_integer)
+    # If there are no blobs, return immediately, leaving the drawing image unmodified
+    if not blob_key_points:
+        return
     # Convert the key points to tuple positions
     blob_positions, blob_sizes = zip(*((key_point.pt, key_point.size)
                                        for key_point in blob_key_points))
